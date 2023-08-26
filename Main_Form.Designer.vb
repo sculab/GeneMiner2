@@ -27,8 +27,12 @@ Partial Class Main_Form
         文件ToolStripMenuItem = New ToolStripMenuItem()
         载入参考序列ToolStripMenuItem = New ToolStripMenuItem()
         测序文件ToolStripMenuItem = New ToolStripMenuItem()
+        ToolStripSeparator6 = New ToolStripSeparator()
+        下载353参考序列ToolStripMenuItem = New ToolStripMenuItem()
         ToolStripSeparator3 = New ToolStripSeparator()
         导出ToolStripMenuItem = New ToolStripMenuItem()
+        导出参考序列ToolStripMenuItem = New ToolStripMenuItem()
+        导出测序文件ToolStripMenuItem = New ToolStripMenuItem()
         分析ToolStripMenuItem = New ToolStripMenuItem()
         过滤ToolStripMenuItem = New ToolStripMenuItem()
         从头过滤ToolStripMenuItem = New ToolStripMenuItem()
@@ -47,12 +51,14 @@ Partial Class Main_Form
         失败的项目ToolStripMenuItem = New ToolStripMenuItem()
         过深的ToolStripMenuItem = New ToolStripMenuItem()
         过浅的项ToolStripMenuItem = New ToolStripMenuItem()
-        操作ToolStripMenuItem = New ToolStripMenuItem()
-        打开输出目录ToolStripMenuItem = New ToolStripMenuItem()
+        三方工具ToolStripMenuItem = New ToolStripMenuItem()
+        构建质体基因组ToolStripMenuItem = New ToolStripMenuItem()
+        多序列比对ToolStripMenuItem = New ToolStripMenuItem()
         DataGridView1 = New DataGridView()
         DataGridView2 = New DataGridView()
         Timer1 = New Timer(components)
         GroupBox1 = New GroupBox()
+        Button2 = New Button()
         Button1 = New Button()
         TextBox1 = New TextBox()
         NumericUpDown3 = New NumericUpDown()
@@ -104,7 +110,7 @@ Partial Class Main_Form
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {文件ToolStripMenuItem, 分析ToolStripMenuItem, 选择ToolStripMenuItem, 操作ToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {文件ToolStripMenuItem, 分析ToolStripMenuItem, 选择ToolStripMenuItem, 三方工具ToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(794, 25)
@@ -113,7 +119,7 @@ Partial Class Main_Form
         ' 
         ' 文件ToolStripMenuItem
         ' 
-        文件ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {载入参考序列ToolStripMenuItem, 测序文件ToolStripMenuItem, ToolStripSeparator3, 导出ToolStripMenuItem})
+        文件ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {载入参考序列ToolStripMenuItem, 测序文件ToolStripMenuItem, ToolStripSeparator6, 下载353参考序列ToolStripMenuItem, ToolStripSeparator3, 导出ToolStripMenuItem, 导出参考序列ToolStripMenuItem, 导出测序文件ToolStripMenuItem})
         文件ToolStripMenuItem.Name = "文件ToolStripMenuItem"
         文件ToolStripMenuItem.Size = New Size(44, 21)
         文件ToolStripMenuItem.Text = "文件"
@@ -130,6 +136,17 @@ Partial Class Main_Form
         测序文件ToolStripMenuItem.Size = New Size(148, 22)
         测序文件ToolStripMenuItem.Text = "载入测序文件"
         ' 
+        ' ToolStripSeparator6
+        ' 
+        ToolStripSeparator6.Name = "ToolStripSeparator6"
+        ToolStripSeparator6.Size = New Size(145, 6)
+        ' 
+        ' 下载353参考序列ToolStripMenuItem
+        ' 
+        下载353参考序列ToolStripMenuItem.Name = "下载353参考序列ToolStripMenuItem"
+        下载353参考序列ToolStripMenuItem.Size = New Size(148, 22)
+        下载353参考序列ToolStripMenuItem.Text = "下载AGS序列"
+        ' 
         ' ToolStripSeparator3
         ' 
         ToolStripSeparator3.Name = "ToolStripSeparator3"
@@ -139,7 +156,19 @@ Partial Class Main_Form
         ' 
         导出ToolStripMenuItem.Name = "导出ToolStripMenuItem"
         导出ToolStripMenuItem.Size = New Size(148, 22)
-        导出ToolStripMenuItem.Text = "导出参考信息"
+        导出ToolStripMenuItem.Text = "导出列表信息"
+        ' 
+        ' 导出参考序列ToolStripMenuItem
+        ' 
+        导出参考序列ToolStripMenuItem.Name = "导出参考序列ToolStripMenuItem"
+        导出参考序列ToolStripMenuItem.Size = New Size(148, 22)
+        导出参考序列ToolStripMenuItem.Text = "导出参考序列"
+        ' 
+        ' 导出测序文件ToolStripMenuItem
+        ' 
+        导出测序文件ToolStripMenuItem.Name = "导出测序文件ToolStripMenuItem"
+        导出测序文件ToolStripMenuItem.Size = New Size(148, 22)
+        导出测序文件ToolStripMenuItem.Text = "导出测序文件"
         ' 
         ' 分析ToolStripMenuItem
         ' 
@@ -248,18 +277,24 @@ Partial Class Main_Form
         过浅的项ToolStripMenuItem.Size = New Size(124, 22)
         过浅的项ToolStripMenuItem.Text = "过浅的项"
         ' 
-        ' 操作ToolStripMenuItem
+        ' 三方工具ToolStripMenuItem
         ' 
-        操作ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {打开输出目录ToolStripMenuItem})
-        操作ToolStripMenuItem.Name = "操作ToolStripMenuItem"
-        操作ToolStripMenuItem.Size = New Size(44, 21)
-        操作ToolStripMenuItem.Text = "操作"
+        三方工具ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {构建质体基因组ToolStripMenuItem, 多序列比对ToolStripMenuItem})
+        三方工具ToolStripMenuItem.Name = "三方工具ToolStripMenuItem"
+        三方工具ToolStripMenuItem.Size = New Size(44, 21)
+        三方工具ToolStripMenuItem.Text = "工具"
         ' 
-        ' 打开输出目录ToolStripMenuItem
+        ' 构建质体基因组ToolStripMenuItem
         ' 
-        打开输出目录ToolStripMenuItem.Name = "打开输出目录ToolStripMenuItem"
-        打开输出目录ToolStripMenuItem.Size = New Size(148, 22)
-        打开输出目录ToolStripMenuItem.Text = "打开输出目录"
+        构建质体基因组ToolStripMenuItem.Name = "构建质体基因组ToolStripMenuItem"
+        构建质体基因组ToolStripMenuItem.Size = New Size(148, 22)
+        构建质体基因组ToolStripMenuItem.Text = "细胞器基因组"
+        ' 
+        ' 多序列比对ToolStripMenuItem
+        ' 
+        多序列比对ToolStripMenuItem.Name = "多序列比对ToolStripMenuItem"
+        多序列比对ToolStripMenuItem.Size = New Size(148, 22)
+        多序列比对ToolStripMenuItem.Text = "多序列比对"
         ' 
         ' DataGridView1
         ' 
@@ -288,6 +323,7 @@ Partial Class Main_Form
         ' GroupBox1
         ' 
         GroupBox1.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        GroupBox1.Controls.Add(Button2)
         GroupBox1.Controls.Add(Button1)
         GroupBox1.Controls.Add(TextBox1)
         GroupBox1.Location = New Point(620, 28)
@@ -296,6 +332,15 @@ Partial Class Main_Form
         GroupBox1.TabIndex = 3
         GroupBox1.TabStop = False
         GroupBox1.Text = "输出目录"
+        ' 
+        ' Button2
+        ' 
+        Button2.Location = New Point(6, 51)
+        Button2.Name = "Button2"
+        Button2.Size = New Size(75, 30)
+        Button2.TabIndex = 2
+        Button2.Text = "打开目录"
+        Button2.UseVisualStyleBackColor = True
         ' 
         ' Button1
         ' 
@@ -322,7 +367,7 @@ Partial Class Main_Form
         NumericUpDown3.Name = "NumericUpDown3"
         NumericUpDown3.Size = New Size(54, 23)
         NumericUpDown3.TabIndex = 22
-        NumericUpDown3.Value = New Decimal(New Integer() {10, 0, 0, 0})
+        NumericUpDown3.Value = New Decimal(New Integer() {2, 0, 0, 0})
         ' 
         ' CheckBox3
         ' 
@@ -608,7 +653,7 @@ Partial Class Main_Form
         MainMenuStrip = MenuStrip1
         Name = "Main_Form"
         StartPosition = FormStartPosition.CenterScreen
-        Text = "输出目录"
+        Text = "EasyMiner"
         MenuStrip1.ResumeLayout(False)
         MenuStrip1.PerformLayout()
         CType(DataGridView1, ComponentModel.ISupportInitialize).EndInit()
@@ -679,8 +724,6 @@ Partial Class Main_Form
     Friend WithEvents 过浅的项ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents 迭代ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents 再过滤ToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents 操作ToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents 打开输出目录ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents NumericUpDown9 As NumericUpDown
     Friend WithEvents Label8 As Label
     Friend WithEvents 从头过滤ToolStripMenuItem As ToolStripMenuItem
@@ -696,4 +739,12 @@ Partial Class Main_Form
     Friend WithEvents ToolStripSeparator4 As ToolStripSeparator
     Friend WithEvents 全自动ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripSeparator5 As ToolStripSeparator
+    Friend WithEvents 下载353参考序列ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ToolStripSeparator6 As ToolStripSeparator
+    Friend WithEvents 导出参考序列ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 三方工具ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 构建质体基因组ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 导出测序文件ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents Button2 As Button
+    Friend WithEvents 多序列比对ToolStripMenuItem As ToolStripMenuItem
 End Class

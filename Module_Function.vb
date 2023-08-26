@@ -87,6 +87,28 @@ Module Module_Function
 		End If
 	End Sub
 
+	Public Sub MergeFiles(ByVal firstFilePath As String, ByVal secondFilePath As String)
+		Try
+			Using firstFileWriter As New StreamWriter(firstFilePath, True) ' "True" appends to the file
+				Using secondFileReader As New StreamReader(secondFilePath)
+					Dim line As String = ""
+					While (InlineAssignHelper(line, secondFileReader.ReadLine())) IsNot Nothing
+						firstFileWriter.WriteLine(line)
+					End While
+				End Using
+			End Using
+			Console.WriteLine("Files merged successfully.")
+		Catch ex As Exception
+			Console.WriteLine("An error occurred: " & ex.Message)
+		End Try
+	End Sub
+
+	Private Function InlineAssignHelper(Of T)(ByRef target As T, ByVal value As T) As T
+		target = value
+		Return value
+	End Function
+
+
 	Public Sub refresh_file()
 		Dim newrow(7) As String
 		Dim seq_count As Integer = 0

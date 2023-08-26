@@ -2,7 +2,7 @@
 Imports System.IO
 Imports System.Threading
 Public Class Main_Form
-    Public mydata_Dataset As New DataSet
+
     Public Sub initialize_data()
         Dim Column_Select As New DataGridViewCheckBoxColumn
         Column_Select.HeaderText = "Select"
@@ -335,20 +335,7 @@ Public Class Main_Form
             Else
                 data_type = ".fasta"
             End If
-            If opendialog.FileNames.Length = 2 Then
-                'mydata_Dataset.Tables("Data Table").Clear()
-                data_loaded = False
-                Dim newrow(2) As String
-                seqsView.AllowNew = True
-                seqsView.AddNew()
-                newrow(0) = seqsView.Count
-                newrow(1) = opendialog.FileNames(0)
-                newrow(2) = opendialog.FileNames(1)
-                seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
-                seqsView.AllowNew = False
-                seqsView.AllowEdit = True
-                timer_id = 3
-            ElseIf opendialog.FileNames.Length = 1 Then
+            If opendialog.FileNames.Length = 1 Then
                 'mydata_Dataset.Tables("Data Table").Clear()
                 data_loaded = False
                 Dim newrow(2) As String
@@ -567,11 +554,7 @@ Public Class Main_Form
         DataGridView1.RefreshEdit()
     End Sub
 
-    Private Sub 打开输出目录ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 打开输出目录ToolStripMenuItem.Click
-        If TextBox1.Text <> "" Then
-            Process.Start("explorer.exe", TextBox1.Text)
-        End If
-    End Sub
+
 
 
     Private Sub 迭代ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 迭代ToolStripMenuItem.Click
@@ -877,5 +860,169 @@ Public Class Main_Form
 
     Private Sub Label6_Click(sender As Object, e As EventArgs) Handles Label6.Click
 
+    End Sub
+
+    Private Sub 下载353参考序列ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 下载353参考序列ToolStripMenuItem.Click
+        form_config_ags.Show()
+    End Sub
+
+    Private Sub 导出参考序列ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 导出参考序列ToolStripMenuItem.Click
+        Dim opendialog As New FolderBrowserDialog
+        Dim resultdialog As DialogResult = opendialog.ShowDialog()
+        If resultdialog = DialogResult.OK Then
+            For i As Integer = 1 To refsView.Count
+                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    File.Copy(currentDirectory + "temp\org_seq\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", opendialog.SelectedPath + "\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta")
+                End If
+            Next
+        End If
+    End Sub
+
+    Private Sub 构建质体基因组ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 构建质体基因组ToolStripMenuItem.Click
+        If TextBox1.Text <> "" Then
+            DataGridView1.EndEdit()
+            If Directory.GetFileSystemEntries(TextBox1.Text).Length > 0 Then
+                Dim result As DialogResult = MessageBox.Show("Clear the output directory?", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If result = DialogResult.Yes Then
+                    DeleteDir(TextBox1.Text)
+                    My.Computer.FileSystem.CreateDirectory(TextBox1.Text)
+                End If
+            End If
+
+            Dim refs_count As Integer = 0
+            Dim seqs_count As Integer = 0
+
+            DeleteDir(currentDirectory + "temp\seeds")
+            My.Computer.FileSystem.CreateDirectory(currentDirectory + "temp\seeds")
+
+            For i As Integer = 1 To refsView.Count
+                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    refs_count += 1
+                    If refs_count = 1 Then
+                        File.Copy(currentDirectory + "temp\org_seq\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", currentDirectory + "temp\seed.fasta", True)
+                    End If
+                End If
+            Next
+            Dim sw As New StreamWriter(currentDirectory + "temp\batch_file.txt")
+            For i As Integer = 1 To seqsView.Count
+                If DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    seqs_count += 1
+                    sw.WriteLine("Project" + DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString)
+                    sw.WriteLine(currentDirectory + "temp\seed.fasta")
+                    sw.WriteLine(currentDirectory + "temp\Project" + DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".1.fq")
+                    sw.WriteLine(currentDirectory + "temp\Project" + DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".2.fq")
+                End If
+            Next
+            sw.Close()
+            If seqs_count >= 1 And refs_count >= 1 Then
+                form_config_plasty.Show()
+            Else
+                MsgBox("Please select at least one reference as seed and at least one sequence data!")
+            End If
+        Else
+            MsgBox("Please select an output folder!")
+        End If
+
+    End Sub
+
+    Private Sub 导出测序文件ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 导出测序文件ToolStripMenuItem.Click
+        If TextBox1.Text <> "" Then
+            Dim th1 As New Threading.Thread(AddressOf export_seq)
+            th1.Start()
+        Else
+            MsgBox("Please select an output folder!")
+        End If
+
+    End Sub
+    Public Sub export_seq()
+        For i As Integer = 1 To seqsView.Count
+            If form_main.DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                Dim SI_build_fq As New ProcessStartInfo()
+                SI_build_fq.FileName = currentDirectory + "analysis\build_fq.exe" ' 替换为实际的命令行程序路径
+                SI_build_fq.WorkingDirectory = currentDirectory + "analysis\" ' 替换为实际的运行文件夹路径
+                SI_build_fq.CreateNoWindow = False
+                SI_build_fq.Arguments = "-i1 " + """" + form_main.DataGridView2.Rows(i - 1).Cells(2).Value.ToString + """"
+                SI_build_fq.Arguments += " -i2 " + """" + form_main.DataGridView2.Rows(i - 1).Cells(3).Value.ToString + """"
+                SI_build_fq.Arguments += " -o " + """" + TextBox1.Text + """"
+                SI_build_fq.Arguments += " -o1 " + "Project" + DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".1"
+                SI_build_fq.Arguments += " -o2 " + "Project" + DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".2"
+                If form_main.CheckBox3.Checked Then
+                    SI_build_fq.Arguments += " -m_reads " + NumericUpDown3.Value.ToString
+
+                End If
+
+                Dim process_build_fq As Process = Process.Start(SI_build_fq)
+                process_build_fq.WaitForExit()
+                process_build_fq.Close()
+            End If
+        Next
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        If TextBox1.Text <> "" Then
+            Process.Start("explorer.exe", TextBox1.Text)
+        End If
+    End Sub
+
+    Private Sub 过滤ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 过滤ToolStripMenuItem.Click
+
+    End Sub
+
+    Private Sub 多序列比对ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 多序列比对ToolStripMenuItem.Click
+        If TextBox1.Text <> "" Then
+            Dim refs_count As Integer = 0
+            ref_dir = (currentDirectory + "temp\temp_refs\").Replace("\", "/")
+
+            DeleteDir(ref_dir)
+            My.Computer.FileSystem.CreateDirectory(ref_dir)
+
+            For i As Integer = 1 To refsView.Count
+                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    refs_count += 1
+                    File.Copy(currentDirectory + "temp\org_seq\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", ref_dir + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta")
+                End If
+            Next
+            If refs_count >= 1 Then
+                If My.Computer.FileSystem.DirectoryExists(TextBox1.Text + "\results") Then
+                    If Directory.GetFileSystemEntries(TextBox1.Text + "\results").Length > 0 Then
+                        Dim result As DialogResult = MessageBox.Show("Should the mined sequences be merged?", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                        If result = DialogResult.Yes Then
+                            For i As Integer = 1 To refsView.Count
+                                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                                    If File.Exists(TextBox1.Text + "\results\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta") Then
+                                        MergeFiles(ref_dir + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", TextBox1.Text + "\results\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta")
+                                    End If
+                                End If
+                            Next
+                        End If
+                    End If
+                End If
+                Dim th1 As New Thread(AddressOf do_align)
+                th1.Start()
+            Else
+                MsgBox("Please select at least one reference!")
+            End If
+        Else
+            MsgBox("Please select an output folder!")
+        End If
+
+
+    End Sub
+
+    Public Sub do_align()
+        Directory.CreateDirectory(TextBox1.Text + "\aligned\")
+        For i As Integer = 1 To refsView.Count
+            If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                Dim SI_muscle5 As New ProcessStartInfo()
+                SI_muscle5.FileName = currentDirectory + "analysis\muscle5.1.win64.exe" ' 替换为实际的命令行程序路径
+                SI_muscle5.WorkingDirectory = currentDirectory + "analysis\" ' 替换为实际的运行文件夹路径
+                SI_muscle5.CreateNoWindow = False
+                SI_muscle5.Arguments = "-align " + """" + ref_dir + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta" + """"
+                SI_muscle5.Arguments += " -output " + """" + TextBox1.Text + "\aligned\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta" + """"
+                Dim process_build_fq As Process = Process.Start(SI_muscle5)
+                process_build_fq.WaitForExit()
+                process_build_fq.Close()
+            End If
+        Next
     End Sub
 End Class

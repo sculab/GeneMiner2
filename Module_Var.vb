@@ -19,13 +19,14 @@
     Public timer_id As Integer = 0
     Public waiting As Boolean = False
     Public current_file As String
+    Public mydata_Dataset As New DataSet
     'Public form_config_stand As New Config_Stand
     'Public form_config_clean As New Config_Clean
     'Public form_config_mix As New Config_Mix
     'Public form_config_data As New Config_Data
-    'Public form_config_info As New Config_Info
-    'Public form_config_type As New Config_Type
-    'Public form_config_primer As New Config_Primer
+    Public form_config_align As New Config_Align
+    Public form_config_plasty As New Config_Plasty
+    Public form_config_ags As New Config_AGS
     Public form_config_split As New Config_Split
     'Public form_config_combine As New Config_Combine
     Public form_main As New Main_Form
