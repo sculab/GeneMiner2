@@ -67,6 +67,7 @@ Public Class Config_Plasty
                 SI_build_fq.Arguments += " -o " + """" + currentDirectory + "temp" + """"
                 SI_build_fq.Arguments += " -o1 " + "Project" + form_main.DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".1"
                 SI_build_fq.Arguments += " -o2 " + "Project" + form_main.DataGridView2.Rows(i - 1).Cells(1).FormattedValue.ToString + ".2"
+                SI_build_fq.Arguments += " -skip 0"
                 If form_main.CheckBox3.Checked Then
                     SI_build_fq.Arguments += " -m_reads " + form_main.NumericUpDown3.Value.ToString
 
@@ -79,7 +80,7 @@ Public Class Config_Plasty
         Next
 
         Dim SI_build_plasty As New ProcessStartInfo()
-        SI_build_plasty.FileName = currentDirectory + "analysis\NOVOPlasty4.3.1.exe" ' 替换为实际的命令行程序路径
+        SI_build_plasty.FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe" ' 替换为实际的命令行程序路径
         SI_build_plasty.WorkingDirectory = currentDirectory + "analysis\" ' 替换为实际的运行文件夹路径
         SI_build_plasty.CreateNoWindow = False
         SI_build_plasty.Arguments = "-c " + """" + currentDirectory + "temp\NOVO_config.txt" + """"

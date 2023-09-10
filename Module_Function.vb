@@ -48,12 +48,17 @@ Module Module_Function
 		Next
 		Return True
 	End Function
-	Public Sub safe_copy(source, target)
+	Public Sub safe_copy(ByVal source As String, ByVal target As String, Optional ByVal overwrite As Boolean = True)
 		If File.Exists(source) Then
-			File.Copy(source, target, True)
-			File.Delete(source)
+			File.Copy(source, target, overwrite)
+			Dim myFileInfo As FileInfo = New FileInfo(target)
+			myFileInfo.IsReadOnly = False
 		End If
+
+
 	End Sub
+
+
 	Public Sub DeleteDir(ByVal aimPath As String)
 		If (aimPath(aimPath.Length - 1) <> Path.DirectorySeparatorChar) Then
 			aimPath += Path.DirectorySeparatorChar
@@ -63,13 +68,14 @@ Module Module_Function
 		For Each FileName As String In fileList
 			If (Directory.Exists(FileName)) Then  ' 先当作目录处理如果存在这个目录就递归
 				DeleteDir(aimPath + Path.GetFileName(FileName))
+				Directory.Delete(aimPath + Path.GetFileName(FileName))
 			Else  ' 否则直接Delete文件  
 				Try
 					File.Delete(aimPath + Path.GetFileName(FileName))
 				Catch ex As Exception
 				End Try
 			End If
-		Next  '删除文件夹  
+		Next  '删除文件夹
 	End Sub
 	Public Sub format_path()
 		Select Case TargetOS
@@ -131,7 +137,7 @@ Module Module_Function
 					line = sr.ReadLine
 				Loop Until line Is Nothing
 				sr.Close()
-				newrow(0) = seq_count
+				newrow(0) = refsView.Count
 				newrow(1) = System.IO.Path.GetFileNameWithoutExtension(FileName)
 				newrow(2) = ref_count
 				newrow(3) = CInt(ref_length / ref_count)
@@ -139,7 +145,7 @@ Module Module_Function
 				newrow(5) = ""
 				newrow(6) = ""
 				newrow(7) = ""
-				refsView.Item(seq_count - 1).Row.ItemArray = newrow
+				refsView.Item(refsView.Count - 1).Row.ItemArray = newrow
 			End If
 		Next
 		refsView.AllowNew = False

@@ -42,13 +42,18 @@ Partial Class Main_Form
         全自动ToolStripMenuItem = New ToolStripMenuItem()
         ToolStripSeparator4 = New ToolStripSeparator()
         迭代ToolStripMenuItem = New ToolStripMenuItem()
+        迭代ToolStripMenuItem1 = New ToolStripMenuItem()
+        重新拼接ToolStripMenuItem = New ToolStripMenuItem()
+        多次迭代ToolStripMenuItem = New ToolStripMenuItem()
         ToolStripSeparator2 = New ToolStripSeparator()
         刷新数据ToolStripMenuItem = New ToolStripMenuItem()
         选择ToolStripMenuItem = New ToolStripMenuItem()
         全选ToolStripMenuItem = New ToolStripMenuItem()
         清空ToolStripMenuItem = New ToolStripMenuItem()
+        反选ToolStripMenuItem = New ToolStripMenuItem()
         ToolStripSeparator1 = New ToolStripSeparator()
         失败的项目ToolStripMenuItem = New ToolStripMenuItem()
+        过短的项ToolStripMenuItem = New ToolStripMenuItem()
         过深的ToolStripMenuItem = New ToolStripMenuItem()
         过浅的项ToolStripMenuItem = New ToolStripMenuItem()
         三方工具ToolStripMenuItem = New ToolStripMenuItem()
@@ -56,6 +61,8 @@ Partial Class Main_Form
         多序列比对ToolStripMenuItem = New ToolStripMenuItem()
         DataGridView1 = New DataGridView()
         DataGridView2 = New DataGridView()
+        ContextMenuStrip1 = New ContextMenuStrip(components)
+        清空数据ToolStripMenuItem = New ToolStripMenuItem()
         Timer1 = New Timer(components)
         GroupBox1 = New GroupBox()
         Button2 = New Button()
@@ -82,6 +89,7 @@ Partial Class Main_Form
         Label1 = New Label()
         TabControl1 = New TabControl()
         TabPage1 = New TabPage()
+        ProgressBar1 = New ProgressBar()
         TabPage2 = New TabPage()
         RichTextBox1 = New RichTextBox()
         GroupBox2 = New GroupBox()
@@ -90,6 +98,7 @@ Partial Class Main_Form
         MenuStrip1.SuspendLayout()
         CType(DataGridView1, ComponentModel.ISupportInitialize).BeginInit()
         CType(DataGridView2, ComponentModel.ISupportInitialize).BeginInit()
+        ContextMenuStrip1.SuspendLayout()
         GroupBox1.SuspendLayout()
         CType(NumericUpDown3, ComponentModel.ISupportInitialize).BeginInit()
         CType(NumericUpDown9, ComponentModel.ISupportInitialize).BeginInit()
@@ -181,7 +190,7 @@ Partial Class Main_Form
         ' 
         过滤ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {从头过滤ToolStripMenuItem, 进一步过滤ToolStripMenuItem})
         过滤ToolStripMenuItem.Name = "过滤ToolStripMenuItem"
-        过滤ToolStripMenuItem.Size = New Size(124, 22)
+        过滤ToolStripMenuItem.Size = New Size(180, 22)
         过滤ToolStripMenuItem.Text = "过滤"
         ' 
         ' 从头过滤ToolStripMenuItem
@@ -199,45 +208,64 @@ Partial Class Main_Form
         ' 拼接ToolStripMenuItem
         ' 
         拼接ToolStripMenuItem.Name = "拼接ToolStripMenuItem"
-        拼接ToolStripMenuItem.Size = New Size(124, 22)
+        拼接ToolStripMenuItem.Size = New Size(180, 22)
         拼接ToolStripMenuItem.Text = "拼接"
         ' 
         ' ToolStripSeparator5
         ' 
         ToolStripSeparator5.Name = "ToolStripSeparator5"
-        ToolStripSeparator5.Size = New Size(121, 6)
+        ToolStripSeparator5.Size = New Size(177, 6)
         ' 
         ' 全自动ToolStripMenuItem
         ' 
         全自动ToolStripMenuItem.Name = "全自动ToolStripMenuItem"
-        全自动ToolStripMenuItem.Size = New Size(124, 22)
+        全自动ToolStripMenuItem.Size = New Size(180, 22)
         全自动ToolStripMenuItem.Text = "自动"
         ' 
         ' ToolStripSeparator4
         ' 
         ToolStripSeparator4.Name = "ToolStripSeparator4"
-        ToolStripSeparator4.Size = New Size(121, 6)
+        ToolStripSeparator4.Size = New Size(177, 6)
         ' 
         ' 迭代ToolStripMenuItem
         ' 
+        迭代ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {迭代ToolStripMenuItem1, 重新拼接ToolStripMenuItem, 多次迭代ToolStripMenuItem})
         迭代ToolStripMenuItem.Name = "迭代ToolStripMenuItem"
-        迭代ToolStripMenuItem.Size = New Size(124, 22)
+        迭代ToolStripMenuItem.Size = New Size(180, 22)
         迭代ToolStripMenuItem.Text = "迭代"
+        ' 
+        ' 迭代ToolStripMenuItem1
+        ' 
+        迭代ToolStripMenuItem1.Name = "迭代ToolStripMenuItem1"
+        迭代ToolStripMenuItem1.Size = New Size(180, 22)
+        迭代ToolStripMenuItem1.Text = "首次迭代"
+        ' 
+        ' 重新拼接ToolStripMenuItem
+        ' 
+        重新拼接ToolStripMenuItem.Name = "重新拼接ToolStripMenuItem"
+        重新拼接ToolStripMenuItem.Size = New Size(180, 22)
+        重新拼接ToolStripMenuItem.Text = "重新拼接"
+        ' 
+        ' 多次迭代ToolStripMenuItem
+        ' 
+        多次迭代ToolStripMenuItem.Name = "多次迭代ToolStripMenuItem"
+        多次迭代ToolStripMenuItem.Size = New Size(180, 22)
+        多次迭代ToolStripMenuItem.Text = "多次迭代"
         ' 
         ' ToolStripSeparator2
         ' 
         ToolStripSeparator2.Name = "ToolStripSeparator2"
-        ToolStripSeparator2.Size = New Size(121, 6)
+        ToolStripSeparator2.Size = New Size(177, 6)
         ' 
         ' 刷新数据ToolStripMenuItem
         ' 
         刷新数据ToolStripMenuItem.Name = "刷新数据ToolStripMenuItem"
-        刷新数据ToolStripMenuItem.Size = New Size(124, 22)
+        刷新数据ToolStripMenuItem.Size = New Size(180, 22)
         刷新数据ToolStripMenuItem.Text = "刷新数据"
         ' 
         ' 选择ToolStripMenuItem
         ' 
-        选择ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {全选ToolStripMenuItem, 清空ToolStripMenuItem, ToolStripSeparator1, 失败的项目ToolStripMenuItem, 过深的ToolStripMenuItem, 过浅的项ToolStripMenuItem})
+        选择ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {全选ToolStripMenuItem, 清空ToolStripMenuItem, 反选ToolStripMenuItem, ToolStripSeparator1, 失败的项目ToolStripMenuItem, 过短的项ToolStripMenuItem, 过深的ToolStripMenuItem, 过浅的项ToolStripMenuItem})
         选择ToolStripMenuItem.Name = "选择ToolStripMenuItem"
         选择ToolStripMenuItem.Size = New Size(44, 21)
         选择ToolStripMenuItem.Text = "选择"
@@ -254,6 +282,12 @@ Partial Class Main_Form
         清空ToolStripMenuItem.Size = New Size(124, 22)
         清空ToolStripMenuItem.Text = "清空"
         ' 
+        ' 反选ToolStripMenuItem
+        ' 
+        反选ToolStripMenuItem.Name = "反选ToolStripMenuItem"
+        反选ToolStripMenuItem.Size = New Size(124, 22)
+        反选ToolStripMenuItem.Text = "反选"
+        ' 
         ' ToolStripSeparator1
         ' 
         ToolStripSeparator1.Name = "ToolStripSeparator1"
@@ -264,6 +298,12 @@ Partial Class Main_Form
         失败的项目ToolStripMenuItem.Name = "失败的项目ToolStripMenuItem"
         失败的项目ToolStripMenuItem.Size = New Size(124, 22)
         失败的项目ToolStripMenuItem.Text = "失败的项"
+        ' 
+        ' 过短的项ToolStripMenuItem
+        ' 
+        过短的项ToolStripMenuItem.Name = "过短的项ToolStripMenuItem"
+        过短的项ToolStripMenuItem.Size = New Size(124, 22)
+        过短的项ToolStripMenuItem.Text = "过短的项"
         ' 
         ' 过深的ToolStripMenuItem
         ' 
@@ -310,11 +350,24 @@ Partial Class Main_Form
         ' 
         DataGridView2.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
         DataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        DataGridView2.Location = New Point(3, 304)
+        DataGridView2.ContextMenuStrip = ContextMenuStrip1
+        DataGridView2.Location = New Point(3, 299)
         DataGridView2.Name = "DataGridView2"
         DataGridView2.RowTemplate.Height = 25
-        DataGridView2.Size = New Size(603, 130)
+        DataGridView2.Size = New Size(603, 105)
         DataGridView2.TabIndex = 2
+        ' 
+        ' ContextMenuStrip1
+        ' 
+        ContextMenuStrip1.Items.AddRange(New ToolStripItem() {清空数据ToolStripMenuItem})
+        ContextMenuStrip1.Name = "ContextMenuStrip1"
+        ContextMenuStrip1.Size = New Size(125, 26)
+        ' 
+        ' 清空数据ToolStripMenuItem
+        ' 
+        清空数据ToolStripMenuItem.Name = "清空数据ToolStripMenuItem"
+        清空数据ToolStripMenuItem.Size = New Size(124, 22)
+        清空数据ToolStripMenuItem.Text = "清空数据"
         ' 
         ' Timer1
         ' 
@@ -367,7 +420,7 @@ Partial Class Main_Form
         NumericUpDown3.Name = "NumericUpDown3"
         NumericUpDown3.Size = New Size(54, 23)
         NumericUpDown3.TabIndex = 22
-        NumericUpDown3.Value = New Decimal(New Integer() {2, 0, 0, 0})
+        NumericUpDown3.Value = New Decimal(New Integer() {5, 0, 0, 0})
         ' 
         ' CheckBox3
         ' 
@@ -559,6 +612,7 @@ Partial Class Main_Form
         ' 
         ' TabPage1
         ' 
+        TabPage1.Controls.Add(ProgressBar1)
         TabPage1.Controls.Add(DataGridView1)
         TabPage1.Controls.Add(DataGridView2)
         TabPage1.Location = New Point(4, 26)
@@ -568,6 +622,14 @@ Partial Class Main_Form
         TabPage1.TabIndex = 0
         TabPage1.Text = "数据"
         TabPage1.UseVisualStyleBackColor = True
+        ' 
+        ' ProgressBar1
+        ' 
+        ProgressBar1.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        ProgressBar1.Location = New Point(3, 410)
+        ProgressBar1.Name = "ProgressBar1"
+        ProgressBar1.Size = New Size(603, 23)
+        ProgressBar1.TabIndex = 3
         ' 
         ' TabPage2
         ' 
@@ -658,6 +720,7 @@ Partial Class Main_Form
         MenuStrip1.PerformLayout()
         CType(DataGridView1, ComponentModel.ISupportInitialize).EndInit()
         CType(DataGridView2, ComponentModel.ISupportInitialize).EndInit()
+        ContextMenuStrip1.ResumeLayout(False)
         GroupBox1.ResumeLayout(False)
         GroupBox1.PerformLayout()
         CType(NumericUpDown3, ComponentModel.ISupportInitialize).EndInit()
@@ -747,4 +810,13 @@ Partial Class Main_Form
     Friend WithEvents 导出测序文件ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents Button2 As Button
     Friend WithEvents 多序列比对ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ContextMenuStrip1 As ContextMenuStrip
+    Friend WithEvents 清空数据ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 过短的项ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 反选ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ProgressBar1 As ProgressBar
+    Friend WithEvents 再次迭代ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 迭代ToolStripMenuItem1 As ToolStripMenuItem
+    Friend WithEvents 重新拼接ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 多次迭代ToolStripMenuItem As ToolStripMenuItem
 End Class

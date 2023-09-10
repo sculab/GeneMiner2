@@ -26,15 +26,15 @@ Partial Class Config_AGS
         Button1 = New Button()
         TextBox1 = New TextBox()
         ListBox1 = New ListBox()
-        ListBox2 = New ListBox()
-        TextBox2 = New TextBox()
         Label1 = New Label()
-        Label2 = New Label()
+        Button3 = New Button()
+        ListBox3 = New ListBox()
+        Button5 = New Button()
         SuspendLayout()
         ' 
         ' Button2
         ' 
-        Button2.Location = New Point(237, 256)
+        Button2.Location = New Point(290, 163)
         Button2.Name = "Button2"
         Button2.Size = New Size(75, 30)
         Button2.TabIndex = 46
@@ -43,7 +43,7 @@ Partial Class Config_AGS
         ' 
         ' Button1
         ' 
-        Button1.Location = New Point(156, 256)
+        Button1.Location = New Point(209, 163)
         Button1.Name = "Button1"
         Button1.Size = New Size(75, 30)
         Button1.TabIndex = 45
@@ -52,7 +52,7 @@ Partial Class Config_AGS
         ' 
         ' TextBox1
         ' 
-        TextBox1.Location = New Point(6, 28)
+        TextBox1.Location = New Point(6, 5)
         TextBox1.Name = "TextBox1"
         TextBox1.Size = New Size(150, 23)
         TextBox1.TabIndex = 48
@@ -61,55 +61,57 @@ Partial Class Config_AGS
         ' 
         ListBox1.FormattingEnabled = True
         ListBox1.ItemHeight = 17
-        ListBox1.Location = New Point(6, 57)
+        ListBox1.Location = New Point(6, 34)
         ListBox1.Name = "ListBox1"
-        ListBox1.Size = New Size(150, 191)
+        ListBox1.Size = New Size(150, 123)
         ListBox1.TabIndex = 49
-        ' 
-        ' ListBox2
-        ' 
-        ListBox2.FormattingEnabled = True
-        ListBox2.ItemHeight = 17
-        ListBox2.Location = New Point(162, 57)
-        ListBox2.Name = "ListBox2"
-        ListBox2.Size = New Size(150, 191)
-        ListBox2.TabIndex = 51
-        ' 
-        ' TextBox2
-        ' 
-        TextBox2.Location = New Point(162, 28)
-        TextBox2.Name = "TextBox2"
-        TextBox2.Size = New Size(150, 23)
-        TextBox2.TabIndex = 50
         ' 
         ' Label1
         ' 
         Label1.AutoSize = True
-        Label1.Location = New Point(6, 8)
+        Label1.Location = New Point(209, 8)
         Label1.Name = "Label1"
         Label1.Size = New Size(63, 17)
         Label1.TabIndex = 52
         Label1.Text = "包含类群: "
         ' 
-        ' Label2
+        ' Button3
         ' 
-        Label2.AutoSize = True
-        Label2.Location = New Point(162, 8)
-        Label2.Name = "Label2"
-        Label2.Size = New Size(63, 17)
-        Label2.TabIndex = 53
-        Label2.Text = "排除类群: "
+        Button3.Location = New Point(162, 34)
+        Button3.Name = "Button3"
+        Button3.Size = New Size(41, 23)
+        Button3.TabIndex = 54
+        Button3.Text = ">>"
+        Button3.UseVisualStyleBackColor = True
+        ' 
+        ' ListBox3
+        ' 
+        ListBox3.FormattingEnabled = True
+        ListBox3.ItemHeight = 17
+        ListBox3.Location = New Point(209, 34)
+        ListBox3.Name = "ListBox3"
+        ListBox3.Size = New Size(156, 123)
+        ListBox3.TabIndex = 55
+        ' 
+        ' Button5
+        ' 
+        Button5.Location = New Point(162, 63)
+        Button5.Name = "Button5"
+        Button5.Size = New Size(41, 23)
+        Button5.TabIndex = 58
+        Button5.Text = "<<"
+        Button5.UseVisualStyleBackColor = True
         ' 
         ' Config_AGS
         ' 
         AutoScaleDimensions = New SizeF(7F, 17F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(318, 298)
+        ClientSize = New Size(371, 200)
         ControlBox = False
-        Controls.Add(Label2)
+        Controls.Add(Button5)
+        Controls.Add(ListBox3)
+        Controls.Add(Button3)
         Controls.Add(Label1)
-        Controls.Add(ListBox2)
-        Controls.Add(TextBox2)
         Controls.Add(ListBox1)
         Controls.Add(TextBox1)
         Controls.Add(Button2)
@@ -130,4 +132,10 @@ Partial Class Config_AGS
     Friend WithEvents TextBox2 As TextBox
     Friend WithEvents Label1 As Label
     Friend WithEvents Label2 As Label
+    Friend WithEvents Button3 As Button
+    Friend WithEvents ListBox3 As ListBox
+    Friend WithEvents ListBox4 As ListBox
+    Friend WithEvents Button4 As Button
+    Friend WithEvents Button5 As Button
+    Friend WithEvents Button6 As Button
 End Class

@@ -9,15 +9,23 @@ Public Class Welcome
     Private Sub Welcome_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         System.Threading.Thread.CurrentThread.CurrentCulture = ci
         Timer1.Enabled = True
+        form_main.Text = form_main.Text + " ver." + version
         form_main.Show()
         format_path()
         Dim th1 As New Thread(AddressOf load_main)
         th1.Start()
     End Sub
     Public Sub load_main()
-        My.Computer.FileSystem.CreateDirectory(root_path + "results")
-        DeleteTemp(root_path + "temp")
-        My.Computer.FileSystem.CreateDirectory(root_path + "temp")
+        Try
+            My.Computer.FileSystem.CreateDirectory(root_path + "results")
+            If File.Exists(root_path + "temp") Then
+                Directory.Delete(root_path + "temp", True)
+            End If
+            My.Computer.FileSystem.CreateDirectory(root_path + "temp")
+        Catch ex As Exception
+
+        End Try
+
         current_file = total_file
 
         Dim filePath As String = root_path + "main\" + "setting.ini"

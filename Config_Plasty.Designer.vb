@@ -128,9 +128,9 @@ Partial Class Config_Plasty
         Label5.AutoSize = True
         Label5.Location = New Point(12, 143)
         Label5.Name = "Label5"
-        Label5.Size = New Size(68, 17)
+        Label5.Size = New Size(136, 17)
         Label5.TabIndex = 8
-        Label5.Text = "叶绿体序列"
+        Label5.Text = "叶绿体序列(拼接线粒体)"
         ' 
         ' Label6
         ' 
