@@ -17,7 +17,7 @@ def Judge_Type(path):
     return suffix_dict.get(os.path.splitext(path)[-1].lower(), 3)
 
 def Bytes_Str(input, is_bytes_type):
-    return input.decode('utf-8') if is_bytes_type else input
+    return input.decode('utf-8').strip() + '\n' if is_bytes_type else input.strip() + '\n'
 
 def Write_Print(log_path, *log_str, sep = " "):
     """

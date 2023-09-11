@@ -415,7 +415,7 @@ def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, iteration = 10
     return processed_contigs, set(kmer_list_1 + kmer_list_2), contig_pos
 
 if __name__ == '__main__':
-    try:
+    #try:
         if sys.platform.startswith('win'):
             multiprocessing.freeze_support()
         pars.add_argument('-ka', metavar='<int>', type=int, help='''kmer of assemble''',  default=21)
@@ -474,7 +474,7 @@ if __name__ == '__main__':
                     if os.path.isfile(contig_best_path): os.remove(contig_best_path)
                     if os.path.isfile(contig_all_path): os.remove(contig_all_path)
                     Write_Print(os.path.join(args.o,  "log.txt"), "No reads were obtained for the", key)
-                    result_dict[key] = "no reads"
+                    result_dict[key] = ["no reads",0]
                     continue
                 # 构建当前参考序列列表
                 # 如果不指定ka, 估算最大ka，执行动态高精度拼接
@@ -489,7 +489,7 @@ if __name__ == '__main__':
                         if os.path.isfile(contig_best_path): os.remove(contig_best_path)
                         if os.path.isfile(contig_all_path): os.remove(contig_all_path)
                         Write_Print(os.path.join(args.o,  "log.txt"), "The reference sequence for the ", key, " may be too distantly related or the sequencing depth may be too low.", sep='')
-                        result_dict[key] = "distant references"
+                        result_dict[key] = ["distant references",0]
                         continue
                     # 略微降低一个级别的k提供更好的兼容性
                     current_ka -= 2
@@ -507,7 +507,7 @@ if __name__ == '__main__':
                     if os.path.isfile(contig_best_path): os.remove(contig_best_path)
                     if os.path.isfile(contig_all_path): os.remove(contig_all_path)
                     Write_Print(os.path.join(args.o,  "log.txt"), 'Could not get enough reads from filter. Estimate depth:', depth ,' '*16)
-                    result_dict[key] = "insufficient reads"
+                    result_dict[key] = ["insufficient reads", 0]
                     continue
                 # 处理ref_dict，标记不在filtered_dict中的kmer
                 for i in ref_dict:
@@ -524,7 +524,7 @@ if __name__ == '__main__':
                     if os.path.isfile(contig_best_path): os.remove(contig_best_path)
                     if os.path.isfile(contig_all_path): os.remove(contig_all_path)
                     Write_Print(os.path.join(args.o,  "log.txt"), 'Could not get enough seeds. Estimate depth:', depth ," "*16)
-                    result_dict[key] = "no seed"
+                    result_dict[key] = ["no seed", 0]
                     continue
                 # 获取seed集合，用来加速集合操作
                 seed_list_len = len(seed_list)
@@ -555,7 +555,7 @@ if __name__ == '__main__':
                         if os.path.isfile(contig_best_path): os.remove(contig_best_path)
                         if os.path.isfile(contig_all_path): os.remove(contig_all_path)
                         Write_Print(os.path.join(args.o,  "log.txt"), "Insufficient reads coverage, unable to obtain valid contig.")
-                        result_dict[key] = "no contigs"
+                        result_dict[key] = ["no contigs",0]
                         continue
                     else:
                         contigs_all_low.sort(key=lambda x: x[4], reverse=True)
@@ -569,7 +569,7 @@ if __name__ == '__main__':
                                 out.write('>contig_' + str(len(x[0])) + '_' + str(x[1]) + '_' + str(x[2]) + '_' + str(x[3]) + '_' + str(x[4]) + '_' + str(x[5]) + '\n')
                                 out.write(x[0] + '\n')
                         ref_dict, filtered_dict = {}, {}
-                        result_dict[key] = "low quality"
+                        result_dict[key] = ["low quality", contigs_best[0][4]]
                         gc.collect()
                         continue
                 # # 获取contigs中seed个数的最大值
@@ -590,11 +590,11 @@ if __name__ == '__main__':
                         out.write('>contig_' + str(len(x[0])) + '_' + str(x[1]) + '_' + str(x[2]) + '_' + str(x[3]) + '_' + str(x[4]) + '_' + str(x[5]) + '\n')
                         out.write(x[0] + '\n')
                 ref_dict, filtered_dict = {}, {}
-                result_dict[key] = "success"
+                result_dict[key] = ["success", contigs_best[0][4]]
                 gc.collect()
         Write_Dict(result_dict, os.path.join(args.o, "result_dict.txt"), False, True)
         t1 = time.time()
         Write_Print(os.path.join(args.o,  "log.txt"), '\nTime cost:', t1 - t0, " "*32,'\n') # 拼接所用的时间
-    except Exception as e:
-        Write_Print(os.path.join(args.o,  "log.txt"), e)
+    # except Exception as e:
+    #     Write_Print(os.path.join(args.o,  "log.txt"), e)
   

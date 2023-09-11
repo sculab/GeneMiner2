@@ -13,12 +13,12 @@ Public Class Main_Form
         ref_table.TableName = "Refs Table"
         Dim Column_ID As New System.Data.DataColumn("ID", System.Type.GetType("System.Int32"))
         Dim Column_Name As New System.Data.DataColumn("Name")
-        Dim Column_Filter As New System.Data.DataColumn("Count")
-        Dim Column_RF As New System.Data.DataColumn("Length")
-        Dim Column_Reads As New System.Data.DataColumn("Depth")
-        Dim Column_Assemble As New System.Data.DataColumn("Assemble")
-        Dim Column_Align As New System.Data.DataColumn("Ass. Len.")
-        Dim Column_State As New System.Data.DataColumn("State")
+        Dim Column_Filter As New System.Data.DataColumn("Ref. Count")
+        Dim Column_RF As New System.Data.DataColumn("Ref. Length")
+        Dim Column_Reads As New System.Data.DataColumn("Filter Depth")
+        Dim Column_Assemble As New System.Data.DataColumn("Assemble State")
+        Dim Column_Align As New System.Data.DataColumn("Ass. Length")
+        Dim Column_State As New System.Data.DataColumn("Ass. Depth")
         ref_table.Columns.Add(Column_ID)
         ref_table.Columns.Add(Column_Name)
         ref_table.Columns.Add(Column_Filter)
@@ -144,13 +144,14 @@ Public Class Main_Form
                     If count_dict.ContainsKey(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) Then
                         If reads_length = 0 Then
                             Dim sr As New StreamReader(out_dir + "\filtered\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + data_type)
-                            sr.ReadLine()
-                            reads_length = sr.ReadLine().Length
+                            If sr.ReadLine() Is Nothing = False Then
+                                reads_length = sr.ReadLine().Length
+                            End If
                             sr.Close()
                         End If
-                        DataGridView1.Rows(i - 1).Cells(5).Value = CInt(count_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) / CInt(DataGridView1.Rows(i - 1).Cells(4).Value) * reads_length)
-                    Else
-                        DataGridView1.Rows(i - 1).Cells(5).Value = 0
+                                DataGridView1.Rows(i - 1).Cells(5).Value = CInt(count_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) / CInt(DataGridView1.Rows(i - 1).Cells(4).Value) * reads_length)
+                            Else
+                                DataGridView1.Rows(i - 1).Cells(5).Value = 0
                     End If
                 End If
             Next
@@ -206,12 +207,12 @@ Public Class Main_Form
                     Dim line As String = sr.ReadLine()
                     Dim parts As String() = line.Split(","c)
 
-                    If parts.Length >= 2 Then
+                    If parts.Length >= 3 Then
                         Dim key As String = parts(0)
                         If result_dict.ContainsKey(key) Then
-                            result_dict(key) = parts(1)
+                            result_dict(key) = parts(1) + "," + parts(2)
                         Else
-                            result_dict.Add(key, parts(1))
+                            result_dict.Add(key, parts(1) + "," + parts(2))
                         End If
                     End If
                 End While
@@ -219,7 +220,7 @@ Public Class Main_Form
             For i As Integer = 1 To refsView.Count
                 If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
                     If result_dict.ContainsKey(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) Then
-                        DataGridView1.Rows(i - 1).Cells(6).Value = result_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString)
+                        DataGridView1.Rows(i - 1).Cells(6).Value = result_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString).Split(","c)(0)
                         If DataGridView1.Rows(i - 1).Cells(6).Value <> "success" Then
                             'DataGridView1.Rows(i - 1).Cells(6).Value = "failed"
                             DataGridView1.Rows(i - 1).Cells(7).Value = 0
@@ -231,14 +232,16 @@ Public Class Main_Form
                                 sr.ReadLine()
                                 DataGridView1.Rows(i - 1).Cells(7).Value = sr.ReadLine().Length
                                 sr.Close()
-                                If DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value > 0.75 And DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value < 1.5 Then
-                                    DataGridView1.Rows(i - 1).Cells(8).Value = "passed"
-                                ElseIf DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value < 0.75 Then
-                                    DataGridView1.Rows(i - 1).Cells(8).Value = "short"
-                                Else
-                                    DataGridView1.Rows(i - 1).Cells(8).Value = "long"
-                                End If
+                                DataGridView1.Rows(i - 1).Cells(8).Value = (CInt(result_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString).Split(","c)(1)) * reads_length / CInt(DataGridView1.Rows(i - 1).Cells(7).Value)).ToString("F0")
+                                'If DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value > 0.75 And DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value < 1.5 Then
+                                '    DataGridView1.Rows(i - 1).Cells(8).Value = "passed"
+                                'ElseIf DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value < 0.75 Then
+                                '    DataGridView1.Rows(i - 1).Cells(8).Value = "short"
+                                'Else
+                                '    DataGridView1.Rows(i - 1).Cells(8).Value = "long"
+                                'End If
                             Catch ex As Exception
+                                MsgBox(ex.ToString)
                                 File.Delete(out_dir + "\results\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta")
                                 DataGridView1.Rows(i - 1).Cells(6).Value = "failed"
                                 DataGridView1.Rows(i - 1).Cells(7).Value = 0
@@ -301,11 +304,11 @@ Public Class Main_Form
                 DataGridView1.Columns(1).Width = 80
                 DataGridView1.Columns(2).Width = 80
                 DataGridView1.Columns(3).Width = 80
-                DataGridView1.Columns(4).Width = 80
-                DataGridView1.Columns(5).Width = 80
+                DataGridView1.Columns(4).Width = 100
+                DataGridView1.Columns(5).Width = 100
                 DataGridView1.Columns(6).Width = 160
-                DataGridView1.Columns(7).Width = 80
-                DataGridView1.Columns(8).Width = 80
+                DataGridView1.Columns(7).Width = 100
+                DataGridView1.Columns(8).Width = 100
                 Timer1.Enabled = True
                 DataGridView1.RefreshEdit()
                 GC.Collect()
@@ -1058,8 +1061,9 @@ Public Class Main_Form
 
     Private Sub 过短的项ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 过短的项ToolStripMenuItem.Click
         Dim sel_count As Integer = 0
+        Dim Length_Ratio As Single = InputBox("Ass. length / Ref. length", "", 0.75)
         For i As Integer = 1 To refsView.Count
-            If DataGridView1.Rows(i - 1).Cells(8).Value = "short" Then
+            If DataGridView1.Rows(i - 1).Cells(7).Value / DataGridView1.Rows(i - 1).Cells(4).Value < Length_Ratio Then
                 DataGridView1.Rows(i - 1).Cells(0).Value = True
                 sel_count += 1
             End If

@@ -18,11 +18,11 @@ def STR2BOOL(v):  # 在参数中使用逻辑值
         raise argparse.ArgumentTypeError('Unsupported value encountered.')
 
 pars.add_argument('-r', metavar='<str>', type=str, help='''input ref file or dir.''',
-                      required=False, default=r"D:\working\Develop\EasyMiner Develop\EasyMiner\bin\Debug\net6.0-windows\temp\temp_refs")
+                      required=False, default=r"D:\working\Develop\EasyMiner Develop\DEMOS\DEMO\A_lyrata")
 pars.add_argument('-q1', metavar='<str>', type=str, help='''input fq/gz -1 files.''', required=False,
-                    default=['D:\working\Develop\EasyMiner Develop\DEMOS\DEMO_03/Cnidium_monnieri.1.fq.gz'], nargs="+")
+                    default=[r"D:\working\Develop\EasyMiner Develop\DEMOS\DEMO\Arabidopsis_thaliana.1.fq.gz"], nargs="+")
 pars.add_argument('-q2', metavar='<str>', type=str, help='''input fq/gz -2 files.''', required=False,
-                    default=['D:\working\Develop\EasyMiner Develop\DEMOS\DEMO_03/Cnidium_monnieri.2.fq.gz'], nargs="+")
+                    default=[r"D:\working\Develop\EasyMiner Develop\DEMOS\DEMO\Arabidopsis_thaliana.2.fq.gz"], nargs="+")
 pars.add_argument('-kf', metavar='<int>', type=int,
                     help='''kmer of filter''', default=31)
 pars.add_argument('-s', metavar='<int>', type=int, help='''length of the sliding window on the reads''', default=4)
@@ -67,11 +67,11 @@ def Seq_To_Int(dna_str, reverse=False):
     """
     if reverse:
         dna_str = dna_str.translate(str.maketrans(
-            "ACGTU", "32100", "RYMKSWHBVDN\n"))[::-1]
+            "ACGTU", "32100", "RYMKSWHBVDN\n\r"))[::-1]
         return int(dna_str, 4)
     else:
         dna_str = dna_str.translate(str.maketrans(
-            "ACGTU", "01233", "RYMKSWHBVDN\n"))
+            "ACGTU", "01233", "RYMKSWHBVDN\n\r"))
         return [int(dna_str, 4)], len(dna_str)
 
 
@@ -170,7 +170,7 @@ def Read_Seq_File(infile):
 
 
 def Bytes_Str(input, is_bytes_type):
-    return input.decode('utf-8') if is_bytes_type else input
+    return input.decode('utf-8').strip() + '\n' if is_bytes_type else input.strip() + '\n'
 
 
 def Make_Kmer_Dict_v6(_kmer_dict, file_list, kmer_size, get_reverse=False, get_pos=False, show_info=True):
@@ -382,7 +382,10 @@ def Write_Dict(_dict, file_name, is_int = True, append = False):
         if is_int:
             wfd.write(",".join([hex(key), hex(value),'\n']))
         else:
-            wfd.write(",".join([str(key), str(value),'\n']))
+            if type(value) == list:
+                wfd.write(",".join([str(key), ",".join(map(str,value)),'\n']))
+            else:
+                wfd.write(",".join([str(key), str(value),'\n']))
     return 1
 
 def Read_Dict(_dict, file_name, is_int = True):
