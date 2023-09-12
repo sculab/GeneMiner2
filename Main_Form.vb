@@ -149,9 +149,9 @@ Public Class Main_Form
                             End If
                             sr.Close()
                         End If
-                                DataGridView1.Rows(i - 1).Cells(5).Value = CInt(count_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) / CInt(DataGridView1.Rows(i - 1).Cells(4).Value) * reads_length)
-                            Else
-                                DataGridView1.Rows(i - 1).Cells(5).Value = 0
+                        DataGridView1.Rows(i - 1).Cells(5).Value = CInt(count_dict(DataGridView1.Rows(i - 1).Cells(2).Value.ToString) / CInt(DataGridView1.Rows(i - 1).Cells(4).Value) * reads_length)
+                    Else
+                        DataGridView1.Rows(i - 1).Cells(5).Value = 0
                     End If
                 End If
             Next
@@ -275,7 +275,12 @@ Public Class Main_Form
             Case 0
                 ProgressBar1.Value = PB_value
             Case 1
-
+                ProgressBar1.Value = PB_value
+                If ProgressBar1.Value = 100 Then
+                    cross_count = 0
+                    PB_value = 0
+                    timer_id = 0
+                End If
             Case 2
                 Timer1.Enabled = False
                 DataGridView1.DataSource = refsView
@@ -421,7 +426,7 @@ Public Class Main_Form
                     TextBox1.Text = opendialog.SelectedPath
                 End If
             Else
-                    TextBox1.Text = opendialog.SelectedPath
+                TextBox1.Text = opendialog.SelectedPath
             End If
 
         End If
@@ -1193,5 +1198,84 @@ Public Class Main_Form
         Else
             MsgBox("Please select an output folder!")
         End If
+    End Sub
+
+    Private Sub 切齐拼接结果ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 切齐拼接结果ToolStripMenuItem.Click
+        If TextBox1.Text <> "" Then
+            Dim refs_count As Integer = 0
+            ref_dir = (currentDirectory + "temp\temp_refs\").Replace("\", "/")
+
+            DeleteDir(ref_dir)
+            My.Computer.FileSystem.CreateDirectory(ref_dir)
+
+            For i As Integer = 1 To refsView.Count
+                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    If File.Exists(TextBox1.Text + "\results\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta") Then
+                        refs_count += 1
+                        safe_copy(currentDirectory + "temp\org_seq\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", ref_dir + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta", True)
+                    End If
+                End If
+            Next
+            If refs_count >= 1 Then
+                timer_id = 1
+                cross_count = 0
+                PB_value = 1
+
+                For i As Integer = 0 To 3
+                    Dim th1 As New Thread(AddressOf do_cut)
+                    th1.Start(i)
+                Next
+            Else
+                MsgBox("Please select at least one reference!")
+            End If
+        Else
+            MsgBox("Please select an output folder!")
+        End If
+    End Sub
+
+    Public Sub do_cut(ByVal pross_id As Integer)
+        Directory.CreateDirectory(TextBox1.Text + "\aligned\")
+        For i As Integer = 1 To refsView.Count
+            If i Mod 4 = pross_id Then
+                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                    If File.Exists(TextBox1.Text + "\results\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta") Then
+                        Dim SI_muscle5 As New ProcessStartInfo()
+                        SI_muscle5.FileName = currentDirectory + "analysis\muscle5.1.win64.exe" ' 替换为实际的命令行程序路径
+                        SI_muscle5.WorkingDirectory = currentDirectory + "analysis\" ' 替换为实际的运行文件夹路径
+                        SI_muscle5.CreateNoWindow = True
+                        SI_muscle5.Arguments = "-align " + """" + ref_dir + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta" + """"
+                        SI_muscle5.Arguments += " -output " + """" + TextBox1.Text + "\aligned\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta" + """"
+                        Dim process_muscle5 As Process = Process.Start(SI_muscle5)
+                        process_muscle5.WaitForExit()
+                        process_muscle5.Close()
+
+                        Dim SI_trimed As New ProcessStartInfo()
+                        SI_trimed.FileName = currentDirectory + "analysis\build_trimed.exe" ' 替换为实际的命令行程序路径
+                        SI_trimed.WorkingDirectory = currentDirectory + "analysis\" ' 替换为实际的运行文件夹路径
+                        SI_trimed.CreateNoWindow = True
+                        SI_trimed.Arguments = "-o " + """" + TextBox1.Text + """"
+                        SI_trimed.Arguments += " -i " + """" + TextBox1.Text + "\aligned\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta" + """"
+                        Dim process_trimed As Process = Process.Start(SI_trimed)
+                        process_trimed.WaitForExit()
+                        process_trimed.Close()
+
+                        If File.Exists(TextBox1.Text + "\trimed\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta") Then
+                            Try
+                                Dim sr As New StreamReader(TextBox1.Text + "\trimed\" + DataGridView1.Rows(i - 1).Cells(2).Value.ToString + ".fasta")
+                                sr.ReadLine()
+                                DataGridView1.Rows(i - 1).Cells(7).Value = sr.ReadLine().Length
+                                sr.Close()
+                                DataGridView1.Rows(i - 1).Cells(8).Value = ""
+                            Catch ex As Exception
+                            End Try
+                        End If
+
+                    End If
+                End If
+                cross_count += 1
+                PB_value = CInt(cross_count / refsView.Count * 100)
+            End If
+
+        Next
     End Sub
 End Class

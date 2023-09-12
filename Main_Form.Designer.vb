@@ -95,6 +95,7 @@ Partial Class Main_Form
         GroupBox2 = New GroupBox()
         GroupBox3 = New GroupBox()
         GroupBox4 = New GroupBox()
+        切齐拼接结果ToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         CType(DataGridView1, ComponentModel.ISupportInitialize).BeginInit()
         CType(DataGridView2, ComponentModel.ISupportInitialize).BeginInit()
@@ -190,7 +191,7 @@ Partial Class Main_Form
         ' 
         过滤ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {从头过滤ToolStripMenuItem, 进一步过滤ToolStripMenuItem})
         过滤ToolStripMenuItem.Name = "过滤ToolStripMenuItem"
-        过滤ToolStripMenuItem.Size = New Size(180, 22)
+        过滤ToolStripMenuItem.Size = New Size(124, 22)
         过滤ToolStripMenuItem.Text = "过滤"
         ' 
         ' 从头过滤ToolStripMenuItem
@@ -208,59 +209,59 @@ Partial Class Main_Form
         ' 拼接ToolStripMenuItem
         ' 
         拼接ToolStripMenuItem.Name = "拼接ToolStripMenuItem"
-        拼接ToolStripMenuItem.Size = New Size(180, 22)
+        拼接ToolStripMenuItem.Size = New Size(124, 22)
         拼接ToolStripMenuItem.Text = "拼接"
         ' 
         ' ToolStripSeparator5
         ' 
         ToolStripSeparator5.Name = "ToolStripSeparator5"
-        ToolStripSeparator5.Size = New Size(177, 6)
+        ToolStripSeparator5.Size = New Size(121, 6)
         ' 
         ' 全自动ToolStripMenuItem
         ' 
         全自动ToolStripMenuItem.Name = "全自动ToolStripMenuItem"
-        全自动ToolStripMenuItem.Size = New Size(180, 22)
+        全自动ToolStripMenuItem.Size = New Size(124, 22)
         全自动ToolStripMenuItem.Text = "自动"
         ' 
         ' ToolStripSeparator4
         ' 
         ToolStripSeparator4.Name = "ToolStripSeparator4"
-        ToolStripSeparator4.Size = New Size(177, 6)
+        ToolStripSeparator4.Size = New Size(121, 6)
         ' 
         ' 迭代ToolStripMenuItem
         ' 
         迭代ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {迭代ToolStripMenuItem1, 重新拼接ToolStripMenuItem, 多次迭代ToolStripMenuItem})
         迭代ToolStripMenuItem.Name = "迭代ToolStripMenuItem"
-        迭代ToolStripMenuItem.Size = New Size(180, 22)
+        迭代ToolStripMenuItem.Size = New Size(124, 22)
         迭代ToolStripMenuItem.Text = "迭代"
         ' 
         ' 迭代ToolStripMenuItem1
         ' 
         迭代ToolStripMenuItem1.Name = "迭代ToolStripMenuItem1"
-        迭代ToolStripMenuItem1.Size = New Size(180, 22)
+        迭代ToolStripMenuItem1.Size = New Size(124, 22)
         迭代ToolStripMenuItem1.Text = "首次迭代"
         ' 
         ' 重新拼接ToolStripMenuItem
         ' 
         重新拼接ToolStripMenuItem.Name = "重新拼接ToolStripMenuItem"
-        重新拼接ToolStripMenuItem.Size = New Size(180, 22)
+        重新拼接ToolStripMenuItem.Size = New Size(124, 22)
         重新拼接ToolStripMenuItem.Text = "重新拼接"
         ' 
         ' 多次迭代ToolStripMenuItem
         ' 
         多次迭代ToolStripMenuItem.Name = "多次迭代ToolStripMenuItem"
-        多次迭代ToolStripMenuItem.Size = New Size(180, 22)
+        多次迭代ToolStripMenuItem.Size = New Size(124, 22)
         多次迭代ToolStripMenuItem.Text = "多次迭代"
         ' 
         ' ToolStripSeparator2
         ' 
         ToolStripSeparator2.Name = "ToolStripSeparator2"
-        ToolStripSeparator2.Size = New Size(177, 6)
+        ToolStripSeparator2.Size = New Size(121, 6)
         ' 
         ' 刷新数据ToolStripMenuItem
         ' 
         刷新数据ToolStripMenuItem.Name = "刷新数据ToolStripMenuItem"
-        刷新数据ToolStripMenuItem.Size = New Size(180, 22)
+        刷新数据ToolStripMenuItem.Size = New Size(124, 22)
         刷新数据ToolStripMenuItem.Text = "刷新数据"
         ' 
         ' 选择ToolStripMenuItem
@@ -319,7 +320,7 @@ Partial Class Main_Form
         ' 
         ' 三方工具ToolStripMenuItem
         ' 
-        三方工具ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {构建质体基因组ToolStripMenuItem, 多序列比对ToolStripMenuItem})
+        三方工具ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {构建质体基因组ToolStripMenuItem, 多序列比对ToolStripMenuItem, 切齐拼接结果ToolStripMenuItem})
         三方工具ToolStripMenuItem.Name = "三方工具ToolStripMenuItem"
         三方工具ToolStripMenuItem.Size = New Size(44, 21)
         三方工具ToolStripMenuItem.Text = "工具"
@@ -327,13 +328,13 @@ Partial Class Main_Form
         ' 构建质体基因组ToolStripMenuItem
         ' 
         构建质体基因组ToolStripMenuItem.Name = "构建质体基因组ToolStripMenuItem"
-        构建质体基因组ToolStripMenuItem.Size = New Size(148, 22)
+        构建质体基因组ToolStripMenuItem.Size = New Size(180, 22)
         构建质体基因组ToolStripMenuItem.Text = "细胞器基因组"
         ' 
         ' 多序列比对ToolStripMenuItem
         ' 
         多序列比对ToolStripMenuItem.Name = "多序列比对ToolStripMenuItem"
-        多序列比对ToolStripMenuItem.Size = New Size(148, 22)
+        多序列比对ToolStripMenuItem.Size = New Size(180, 22)
         多序列比对ToolStripMenuItem.Text = "多序列比对"
         ' 
         ' DataGridView1
@@ -701,6 +702,12 @@ Partial Class Main_Form
         GroupBox4.TabStop = False
         GroupBox4.Text = "拼接"
         ' 
+        ' 切齐拼接结果ToolStripMenuItem
+        ' 
+        切齐拼接结果ToolStripMenuItem.Name = "切齐拼接结果ToolStripMenuItem"
+        切齐拼接结果ToolStripMenuItem.Size = New Size(180, 22)
+        切齐拼接结果ToolStripMenuItem.Text = "切齐拼接结果"
+        ' 
         ' Main_Form
         ' 
         AutoScaleDimensions = New SizeF(7F, 17F)
@@ -819,4 +826,5 @@ Partial Class Main_Form
     Friend WithEvents 迭代ToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents 重新拼接ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents 多次迭代ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents 切齐拼接结果ToolStripMenuItem As ToolStripMenuItem
 End Class

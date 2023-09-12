@@ -7,7 +7,7 @@
 #ElseIf TargetOS = "win32" Then
     Public TargetOS As String = "win32"
 #End If
-    Public version As String = "20230909"
+    Public version As String = "20230912"
     Public settings As Dictionary(Of String, String)
     Public currentDirectory As String
     Public refsView As New DataView
@@ -37,9 +37,10 @@
     Public exe_mode As String = "pro"
     'Public fasta_seq() As String
     Public add_data As Boolean = False
-    Public data_type As String = "fasta"
+    Public data_type As String = ".fq"
     Public refs_type As String = "fasta"
     Public data_loaded As Boolean = False
     Public reads_length As Integer = 0
+    Public cross_count As Integer = 0
     Public ref_dir, out_dir, q1, q2, k1, k2 As String
 End Module
