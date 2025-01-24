@@ -1,9 +1,10 @@
 from collections import deque
+from itertools import chain
 from operator import itemgetter
 import gc
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
-from overlap import calculate_overlap_wrapper
+from overlap import calculate_overlap
 import numpy as np
 from Bio import SeqIO
 from main_filter import * 
@@ -16,23 +17,37 @@ D_BASE_DICT = {'AG':'R','CT':'Y', 'GT':'K', 'GC':'S','AC':'M', 'AT':'W','GA':'R'
 
 def find_max_overlap(long_dnas, short_dnas, min_overlap=20, step=1, max_overlap_limit=None):
     """
-    查找最大重叠片段
-    """ 
-    short_dnas_array = np.array([[ord(c) for c in short_dna] for short_dna in short_dnas], dtype=np.uint32)
-    max_overlap = 0
+    查找前10%重叠片段
+    """
+    if not short_dnas:
+        return 0
+
+    short_dnas_array = np.vstack([np.fromiter(map(ord, short_dna), count=len(short_dna), dtype=np.uint32) for short_dna in short_dnas])
+
+    if max_overlap_limit is None:
+        max_overlap_limit = short_dnas_array.shape[1]
+
+    overlaps = []
     for long_dna in long_dnas:
-        long_dna_array = np.array([ord(c) for c in long_dna], dtype=np.uint32)
-        if max_overlap_limit is None:
-            max_overlap_limit = short_dnas_array.shape[1]
-        overlap = calculate_overlap_wrapper((long_dna_array, short_dnas_array, min_overlap, step, max_overlap_limit))
-        temp_max_overlap = max(max_overlap, overlap)
-        if max_overlap < temp_max_overlap:
-            max_overlap = temp_max_overlap
-            if max_overlap >= max_overlap_limit:
-                return max_overlap
-            elif max_overlap > min_overlap:
-                min_overlap = max_overlap
-    return max_overlap
+        overlap = calculate_overlap(np.fromiter(map(ord, long_dna), count=len(long_dna), dtype=np.uint32),
+                                    short_dnas_array, min_overlap, step, max_overlap_limit)
+        if overlap > 0:
+            if overlap >= max_overlap_limit:
+                return max_overlap_limit
+            overlaps.append(overlap)
+    overlaps.sort(reverse=True)
+
+    if not overlaps:
+        return 0
+
+    top_tenth_overlap = overlaps[(len(overlaps) - 1) // 10]
+    if top_tenth_overlap >= max_overlap_limit:
+        return max_overlap_limit
+    elif top_tenth_overlap < min_overlap:
+        return min_overlap
+    else:
+        return top_tenth_overlap
+
 
 def consensus_sequence(multi_alignment):
     """
@@ -66,41 +81,42 @@ def Make_Assemble_Dict(file_list, kmer_size, _kmer_dict, _ref_dict, Filted_File_
     """
     MASK_BIN = (1<< (kmer_size<<1)) - 1 # kmer的掩码
     kmer_count = 0
+    fasta_file = Filted_File_Ext == '.fasta'
     for file in file_list:
         infile = open(file, 'r', encoding='utf-8', errors='ignore')
         infile.readline()
         for line in infile:
-            temp_str = [] # 为了支持多行的fasta文件作为源数据
-            if Filted_File_Ext == '.fasta':
+            if fasta_file:
+                temp_str = []
                 while line and line[0] != '>':
                     temp_str.append(line)
                     line = infile.readline()
+                read_seq = ''.join(filter(str.isalpha, ''.join(temp_str).upper()))
             else:
-                temp_str.append(line)
+                read_seq = ''.join(filter(str.isalpha, line)).upper()
                 infile.readline()
                 infile.readline()
                 infile.readline()
-            read_seq = ''.join(filter(str.isalpha, ''.join(temp_str).upper()))
             intseqs, read_len = Seq_To_Int(read_seq) # 序列转整数，获取长度
             intseqs.append(Seq_To_Int(read_seq, True)) # 加入反向互补序列
             for x in intseqs:
                 kmer_count += read_len - kmer_size + 1
                 for j in range(0, read_len - kmer_size):
-                    temp_list, temp_pos,  kmer = [], 0, x >> (j<<1) & MASK_BIN
+                    kmer = x >> (j<<1) & MASK_BIN
                     if kmer in _kmer_dict:
                         _kmer_dict[kmer][0] += 1
                     else:
                         if kmer in _ref_dict: # kmer的位置
                             temp_int = int(_ref_dict[kmer])
                             temp_depth = (temp_int >> 10) & ((1<<20) -1) #在参考序列中的深度
-                            if  temp_int & 1073741824: # 判断是否为反向互补的序列
-                                temp_pos = 1000 - (temp_int & 1023)
-                                temp_list = [1, temp_pos, 1, temp_depth] # 标记为反向的的kmer
-                            else: 
-                                temp_pos = temp_int & 1023
-                                temp_list = [1, temp_pos, 0, temp_depth] 
+                            temp_pos = temp_int & 1023
+                            is_reverse = bool(temp_int & 1073741824) # 判断是否为反向互补的序列
+                            if is_reverse:
+                                # 标记为反向的的kmer
+                                temp_pos = 1000 - temp_pos
+                            temp_list = [1, temp_pos, is_reverse, temp_depth]
                         else:
-                            temp_list = [1, 1023, 1, 0] 
+                            temp_list = [1, 1023, 1, 0]
                         _kmer_dict[kmer] = temp_list
         infile.close()
     return kmer_count
@@ -269,16 +285,16 @@ def Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration = 1024):
     :param kmer_size: kmer的大小
     :param iteration: 最大循环数量
     :param weight: 默认权重
-    :return: best_seq, kmer_list, best_kmc, best_pos, best_snp
+    :return: best_seq, kmer_set, best_kmc, best_pos, best_snp
     """ 
-    temp_list, kmer_list, stack_list, pos_list = deque([seed]), deque([seed]), deque(), deque()
-    cur_kmc, cur_seq, contigs = deque(), deque(), deque()
+    temp_list, kmer_set, stack_list, pos_list = [seed], set([seed]), [], []
+    temp_dict = Counter(temp_list)
+    cur_kmc, cur_seq, contigs = deque(), deque(), []
     _pos, node_distance, best_kmc_sum  = 0, 0, 0
     MASK = (1 << ((kmer_size << 1) - 2)) - 1
-    while True and iteration:
-        node = [[i, _dict[i][1], _dict[i][0] + _dict[i][3], {0: 'A', 1: 'C', 2: 'G', 3: 'T'}[i & 3]] for i in Forward_Bin(temp_list[-1], MASK) if i in _dict]
+    while iteration:
+        node = [(i, _dict[i][1], _dict[i][0] + _dict[i][3]) for i in Forward_Bin(temp_list[-1], MASK) if i in _dict and not temp_dict[i]]
         node.sort(key = itemgetter(2), reverse=True)
-        while node and node[0][0] in temp_list: node.pop(0) 
         if not node: 
             iteration -= 1
             cur_kmc_sum = sum(cur_kmc)
@@ -286,24 +302,24 @@ def Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration = 1024):
             if cur_kmc_sum > best_kmc_sum:
                 best_kmc_sum = cur_kmc_sum
             for _ in range(node_distance):
-                temp_list.pop()
+                temp_dict[temp_list.pop()] -= 1
                 cur_kmc.pop()
                 cur_seq.pop()
-            if stack_list: 
-                node, node_distance, _pos = stack_list.pop()
-            else: 
+            if not stack_list:
                 break
+            node, node_distance, _pos = stack_list.pop()
         if len(node) >= 2:
             stack_list.append((node[1:], node_distance, _pos))
             node_distance = 0
         if node[0][1] > 0: _pos = node[0][1]
         temp_list.append(node[0][0])
-        kmer_list.append(node[0][0])
+        temp_dict[node[0][0]] += 1
+        kmer_set.add(node[0][0])
         pos_list.append(node[0][1])
         cur_kmc.append(node[0][2])
         cur_seq.append(node[0][0]&3)
         node_distance += 1
-    return contigs, kmer_list, pos_list, int(best_kmc_sum)
+    return contigs, kmer_set, pos_list, int(best_kmc_sum)
 
 def count_duplicates(numbers):
     count_dict = {}
@@ -369,10 +385,10 @@ def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, iteration = 10
     :param weight: 没有ref时的默认权重
     :return: contigs的集合，用到所有的kmer的集合，contig的大概位置
     """ 
-    contigs_1, kmer_list_1, pos_list_1, weight_1 = Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration)
-    contigs_2, kmer_list_2, pos_list_2, weight_2 = Get_Forward_Contig_v6(_dict, Reverse_Int(seed, kmer_size), kmer_size, iteration)
+    contigs_1, kmer_set_1, pos_list_1, weight_1 = Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration)
+    contigs_2, kmer_set_2, pos_list_2, weight_2 = Get_Forward_Contig_v6(_dict, Reverse_Int(seed, kmer_size), kmer_size, iteration)
     # 清理位置列表
-    pos_list = [x for x in pos_list_1+ pos_list_2 if x > 0 and x < 1000]
+    pos_list = [x for x in chain(pos_list_1, pos_list_2) if x > 0 and x < 1000]
     # 获取位置中位数
     contig_pos = int(Quartile(pos_list)[1] if len(pos_list)>1 else -1)
     # 获取最可能的两侧的contig
@@ -397,7 +413,7 @@ def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, iteration = 10
                         paired_count.append(_reads_dict[slice_str][1])
             # 序列，序列的拼接权重，切片数，配对的切片数
             processed_contigs.append([c, c_weight, r_count, count_duplicates(paired_count)])
-    return processed_contigs, set(kmer_list_1 + kmer_list_2), contig_pos
+    return processed_contigs, kmer_set_1 | kmer_set_2, contig_pos
 
 def process_key_value(args, key, failed_count, result_dict, ref_path_dict, iteration, soft_boundary, loop_count):
     limit = args.limit_count
