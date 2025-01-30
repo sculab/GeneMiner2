@@ -9,6 +9,7 @@ Imports System.Security.Cryptography
 
 Imports System.Windows.Forms.VisualStyles.VisualStyleElement
 Imports System.Security.Policy
+Imports System.Runtime.InteropServices
 Module Module_Function
     Public Function ReadSettings(filePath As String) As Dictionary(Of String, String)
         Dim settings As New Dictionary(Of String, String)()
@@ -487,7 +488,7 @@ Module Module_Function
 
     Public Function make_ref_dict(ByVal wd As String, ByVal rd As String, ByVal output_dir As String, ByVal lkd As String) As Double
         Dim SI_filter As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\main_filter.exe",
+            .FileName = currentDirectory + "analysis\MainFilterNew.exe",
             .WorkingDirectory = wd,
             .CreateNoWindow = False,
             .Arguments = "-r " + """" + rd + """"
@@ -495,36 +496,27 @@ Module Module_Function
         SI_filter.Arguments += " -o " + """" + output_dir + """"
         SI_filter.Arguments += " -kf " + k1.ToString
         SI_filter.Arguments += " -s " + form_config_basic.NumericUpDown2.Value.ToString
-        SI_filter.Arguments += " -gr " + form_config_basic.CheckBox2.Checked.ToString
-        SI_filter.Arguments += " -lkd " + lkd
+        SI_filter.Arguments += If(form_config_basic.CheckBox2.Checked, " -gr", "")
+        SI_filter.Arguments += " -lkd " + """" + output_dir + "\" + lkd + """"
         SI_filter.Arguments += " -m 2"
         Dim process_filter As Process = Process.Start(SI_filter)
-        ' 用于存储观察到的最大内存使用量
 
         ' 用于存储观察到的最大内存使用量
-        Dim peakMemoryUsage As Long = 0
+        Dim peakMemoryUsage As Double
         If TargetOS = "macos" Then
             process_filter.WaitForExit()
             peakMemoryUsage = 8
         Else
-            Dim pc As New PerformanceCounter("Process", "Working Set - Private", process_filter.ProcessName)
-
+            Dim peakMemoryBytes As Long = 512 * 1024 * 1024
             ' 循环检查进程是否仍在运行，并更新峰值内存使用量
             While Not process_filter.HasExited
-                Try
-                    ' 读取当前的工作集大小，并更新峰值内存使用量
-                    Dim currentMemoryUsage As Long = pc.NextValue()
-                    peakMemoryUsage = Math.Max(peakMemoryUsage, currentMemoryUsage)
-                Catch ex As Exception
-                    ' 在这里处理可能发生的异常
-                    Console.WriteLine("Error: " & ex.Message)
-                End Try
-
-                ' 等待1秒再次检查
+                ' 读取当前的工作集大小，并更新峰值内存使用量
+                peakMemoryBytes = Math.Max(peakMemoryBytes, process_filter.PeakWorkingSet64)
                 Threading.Thread.Sleep(500)
             End While
-            peakMemoryUsage = peakMemoryUsage / 1024 / 1024 / 1024
+            peakMemoryUsage = Math.Ceiling(CDbl(peakMemoryBytes) / (1024.0 * 1024.0 * 1024.0))
         End If
+
         process_filter.Close()
         Return peakMemoryUsage
     End Function

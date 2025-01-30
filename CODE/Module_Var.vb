@@ -46,7 +46,6 @@ Module Module_Var
     Public utf8WithoutBom As New UTF8Encoding(False)
     Public cpg_down_mode As Integer = 0
     Public cpg_assemble_mode As Integer = 0
-    Public totalPhysicalMemory As Double
     Public MenuClicked As String
 
 

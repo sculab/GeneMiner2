@@ -311,7 +311,7 @@ Public Class Config_CP
         If File.Exists(count_file) Then
             File.Delete(count_file)
         End If
-        SI_filter.FileName = currentDirectory + "analysis\main_filter.exe" 
+        SI_filter.FileName = currentDirectory + "analysis\MainFilterNew.exe"
         SI_filter.WorkingDirectory = currentDirectory + "temp\" 
         SI_filter.CreateNoWindow = False
         SI_filter.Arguments = "-r " + """" + ref_dir + """"
@@ -319,14 +319,9 @@ Public Class Config_CP
         SI_filter.Arguments += " -o " + """" + out_dir + """"
         SI_filter.Arguments += " -kf " + k1
         SI_filter.Arguments += " -s " + form_config_basic.NumericUpDown2.Value.ToString
-        SI_filter.Arguments += " -gr " + form_config_basic.CheckBox2.Checked.ToString
-        SI_filter.Arguments += " -lkd kmer_dict_k" + k1.ToString + ".dict"
-        If form_config_basic.CheckBox3.Checked Then
-            SI_filter.Arguments += " -m_reads " + form_config_basic.NumericUpDown3.Value.ToString
-        Else
-            SI_filter.Arguments += " -m_reads 1000000000"
-        End If
-        SI_filter.Arguments += " -m 1"
+        SI_filter.Arguments += If(form_config_basic.CheckBox2.Checked, " -gr", "")
+        SI_filter.Arguments += If(form_config_basic.CheckBox3.Checked, " -m_reads " + form_config_basic.NumericUpDown3.Value.ToString, "")
+        SI_filter.Arguments += " -lb -m 1"
         Dim process_filter As Process = Process.Start(SI_filter)
         process_filter.WaitForExit()
         process_filter.Close()

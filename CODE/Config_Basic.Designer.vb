@@ -321,7 +321,7 @@ Partial Class Config_Basic
         NumericUpDown4.Name = "NumericUpDown4"
         NumericUpDown4.Size = New Size(54, 23)
         NumericUpDown4.TabIndex = 9
-        NumericUpDown4.Value = New Decimal(New Integer() {512, 0, 0, 0})
+        NumericUpDown4.Value = New Decimal(New Integer() {768, 0, 0, 0})
         ' 
         ' NumericUpDown9
         ' 
@@ -331,7 +331,7 @@ Partial Class Config_Basic
         NumericUpDown9.Name = "NumericUpDown9"
         NumericUpDown9.Size = New Size(54, 23)
         NumericUpDown9.TabIndex = 20
-        NumericUpDown9.Value = New Decimal(New Integer() {8, 0, 0, 0})
+        NumericUpDown9.Value = New Decimal(New Integer() {6, 0, 0, 0})
         ' 
         ' Label8
         ' 
