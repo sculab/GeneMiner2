@@ -131,7 +131,7 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     read_str = read.upper().translate(trans)
 
     if len(read_str) < kmer_size:
-        return RunsStatistics(0, 0, 0)
+        return 0, 0, 0, 0, 0, 0, 0
 
     mask_bin = (1 << (kmer_size << 1)) - 1
     read_int = int(read_str, 4)

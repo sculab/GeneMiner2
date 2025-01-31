@@ -3139,30 +3139,8 @@ Public Class Main_Form
         End If
     End Sub
     Public Sub batch_re_assemble()
-        For batch_i As Integer = 1 To seqsView.Count
-            PB_value = batch_i / seqsView.Count * 100
-            If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-
-                Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
-                out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
-                q1 = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString.Replace("\", "/") + """"
-                q2 = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString.Replace("\", "/") + """"
-                Directory.CreateDirectory(out_dir)
-                If My.Computer.FileSystem.DirectoryExists(Path.Combine(out_dir, "results")) Then
-                    DeleteDir(Path.Combine(out_dir, "results"))
-                End If
-                'options = (0:kf,1:kr,2:q1,3:q2,4:ref,5:out_dir,6:lkd,7:rl,8:refilter,9:no_window,10:thread)
-                Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "..\kmer_dict_k" + k1.ToString + ".dict", 0, "0", no_window, current_thread}
-                do_assemble(my_options)
-                If DebugToolStripMenuItem.Checked = False Then
-                    If Directory.Exists(out_dir + "\large_files") Then
-                        Directory.Delete(out_dir + "\large_files", True)
-                    End If
-                End If
-            End If
-        Next
-        PB_value = -1
-        MsgBox("Analysis completed! Please check results folder in output.", MsgBoxStyle.Information, "Infomation")
+        batch_task(False, False, True, False)
+        MsgBox("Analysis completed! Please check results folder.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Private Sub 拆分fq文件ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 拆分fq文件ToolStripMenuItem.Click
@@ -3592,29 +3570,28 @@ Public Class Main_Form
         If TargetOS = "macos" Then
             parallelOptions.MaxDegreeOfParallelism = 1
         End If
-        Parallel.For(1, seqsView.Count + 1, parallelOptions, Sub(batch_i)
-                                                                 Try
-                                                                     If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                                                                         Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
-                                                                         folder_name = folder_name.Replace("-", "_").Replace(":", "_")
-                                                                         Dim temp_out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
-                                                                         DeleteDir(Path.Combine(temp_out_dir, "blast"))
-                                                                         Directory.CreateDirectory(Path.Combine(temp_out_dir, "blast"))
-                                                                         For i As Integer = 1 To refsView.Count
-                                                                             Interlocked.Add(count, 1)
-                                                                             PB_value = count / seqsView.Count / refsView.Count * 100
-                                                                             If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                                                                                 safe_copy(Path.Combine(temp_out_dir, source_dir, refsView.Item(i - 1).Item(1).ToString + ".fasta"), Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
+        Dim ticked_samples = Enumerable.Range(1, seqsView.Count).Where(Function(i) DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True").ToList
+        Parallel.ForEach(ticked_samples, parallelOptions, Sub(batch_i)
+                                                              Try
+                                                                  Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
+                                                                  folder_name = folder_name.Replace("-", "_").Replace(":", "_")
+                                                                  Dim temp_out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
+                                                                  DeleteDir(Path.Combine(temp_out_dir, "blast"))
+                                                                  Directory.CreateDirectory(Path.Combine(temp_out_dir, "blast"))
+                                                                  For i As Integer = 1 To refsView.Count
+                                                                      Interlocked.Add(count, 1)
+                                                                      PB_value = count / ticked_samples.Count / refsView.Count * 100
+                                                                      If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
+                                                                          safe_copy(Path.Combine(temp_out_dir, source_dir, refsView.Item(i - 1).Item(1).ToString + ".fasta"), Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
 
-                                                                                 Dim result_path As String = Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta")
-                                                                                 Dim ref_path As String = (currentDirectory + "temp\temp_refs\").Replace("\", "/") + refsView.Item(i - 1).Item(1).ToString + ".fasta"
-                                                                                 do_trim_blast(ref_path, result_path)
-                                                                             End If
-                                                                         Next
-                                                                     End If
-                                                                 Catch ex As Exception
-                                                                 End Try
-                                                             End Sub)
+                                                                          Dim result_path As String = Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta")
+                                                                          Dim ref_path As String = (currentDirectory + "temp\temp_refs\").Replace("\", "/") + refsView.Item(i - 1).Item(1).ToString + ".fasta"
+                                                                          do_trim_blast(ref_path, result_path)
+                                                                      End If
+                                                                  Next
+                                                              Catch ex As Exception
+                                                              End Try
+                                                          End Sub)
         PB_value = -1
         MsgBox("Analysis Complete! All results has been trimed.", MsgBoxStyle.Information, "Infomation")
     End Sub
@@ -4422,7 +4399,7 @@ Public Class Main_Form
             memory_used = Math.Max(memory_used, form_config_plasty.NumericUpDown2.Value)
         End If
 
-        Dim allow_thread As Integer = Math.Max(current_thread / 4, 1)
+        Dim allow_thread As Integer = Math.Max(current_thread \ 4, 1)
         Dim avail_thread As Integer = Math.Max((New ComputerInfo().AvailablePhysicalMemory / 1024 / 1024 / 1024 - 4) / memory_used, 1)
         Dim concurrency As Integer = Math.Min(Math.Min(allow_thread, avail_thread), filter_thread)
         Dim parallel_options As New ParallelOptions With {
@@ -4437,7 +4414,7 @@ Public Class Main_Form
         Dim total_threads As Integer = current_thread
 
         While total_threads > 0
-            Dim threads_per_task As Integer = total_threads / allocatable_tasks
+            Dim threads_per_task As Integer = total_threads \ allocatable_tasks
             If threads_per_task = 0 Then
                 task_threads(0) += total_threads
                 total_threads = 0
@@ -4447,18 +4424,18 @@ Public Class Main_Form
                 task_threads(i) += threads_per_task
                 total_threads -= threads_per_task
             Next
-            allocatable_tasks /= 2
+            allocatable_tasks \= 2
         End While
-
-        Dim count As Integer = 1
-        PB_value = count / (seqsView.Count + 1) * 100
 
         Dim task_id As Integer = 0
         Dim task_dict As New Dictionary(Of Integer, Integer)
+        Dim ticked_samples = Enumerable.Range(1, seqsView.Count).Where(Function(i) DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True").ToList
 
-        Parallel.For(1, seqsView.Count + 1, parallel_options,
-                     Sub(batch_i As Integer)
-                         If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
+        Dim finish_count As Integer = 1
+        PB_value = finish_count / (ticked_samples.Count + 1) * 100
+
+        Parallel.ForEach(ticked_samples, parallel_options,
+                         Sub(batch_i As Integer)
                              Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
                              Dim out_dir As String = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
                              Directory.CreateDirectory(out_dir)
@@ -4577,11 +4554,11 @@ Public Class Main_Form
                                          End Using
 
                                          Dim process_build_plasty As Process = Process.Start(New ProcessStartInfo With {
-                                             .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe",
-                                             .WorkingDirectory = plasty_dir,
-                                             .CreateNoWindow = False,
-                                             .Arguments = "-c NOVO_config.txt"
-                                         })
+                                         .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe",
+                                         .WorkingDirectory = plasty_dir,
+                                         .CreateNoWindow = False,
+                                         .Arguments = "-c NOVO_config.txt"
+                                     })
                                          process_build_plasty.WaitForExit()
                                          process_build_plasty.Close()
 
@@ -4601,11 +4578,11 @@ Public Class Main_Form
                                          Dim assemble_file As String = plasty_dir + "\Circularized_assembly_1_Project1.fasta"
                                          If File.Exists(plasty_dir + "\Option_1_Project1.fasta") Then
                                              Dim process_check_option As Process = Process.Start(New ProcessStartInfo With {
-                                                 .FileName = currentDirectory + "analysis\check_option_blast.exe",
-                                                 .WorkingDirectory = plasty_dir,
-                                                 .CreateNoWindow = False,
-                                                 .Arguments = "-i " + """" + plasty_dir + """" + " -r " + """" + best_ref + ".fasta" + """" + " -o " + "best.fasta"
-                                             }）
+                                             .FileName = currentDirectory + "analysis\check_option_blast.exe",
+                                             .WorkingDirectory = plasty_dir,
+                                             .CreateNoWindow = False,
+                                             .Arguments = "-i " + """" + plasty_dir + """" + " -r " + """" + best_ref + ".fasta" + """" + " -o " + "best.fasta"
+                                         }）
                                              process_check_option.WaitForExit()
                                              process_check_option.Close()
                                              If File.Exists(plasty_dir + "\best.fasta") Then
@@ -4668,11 +4645,10 @@ Public Class Main_Form
                                      End While
                                  End Using
                              End If
-                         End If
 
-                         Interlocked.Add(count, 1)
-                         PB_value = count / seqsView.Count * 100
-                     End Sub)
+                             Interlocked.Add(finish_count, 1)
+                             PB_value = finish_count / (ticked_samples.Count + 1) * 100
+                         End Sub)
 
         PB_value = 0
     End Sub
