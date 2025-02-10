@@ -339,7 +339,7 @@ def filter_gene(task):
 
     tmp_path = run_length_filter(task.name, task.out_dir, task.ref_path,
                                  effective_len, task.read_path, file_type,
-                                 task.kmer_size - 8, task.keep_temporaries)
+                                 (task.kmer_size - 8) | 1, task.keep_temporaries)
 
     kmer_filter(task.name, task.out_dir, task.ref_path,
                 effective_len, tmp_path, file_type,
