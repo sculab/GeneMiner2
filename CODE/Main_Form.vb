@@ -4442,7 +4442,6 @@ Public Class Main_Form
 
                              Dim q1 As String = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString.Replace("\", "/") + """"
                              Dim q2 As String = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString.Replace("\", "/") + """"
-                             Dim thread_count As Integer
 
                              If File.Exists(out_dir + "\log.txt") Then
                                  File.Delete(out_dir + "\log.txt")
@@ -4460,12 +4459,15 @@ Public Class Main_Form
                                  End If
                              End If
 
+                             Dim thread_count As Integer
+
                              SyncLock seqsView
-                                 If task_dict.ContainsKey(Task.CurrentId) Then
-                                     thread_count = task_dict(Task.CurrentId)
+                                 Dim current_thread_id = Environment.CurrentManagedThreadId
+                                 If task_dict.ContainsKey(current_thread_id) Then
+                                     thread_count = task_dict(current_thread_id)
                                  Else
                                      thread_count = task_threads(task_id)
-                                     task_dict(Task.CurrentId) = thread_count
+                                     task_dict(current_thread_id) = thread_count
                                      task_id = Math.Min(task_id + 1, concurrency - 1)
                                  End If
                              End SyncLock

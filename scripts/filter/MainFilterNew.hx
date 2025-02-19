@@ -1,5 +1,6 @@
 import haxe.Exception;
 import haxe.Int64;
+import haxe.Rest;
 import haxe.ds.Vector;
 import haxe.io.Bytes;
 import haxe.io.Eof;
@@ -15,7 +16,6 @@ using StringTools;
 
 #if cpp
 import cpp.UInt32;
-import cpp.Rest;
 import cpp.StdString;
 import cpp.VarArg;
 #else
@@ -76,25 +76,35 @@ extern class NativeFileOutputBuffer {
 }
 
 @:include('../../bindings.h')
-@:native('::UnorderedMapHandle')
-extern class UnorderedMapHandle<K, V> {
-    public function new(tag: Bool);
+@:native('::UnorderedMapPointer')
+extern class UnorderedMapPointer<K, V> {
     public function destroy(): Void;
-    public function foreach(fn: Dynamic, extras: Rest<VarArg>): Void;
+    public function foreach(fn: Dynamic, extras: cpp.Rest<VarArg>): Void;
     public function get(key: K, def: V): V;
     public function reserve(count: Int): Void;
     public function set(key: K, value: V): Void;
 }
 
 @:include('../../bindings.h')
-@:native('::UnorderedSetHandle')
-extern class UnorderedSetHandle<T> {
-    public function new(tag: Bool);
+@:native('::UnorderedMapReference')
+extern class UnorderedMapReference<K, V> extends UnorderedMapPointer<K, V> {
+    public function new(create: Bool);
+}
+
+@:include('../../bindings.h')
+@:native('::UnorderedSetPointer')
+extern class UnorderedSetPointer<T> {
     public function destroy(): Void;
     public function clear(): Void;
     public function empty(): Bool;
-    public function foreach(fn: Dynamic, extras: Rest<VarArg>): Void;
+    public function foreach(fn: Dynamic, extras: cpp.Rest<VarArg>): Void;
     public function insert(value: T): Void;
+}
+
+@:include('../../bindings.h')
+@:native('::UnorderedSetReference')
+extern class UnorderedSetReference<T> extends UnorderedSetPointer<T> {
+    public function new(create: Bool);
 }
 
 class GzipFileInput extends Input {
@@ -133,16 +143,17 @@ class FileOutputBuffer {
 @:generic
 @:remove
 class UnorderedMap<K, V> {
-    var pointer: UnorderedMapHandle<K, V>;
+    var pointer: UnorderedMapReference<K, V>;
 
     public function new() {
-       pointer = new UnorderedMapHandle<K, V>(true);
+       pointer = new UnorderedMapReference<K, V>(true);
        cpp.NativeGc.addFinalizable(this, false);
     }
 
     public function finalize() pointer.destroy();
     public inline function foreach(fn: K -> V -> Void) pointer.foreach(fn);
     public inline function get(key: K, def: V) return pointer.get(key, def);
+    public inline function reference() return pointer;
     public inline function reserve(count: Int) pointer.reserve(count);
     public inline function set(key: K, value: V) return pointer.set(key, value);
 }
@@ -150,10 +161,10 @@ class UnorderedMap<K, V> {
 @:generic
 @:remove
 class UnorderedSet<T> {
-    var pointer: UnorderedSetHandle<T>;
+    var pointer: UnorderedSetReference<T>;
 
     public function new() {
-       pointer = new UnorderedSetHandle<T>(true);
+       pointer = new UnorderedSetReference<T>(true);
        cpp.NativeGc.addFinalizable(this, false);
     }
 
@@ -162,6 +173,7 @@ class UnorderedSet<T> {
     public inline function empty() return pointer.empty();
     public inline function foreach(fn: T -> Void) pointer.foreach(fn);
     public inline function insert(value: T) return pointer.insert(value);
+    public inline function reference() return pointer;
 }
 
 #else
@@ -203,19 +215,34 @@ class FileOutputBuffer {
 
 @:forward.new
 abstract UnorderedMap<K, V>(Map<K, V>) {
-    public inline function foreach(fn: K -> V -> Void) for (k => v in this.keyValueIterator()) fn(k, v);
+    public inline function foreach(fn: Dynamic, extras: Rest<Any>) {
+        for (k => v in this.keyValueIterator()) {
+            Reflect.callMethod(null, fn.bind(k, v), extras.toArray());
+        }
+    }
+
     public inline function get(key: K, def: V) return this.get(key) ?? def;
+    public inline function reference() return abstract;
     public inline function reserve(count: Int) {}
     public inline function set(key: K, value: V) this.set(key, value);
 }
 
 @:forward.new
 abstract UnorderedSet<T>(Map<T, Bool>) {
+    public inline function foreach(fn: Dynamic, extras: Rest<Any>) {
+        for (k in this.keys()) {
+            Reflect.callMethod(null, fn.bind(k), extras.toArray());
+        }
+    }
+
     public inline function clear() this.clear();
     public inline function empty() return Lambda.count(cast this) == 0;
-    public inline function foreach(fn: T -> Void) for (k in this.keys()) fn(k);
     public inline function insert(value: T) this.set(value, true);
+    public inline function reference() return abstract;
 }
+
+typedef UnorderedMapPointer<K, V> = UnorderedMap<K, V>;
+typedef UnorderedSetPointer<T> = UnorderedSet<T>;
 
 #end
 
@@ -592,6 +619,7 @@ abstract LongKmer(String) {
     public inline function toString() return this;
 }
 
+@:unreflective
 class KmerMap {
     public static inline var minMaxPatternSize = 12;
     public static inline var minMaxMapSize = 1 << minMaxPatternSize;
@@ -1037,8 +1065,8 @@ class KmerMap {
         expectedSkipLength = sum;
     }
 
-    private inline function markHitsShort(match: UnorderedSet<Int>, kmer: ShortKmer) {
-        var pos = shortKmerMap.get(kmer.toInt64(), -1);
+    private inline function markHitsShort(map: UnorderedMapPointer<Int64, Int>, match: UnorderedSetPointer<Int>, kmer: ShortKmer) {
+        var pos = map.get(kmer.toInt64(), -1);
 
         if (pos != -1) {
 #if cpp
@@ -1054,12 +1082,12 @@ class KmerMap {
         return false;
     }
 
-    private inline function markHitsLong(match: UnorderedSet<Int>, kmer: LongKmer) {
+    private inline function markHitsLong(map: UnorderedMapPointer<String, Int>, match: UnorderedSetPointer<Int>, kmer: LongKmer) {
 #if debug
         if (kmer.toString().length != kmerLength) throw new ArgumentError('Mismatched k-mer length ${kmer.toString().length}');
 #end
 
-        var pos = longKmerMap.get(kmer.toString(), -1);
+        var pos = map.get(kmer.toString(), -1);
 
         if (pos != -1) {
 #if cpp
@@ -1075,11 +1103,13 @@ class KmerMap {
         return false;
     }
 
-    public function markHits(match: UnorderedSet<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse = false) {
+    public function markHits(match: UnorderedSetPointer<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse: Bool) {
 #if debug
         if (seqEnd < kmerLength) throw new ArgumentError('Read is too short ($seqEnd bp)');
 #end
 
+        final longMap     = longKmerMap?.reference();
+        final shortMap    = shortKmerMap?.reference();
         final usePatterns = expectedSkipLength >= 0.5 && skipLength > step;
         var checkPattern  = usePatterns;
         var offset        = 0;
@@ -1113,17 +1143,17 @@ class KmerMap {
             var hit = false;
 
             if (useLongKmer) {
-                hit = markHitsLong(match, new LongKmer(kmer));
+                hit = markHitsLong(longMap, match, new LongKmer(kmer));
 
                 if (getReverse) {
-                    hit = markHitsLong(match, new LongKmer(kmer, true)) || hit;
+                    hit = markHitsLong(longMap, match, new LongKmer(kmer, true)) || hit;
                 }
             }
             else {
-                hit = markHitsShort(match, ShortKmer.fromString(kmer));
+                hit = markHitsShort(shortMap, match, ShortKmer.fromString(kmer));
 
                 if (getReverse) {
-                    hit = markHitsShort(match, ShortKmer.fromString(kmer, true)) || hit;
+                    hit = markHitsShort(shortMap, match, ShortKmer.fromString(kmer, true)) || hit;
                 }
             }
 
@@ -1137,27 +1167,29 @@ class KmerMap {
             var kmer = seq.getString(tailOffset, kmerLength);
 
             if (useLongKmer) {
-                markHitsLong(match, new LongKmer(kmer));
+                markHitsLong(longMap, match, new LongKmer(kmer));
 
                 if (getReverse) {
-                    markHitsLong(match, new LongKmer(kmer, true));
+                    markHitsLong(longMap, match, new LongKmer(kmer, true));
                 }
             }
             else {
-                markHitsShort(match, ShortKmer.fromString(kmer));
+                markHitsShort(shortMap, match, ShortKmer.fromString(kmer));
 
                 if (getReverse) {
-                    markHitsShort(match, ShortKmer.fromString(kmer, true));
+                    markHitsShort(shortMap, match, ShortKmer.fromString(kmer, true));
                 }
             }
         }
     }
 
-    public function markHitsFast(match: UnorderedSet<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse = false) {
+    public function markHitsFast(match: UnorderedSetPointer<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse: Bool) {
 #if debug
         if (useLongKmer || step >= kmerLength) throw new ArgumentError('KmerMap.markHitsFast supports short k-mers only');
         if (seqEnd < kmerLength) throw new ArgumentError('Read is too short ($seqEnd bp)');
 #end
+
+        final map: UnorderedMapPointer<Int64, Int> = shortKmerMap.reference();
 
         final kmerOffset  = 64 - 2 * kmerLength;
         final kmerMask    = ~((1 << kmerOffset) - 1);
@@ -1181,10 +1213,10 @@ class KmerMap {
             skr |= nucc << (2 * (i + 32 - kmerLength));
         }
 
-        markHitsShort(match, new ShortKmer(sk));
+        markHitsShort(map, match, new ShortKmer(sk));
 
         if (getReverse) {
-            markHitsShort(match, new ShortKmer(skr));
+            markHitsShort(map, match, new ShortKmer(skr));
         }
 
         var actualStep = step;
@@ -1221,10 +1253,10 @@ class KmerMap {
                 }
             }
 
-            var hit = markHitsShort(match, new ShortKmer(sk));
+            var hit = markHitsShort(map, match, new ShortKmer(sk));
 
             if (getReverse) {
-                hit = markHitsShort(match, new ShortKmer(skr)) || hit;
+                hit = markHitsShort(map, match, new ShortKmer(skr)) || hit;
             }
 
             checkPattern = usePatterns && !hit;
@@ -1249,10 +1281,10 @@ class KmerMap {
                 skr |= nucc << (64 - 2 * (actualStep - j));
             }
 
-            markHitsShort(match, new ShortKmer(sk));
+            markHitsShort(map, match, new ShortKmer(sk));
 
             if (getReverse) {
-                markHitsShort(match, new ShortKmer(skr));
+                markHitsShort(map, match, new ShortKmer(skr));
             }
         }
     }
@@ -1868,15 +1900,6 @@ class MainFilterNew {
         return loader.count;
     }
 
-    @:access(UnorderedSet)
-    inline function processHits(match: UnorderedSet<Int>, callback: Dynamic, hasRecord2: Bool, record1: Array<String>, record2: Array<String>) {
-#if cpp
-        match.pointer.foreach(callback, hasRecord2, record1, record2);
-#else
-        match.foreach(key -> callback(key, hasRecord2, record1, record2));
-#end
-    }
-
     function filterReads(fastq1: Array<String>, fastq2: Array<String>, getReverse: Bool) {
         var mode = command.mode;
         var kmerSize = command.kmer;
@@ -1904,7 +1927,7 @@ class MainFilterNew {
             };
         }
 
-        var match = new UnorderedSet<Int>();
+        var matchSet = new UnorderedSet<Int>();
         var seqBuffer = Bytes.alloc(initialBufferSize);
 
         for (i => file1 in fastq1) {
@@ -1919,6 +1942,8 @@ class MainFilterNew {
 
             var input1 = new SeqFileInput(file1, judgeType(file1));
             var input2 = pairedReads ? new SeqFileInput(file2, judgeType(file2)) : null;
+
+            var match: UnorderedSetPointer<Int> = matchSet.reference();
 
             while (!input1.eof()) {
                 var record1 = input1.readSequence();
@@ -1966,7 +1991,7 @@ class MainFilterNew {
                     }
                 }
 
-                processHits(match, matchCallback, hasRecord2, record1, record2);
+                match.foreach(matchCallback, hasRecord2, record1, record2);
 
                 if (mode == 1 && !match.empty()) {
                     outputBuffer.writeRecord(0, record1, false);

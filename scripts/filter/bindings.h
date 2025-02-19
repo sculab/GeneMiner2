@@ -6,6 +6,7 @@
 #define BUFFER_MIN_SIZE 4096
 #define BUFFER_MAX_SIZE 65536
 #define CHUNK_SIZE 65536
+#define EMH_EXT 1
 #define EMH_INT_HASH 1
 
 #include "haxe/io/Eof.h"
@@ -19,8 +20,7 @@
 
 class GzipReader final {
 public:
-    static GzipReader* open(std::string filename)
-    {
+    static GzipReader* open(std::string filename) {
         gzFile file = gzopen(filename.c_str(), "rb");
 
         if (file == NULL) {
@@ -89,7 +89,7 @@ private:
 
 class NativeFileOutputBuffer final {
 public:
-    NativeFileOutputBuffer(int size) : records(size), fileBufferSize(size, 0) {
+    explicit NativeFileOutputBuffer(int size) : records(size), fileBufferSize(size, 0) {
         totalBufferSize = 0;
     }
 
@@ -176,6 +176,13 @@ private:
     int totalBufferSize;
 };
 
+template <typename T>
+class OwningReference final : public ::cpp::Reference<T> {
+public:
+    OwningReference(const null& value) : ::cpp::Reference<T>(value) {}
+    explicit OwningReference(bool create = false) : ::cpp::Reference<T>(create ? new T() : nullptr) {}
+};
+
 template <typename Derived, typename K, typename V>
 class UnorderedMapBase {
 public:
@@ -209,9 +216,9 @@ public:
     }
 
     template <typename Kd, typename Vd>
-    Vd get(Kd key, Vd def) {
-        auto it = map.find(static_cast<const Derived*>(this)->cast_key(key));
-        return it == map.end() ? def : static_cast<const Derived*>(this)->dynamic_value(it->second);
+    Vd get(Kd key, Vd def) const {
+        const V* ptr = map.try_get(static_cast<const Derived*>(this)->cast_key(key));
+        return ptr ? static_cast<const Derived*>(this)->dynamic_value(*ptr) : def;
     }
 
     void reserve(int count) {
@@ -250,11 +257,10 @@ public:
 };
 
 template <typename K, typename V>
-class UnorderedMapHandle final : public ::cpp::Reference<UnorderedMapType<K, V>> {
-public:
-    explicit UnorderedMapHandle() : ::cpp::Reference<UnorderedMapType<K, V>>() {}
-    explicit UnorderedMapHandle(bool tag) : ::cpp::Reference<UnorderedMapType<K, V>>(new UnorderedMapType<K, V>()) {}
-};
+using UnorderedMapPointer = UnorderedMapType<K, V>*;
+
+template <typename K, typename V>
+using UnorderedMapReference = OwningReference<UnorderedMapType<K, V>>;
 
 template <typename Derived, typename T>
 class UnorderedSetBase {
@@ -277,7 +283,7 @@ public:
         set.clear();
     }
 
-    bool empty() {
+    bool empty() const {
         return set.empty();
     }
 
@@ -305,10 +311,9 @@ class UnorderedSetType final : public UnorderedSetBase<UnorderedSetType<T>, T> {
 };
 
 template <typename T>
-class UnorderedSetHandle final : public ::cpp::Reference<UnorderedSetType<T>> {
-public:
-    explicit UnorderedSetHandle() : ::cpp::Reference<UnorderedSetType<T>>() {}
-    explicit UnorderedSetHandle(bool tag) : ::cpp::Reference<UnorderedSetType<T>>(new UnorderedSetType<T>()) {}
-};
+using UnorderedSetPointer = UnorderedSetType<T>*;
+
+template <typename T>
+using UnorderedSetReference = OwningReference<UnorderedSetType<T>>;
 
 #endif /* INCLUDED_MainFilterNew_Bindings */
