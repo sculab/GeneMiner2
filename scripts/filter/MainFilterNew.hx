@@ -1227,15 +1227,16 @@ class KmerMap {
             sk       <<= 2 * actualStep;
             skr     >>>= 2 * actualStep;
 
-            for (j in 0...actualStep) {
-                var stride = kmerLength - actualStep + j;
+            do {
+                var stride = kmerLength - actualStep;
                 var bit = FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), offset + stride - 4));
                 var nuc:  Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + stride));
                 var nucc: Int64 = 3 - nuc;
-                pattern |= bit  << (actualStep - j - 1);
+                pattern |= bit  << (actualStep - 1);
                 sk      |= nuc  << (64 - 2 * (stride + 1));
-                skr     |= nucc << (64 - 2 * (actualStep - j));
-            }
+                skr     |= nucc << (64 - 2 * actualStep);
+                actualStep--;
+            } while (actualStep > 0);
 
             pattern &= (1 << minMaxPatternSize) - 1;
             sk      &= kmerMask;
@@ -1273,13 +1274,14 @@ class KmerMap {
             sk       <<= 2 * actualStep;
             skr     >>>= 2 * actualStep;
 
-            for (j in 0...actualStep) {
-                var stride = kmerLength - actualStep + j;
+            do {
+                var stride = kmerLength - actualStep;
                 var nuc:  Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + stride));
                 var nucc: Int64 = 3 - nuc;
                 sk  |= nuc  << (64 - 2 * (stride + 1));
-                skr |= nucc << (64 - 2 * (actualStep - j));
-            }
+                skr |= nucc << (64 - 2 * actualStep);
+                actualStep--;
+            } while (actualStep > 0);
 
             markHitsShort(map, match, new ShortKmer(sk));
 
@@ -1411,37 +1413,70 @@ class SeqFileInput {
                 }
             }
 
-            var line = null;
+            var foundNewLine = false;
+            var lineEnd = posStart + 1;
 
-            for (i in posStart...posEnd) {
-                var skip = switch (Bytes.fastGet(buffer.getData(), i)) {
-                    case "\n".code: 1;
-                    case "\r".code: (i < posEnd - 1 && Bytes.fastGet(buffer.getData(), i + 1) == "\n".code) ? 2 : 1;
-                    default: continue;
+            while (lineEnd <= posEnd) {
+                foundNewLine = switch (Bytes.fastGet(buffer.getData(), lineEnd - 1)) {
+                    case 0 | "\n".code: true;
+                    default: false;
                 };
 
+                if (foundNewLine) {
+                    lineEnd--;
+                    break;
+                }
+
+                if (lineEnd == posEnd) {
+                    break;
+                }
+
+                foundNewLine = switch (Bytes.fastGet(buffer.getData(), lineEnd)) {
+                    case 0 | "\n".code: true;
+                    default: false;
+                };
+
+                if (foundNewLine) {
+                    break;
+                }
+
+                lineEnd += 2;
+            }
+
+            if (foundNewLine) {
                 if (!descriptionLine) {
-                    while (posStart < i && Bytes.fastGet(buffer.getData(), posStart) <= 32) {
+                    while (posStart < lineEnd && Bytes.fastGet(buffer.getData(), posStart) <= 32) {
                         posStart++;
                     };
                 }
 
-                var lineEnd = i;
+                var nextPosStart = lineEnd + 1;
 
                 while (posStart < lineEnd && Bytes.fastGet(buffer.getData(), lineEnd - 1) <= 32) {
                     lineEnd--;
                 };
 
-                line = buffer.getString(posStart, lineEnd - posStart);
-                posStart = i + skip;
-                break;
-            }
+                var line = buffer.getString(posStart, lineEnd - posStart);
+                linesRead++;
+                posStart = nextPosStart;
 
-            if (posStart > posEnd) {
-                posStart = posEnd;
-            }
+                if ((isFasta ? line.startsWith(">") : (linesRead & 3) == 1) || eof()) {
+                    var record = pendingRecord;
+                    pendingRecord = [];
 
-            if (line == null) {
+#if cpp
+                    cpp.NativeArray.reserve(pendingRecord, isFasta ? 2 : 4);
+#end
+
+                    if (record.length != 0) {
+                        pendingRecord.push(line);
+                        return finalizeRecord(record);
+                    }
+                }
+
+                pendingRecord.push(line);
+            }
+            else {
                 if (posEnd >= buffer.length && posStart < pageSize) {
                     if (buffer.length >= maxBufferSize) {
                         throw new EncodingError('Sequence is too long (buffer size is ${buffer.length} bytes)');
@@ -1483,26 +1518,6 @@ class SeqFileInput {
                 pendingRecord = [];
                 return finalizeRecord(record);
             }
-
-            linesRead++;
-
-            var newRecord = (isFasta && line.startsWith(">")) || (!isFasta && (linesRead & 3) == 1) || eof();
-
-            if (newRecord) {
-                var record = pendingRecord;
-                pendingRecord = [];
-
-#if cpp
-                cpp.NativeArray.reserve(pendingRecord, isFasta ? 2 : 4);
-#end
-
-                if (record.length != 0) {
-                    pendingRecord.push(line);
-                    return finalizeRecord(record);
-                }
-            }
-
-            pendingRecord.push(line);
         }
     }
 
