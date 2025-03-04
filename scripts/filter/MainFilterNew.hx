@@ -499,6 +499,7 @@ abstract CuckooSet(Vector<Int64>) {
     public inline function toVector() return this;
 }
 
+@:unreflective
 class FastaHelper {
     static final nuclChars = ["A".code, "C".code, "G".code, "T".code];
 
@@ -517,8 +518,12 @@ class FastaHelper {
 #end
 
         var i = 0;
+        var j = 0;
 
-        for (c in seq) {
+        while (i < seq.length) {
+            var c = getChar(seq, i);
+            i++;
+
             // Not an alphabetic letter
             if (c < 65) {
                 continue;
@@ -535,14 +540,42 @@ class FastaHelper {
             }
 
             switch (c) {
-                case "A".code | "C".code | "G".code | "T".code: buf.set(i, c);
+                case "A".code | "C".code | "G".code | "T".code: setChar(buf, j, c);
                 default: continue;
             }
 
-            i++;
+            j++;
         }
 
-        return i;
+        return j;
+    }
+
+    public static inline function fromBytes(b: Bytes, pos: Int, len: Int): String {
+#if cpp
+        var src: cpp.RawConstPointer<cpp.Char> = cast cpp.NativeArray.address(b.getData(), pos).rawCast();
+        var dst: cpp.Pointer<cpp.Char> = cast cpp.NativeGc.allocGcBytes(len + 1).reinterpret();
+        cpp.Native.memcpy(dst.get_raw(), src, len);
+        dst.setAt(len, 0);
+        return cpp.NativeString.fromGcPointer(dst, len);
+#else
+        return b.getString(pos, len);
+#end
+    }
+
+    public static inline function getChar(s: String, i: Int): Int {
+#if cpp
+        return cpp.ConstPointer.fromRaw(cpp.NativeString.raw(s)).at(i);
+#else
+        return s.unsafeCodeAt(i);
+#end
+    }
+
+    public static inline function setChar(b: Bytes, i: Int, c: Int) {
+#if cpp
+        cpp.NativeArray.unsafeSet(b.getData(), i, c);
+#else
+        b.set(i, c);
+#end
     }
 }
 
@@ -564,11 +597,11 @@ abstract ShortKmer(Int64) {
 
             if (complement) {
                 shift = 2 * (i + 32 - kmer.length);
-                n = 3 - FastaHelper.nuclToInt(kmer.fastCodeAt(i));
+                n = 3 - FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
             }
             else {
                 shift = 2 * (31 - i);
-                n = FastaHelper.nuclToInt(kmer.fastCodeAt(i));
+                n = FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
             }
 
             value |= n << shift;
@@ -603,13 +636,13 @@ abstract LongKmer(String) {
 #end
 
         if (complement) {
-            var buf = new StringBuf();
+            var buf = Bytes.alloc(kmer.length);
 
             for (i in 0...kmer.length) {
-                buf.addChar(FastaHelper.intToNucl(3 - FastaHelper.nuclToInt(kmer.fastCodeAt(kmer.length - i - 1))));
+                FastaHelper.setChar(buf, i, FastaHelper.intToNucl(3 - FastaHelper.nuclToInt(FastaHelper.getChar(kmer, kmer.length - i - 1))));
             }
 
-            this = buf.toString();
+            this = FastaHelper.fromBytes(buf, 0, kmer.length);
         }
         else {
             this = kmer;
@@ -784,7 +817,7 @@ class KmerMap {
                 }
 
                 var seqEnd = FastaHelper.convertToDna(seqBuffer, record[1]);
-                var seq = seqBuffer.getString(0, seqEnd);
+                var seq = FastaHelper.fromBytes(seqBuffer, 0, seqEnd);
 
                 if (seq.length < object.kmerLength) {
                     continue;
@@ -894,6 +927,8 @@ class KmerMap {
             object.shortKmerMap.reserve(Std.int(cuckooSetCount / 0.75));
         }
 
+        final kmerHeaderSize = object.kmerStorageSize + 4;
+
         var buf = Bytes.alloc(2 * 1024 * 1024);
         var dataEnd = 0;
 
@@ -925,11 +960,13 @@ class KmerMap {
                     break;
                 }
 
-                var csOffset = object.kmerStorageSize + 4;
-                var csLen = itemSize - csOffset;
-                var isSingleton = csLen == 8;
-                var singletonElement = buf.getInt64(i + csOffset);
+                if (itemSize < kmerHeaderSize) {
+                    throw new ArgumentError('Malformed k-mer');
+                }
 
+                var csLen = itemSize - kmerHeaderSize;
+                var isSingleton = csLen == 8;
+                var singletonElement = buf.getInt64(i + kmerHeaderSize);
                 var index = isSingleton ? singletons.get(singletonElement, -1) : -1;
 
                 if (index < 0) {
@@ -937,7 +974,7 @@ class KmerMap {
                         throw new ArgumentError('Overflow in k-mer list');
                     }
 
-                    object.cuckooSetList[insertionIndex] = new CuckooSet(csLen, buf, i + csOffset);
+                    object.cuckooSetList[insertionIndex] = new CuckooSet(csLen, buf, i + kmerHeaderSize);
                     index = insertionIndex;
                     insertionIndex++;
 
@@ -947,7 +984,7 @@ class KmerMap {
                 }
 
                 if (object.useLongKmer) {
-                    var lk = buf.getString(i + 4, object.kmerStorageSize);
+                    var lk = FastaHelper.fromBytes(buf, i + 4, object.kmerStorageSize);
                     object.longKmerMap.set(lk, index);
                 }
                 else {
@@ -963,6 +1000,7 @@ class KmerMap {
 
             if (resize > 0) {
                 buf = Bytes.alloc(resize);
+                resize = 0;
             }
 
             if (i < dataEnd) {
@@ -994,7 +1032,7 @@ class KmerMap {
         var bit: Int;
 
         for (i in 0...minMaxPatternSize) {
-            bit = FastaHelper.nuclToPattern(seq.fastCodeAt(i));
+            bit = FastaHelper.nuclToPattern(FastaHelper.getChar(seq, i));
             forwardPattern <<= 1;
             forwardPattern |= bit;
             backwardPattern >>>= 1;
@@ -1003,14 +1041,14 @@ class KmerMap {
 
         for (i in minMaxPatternSize...(minMaxPatternSize + 4)) {
             forwardTetramer <<= 2;
-            forwardTetramer |= FastaHelper.nuclToInt(seq.fastCodeAt(i));
+            forwardTetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(seq, i));
         }
 
         addMinMaxTetramer(forwardPattern, forwardTetramer, forwardTetramer);
         addMinMaxTetramer(backwardPattern, 0, 0xff);
 
         for (i in 1...(seq.length - minMaxPatternSize + 1)) {
-            bit = FastaHelper.nuclToPattern(seq.fastCodeAt(minMaxPatternSize + i - 1));
+            bit = FastaHelper.nuclToPattern(FastaHelper.getChar(seq, minMaxPatternSize + i - 1));
             forwardPattern <<= 1;
             forwardPattern |= bit;
             forwardPattern &= (1 << minMaxPatternSize) - 1;
@@ -1021,7 +1059,7 @@ class KmerMap {
             forwardTetramer &= 0xff;
 
             if (i <= seq.length - minMaxPatternSize - 4) {
-                forwardTetramer |= FastaHelper.nuclToInt(seq.fastCodeAt(minMaxPatternSize + i + 3));
+                forwardTetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(seq, minMaxPatternSize + i + 3));
                 addMinMaxTetramer(forwardPattern, forwardTetramer, forwardTetramer);
             }
             else {
@@ -1030,7 +1068,7 @@ class KmerMap {
             }
 
             backwardTetramer >>>= 2;
-            backwardTetramer |= (3 - FastaHelper.nuclToInt(seq.fastCodeAt(i - 1))) << 6;
+            backwardTetramer |= (3 - FastaHelper.nuclToInt(FastaHelper.getChar(seq, i - 1))) << 6;
 
             if (i >= 4) {
                 addMinMaxTetramer(backwardPattern, backwardTetramer, backwardTetramer);
@@ -1115,7 +1153,7 @@ class KmerMap {
         var offset        = 0;
 
         while (offset + kmerLength <= seqEnd) {
-            var kmer = seq.getString(offset, kmerLength);
+            var kmer = FastaHelper.fromBytes(seq, offset, kmerLength);
 
             if (checkPattern) {
                 var pattern = 0;
@@ -1123,12 +1161,12 @@ class KmerMap {
 
                 for (i in (kmerLength - minMaxPatternSize - 4)...(kmerLength - 4)) {
                     pattern <<= 1;
-                    pattern |= FastaHelper.nuclToPattern(kmer.fastCodeAt(i));
+                    pattern |= FastaHelper.nuclToPattern(FastaHelper.getChar(kmer, i));
                 }
 
                 for (i in (kmerLength - 4)...kmerLength) {
                     tetramer <<= 2;
-                    tetramer |= FastaHelper.nuclToInt(kmer.fastCodeAt(i));
+                    tetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
                 }
 
                 var maximizer = minMaxMap[pattern] & 0xff;
@@ -1164,7 +1202,7 @@ class KmerMap {
         var tailOffset = seqEnd - kmerLength;
 
         if (offset - step < tailOffset) {
-            var kmer = seq.getString(tailOffset, kmerLength);
+            var kmer = FastaHelper.fromBytes(seq, tailOffset, kmerLength);
 
             if (useLongKmer) {
                 markHitsLong(longMap, match, new LongKmer(kmer));
@@ -1456,7 +1494,7 @@ class SeqFileInput {
                     lineEnd--;
                 };
 
-                var line = buffer.getString(posStart, lineEnd - posStart);
+                var line = FastaHelper.fromBytes(buffer, posStart, lineEnd - posStart);
                 linesRead++;
                 posStart = nextPosStart;
 
@@ -1510,7 +1548,7 @@ class SeqFileInput {
                     posEnd--;
                 };
 
-                pendingRecord.push(buffer.getString(posStart, posEnd));
+                pendingRecord.push(FastaHelper.fromBytes(buffer, posStart, posEnd));
                 posStart = 0;
                 posEnd = 0;
 

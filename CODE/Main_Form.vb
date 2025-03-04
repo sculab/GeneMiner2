@@ -100,6 +100,7 @@ Public Class Main_Form
             SI_filter.Arguments += " -qd " + """" + options(5) + "\filtered_pe" + """"
             SI_filter.Arguments += " -o " + """" + options(5) + "\filtered" + """"
             SI_filter.Arguments += " -kf " + options(0)
+            SI_filter.Arguments += " --log-file " + """" + options(5) + "\log.txt" + """"
             SI_filter.Arguments += " --max-depth " + form_config_basic.NumericUpDown4.Value.ToString
             SI_filter.Arguments += " --max-size " + form_config_basic.NumericUpDown9.Value.ToString
             SI_filter.Arguments += " -p " + options(10)
@@ -221,12 +222,7 @@ Public Class Main_Form
             .CreateNoWindow = (options(9) = 1),
             .Arguments = "-r " + """" + options(4) + """"
         }
-        SI_assembler.Arguments += " -q1" + options(2) + " -q2" + options(3)
         SI_assembler.Arguments += " -o " + """" + options(5) + """"
-        SI_assembler.Arguments += " -kf " + options(0)
-        SI_assembler.Arguments += " -s " + form_config_basic.NumericUpDown2.Value.ToString
-        SI_assembler.Arguments += " -gr " + form_config_basic.CheckBox2.Checked.ToString
-        SI_assembler.Arguments += " -gr " + form_config_basic.CheckBox2.Checked.ToString
         If form_config_basic.CheckBox1.Checked Then
             SI_assembler.Arguments += " -ka 0"
         Else
@@ -3969,8 +3965,10 @@ Public Class Main_Form
             For i As Integer = 0 To sequences.Count - 2
                 For j As Integer = i + 1 To sequences.Count - 1
                     Dim difference_count As Integer = CalculateDifference(sequences(i), sequences(j))
-                    If sequences(i).Replace("-", "").Replace("?", "").Length > 0 Then
-                        Dim difference As Single = difference_count / Math.Max(sequences(i).Replace("-", "").Replace("?", "").Length, sequences(j).Replace("-", "").Replace("?", "").Length)
+                    Dim seq_i As String = sequences(i).Replace("-", "").Replace("?", "")
+                    Dim seq_j As String = sequences(i).Replace("-", "").Replace("?", "")
+                    If seq_i.Length > 0 AndAlso seq_j.Length > 0 Then
+                        Dim difference As Single = difference_count / Math.Min(seq_i.Length, seq_j.Length)
                         If difference > maxDifference Then
                             maxDifference = difference
                         End If
@@ -4443,10 +4441,6 @@ Public Class Main_Form
                              Dim q1 As String = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString.Replace("\", "/") + """"
                              Dim q2 As String = " " + """" + DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString.Replace("\", "/") + """"
 
-                             If File.Exists(out_dir + "\log.txt") Then
-                                 File.Delete(out_dir + "\log.txt")
-                             End If
-
                              If plasty Then
                                  If database_type = "mito_plant" AndAlso Not File.Exists(out_dir + "\Organelle\Gennome_cp.fasta") Then
                                      RichTextBox1.BeginInvoke(Sub() RichTextBox1.AppendText("The chloroplast genome was not found in the " + folder_name + vbCrLf))
@@ -4491,7 +4485,17 @@ Public Class Main_Form
                              End If
 
                              If refilter Then
+                                 If My.Computer.FileSystem.DirectoryExists(Path.Combine(out_dir, "filtered")) Then
+                                     DeleteDir(Path.Combine(out_dir, "filtered"))
+                                 End If
+
                                  do_filter({k1, k2, "", "", ref_dir, out_dir, "", 0, 1, no_window, thread_count})
+
+                                 ' 如果两步同时进行，删除第一步过滤的临时文件
+                                 If filter AndAlso (My.Computer.FileSystem.DirectoryExists(Path.Combine(out_dir, "filtered_pe")) AndAlso
+                                                    My.Computer.FileSystem.DirectoryExists(Path.Combine(out_dir, "filtered"))) Then
+                                     DeleteDir(Path.Combine(out_dir, "filtered_pe"))
+                                 End If
                              End If
 
                              If assemble Then

@@ -33,6 +33,13 @@ READ_ITERATORS = {
 FWD_TRANS = str.maketrans("ACGTU", "01233", "RYMKSWHBVDN\n\r")
 REV_TRANS = str.maketrans("ACGTU", "32100", "RYMKSWHBVDN\n\r")
 
+def print_log(log_path, *args, **kwargs):
+    if log_path:
+        with open(log_path, 'a') as out:
+            print(*args, file=out, **kwargs)
+
+    print(*args, **kwargs)
+
 def get_read_dict(se_dir, pe_dir):
     read_dict = {}
     walk_directory = lambda path: ((os.path.dirname(ent.path), *os.path.splitext(ent.name)) for ent in os.scandir(path) if ent.is_file())
@@ -76,16 +83,17 @@ def get_read_dict(se_dir, pe_dir):
 def get_ref_dict(ref_dir):
     ref_dict = {}
 
-    for ent in os.scandir(ref_dir):
-        basename, extname = os.path.splitext(ent.name)
+    with os.scandir(ref_dir) as entries:
+        for ent in entries:
+            basename, extname = os.path.splitext(ent.name)
 
-        if extname not in FILE_TYPES:
-            continue
+            if extname not in FILE_TYPES:
+                continue
 
-        if basename in ref_dict:
-            raise ValueError(f'Duplicate reference sequence name {basename}.')
+            if basename in ref_dict:
+                raise ValueError(f'Duplicate reference sequence name {basename}.')
 
-        ref_dict[basename] = ent.path
+            ref_dict[basename] = ent.path
 
     return ref_dict
 
@@ -253,7 +261,7 @@ def run_length_filter(name, out_dir, ref_path, ref_length, read_info, file_type,
 
     return output_path
 
-def kmer_filter(name, out_dir, ref_path, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
+def kmer_filter(name, out_dir, ref_path, log_path, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
     output_ext  = FILE_EXTENSION[file_type]
     output_path = os.path.join(out_dir, name + output_ext)
     format_func = FORMAT_FUNCTIONS[file_type]
@@ -282,7 +290,7 @@ def kmer_filter(name, out_dir, ref_path, ref_length, temp_path, file_type, kmer_
         else:
             kmer_size += 2
 
-        print(f'K-mer size for {name}: {kmer_size}')
+        print_log(log_path, f'K-mer size for {name}: {kmer_size}')
 
         kmer_dict = build_kmer_dict(ref_path, kmer_size)
 
@@ -323,16 +331,16 @@ def calc_effective_len(ref_path):
     with open(ref_path, 'r') as f:
         length_list = [len(seq) for _, seq in SimpleFastaParser(f)]
 
-    return max(length_list) * ((math.log2(len(length_list) + 1) + 1) // 2)
+    return max(length_list) * ((math.log1p(len(length_list)) + 1) // 2)
 
 def filter_gene(task):
     file_ext = os.path.splitext(task.read_path[0])[1]
 
     if file_ext not in FILE_TYPES:
-        print(f"File '{task.read_path[0]}' has invalid file type.")
+        print_log(task.log_path, f"File '{task.read_path[0]}' has invalid file type.")
         return
 
-    print(f'Filtering gene {task.name}.')
+    print_log(task.log_path, f'Filtering gene {task.name}.')
 
     effective_len = calc_effective_len(task.ref_path)
     file_type = FILE_TYPES[file_ext]
@@ -341,7 +349,7 @@ def filter_gene(task):
                                  effective_len, task.read_path, file_type,
                                  (task.kmer_size - 8) | 1, task.keep_temporaries)
 
-    kmer_filter(task.name, task.out_dir, task.ref_path,
+    kmer_filter(task.name, task.out_dir, task.ref_path, task.log_path,
                 effective_len, tmp_path, file_type,
                 task.kmer_size, task.min_depth, task.max_depth,
                 task.max_size, task.keep_temporaries)
@@ -350,18 +358,18 @@ def filter_gene(task):
         os.unlink(tmp_path)
 
 Task = collections.namedtuple('Task', ('name', 'out_dir', 'ref_path', 'read_path',
-                                       'min_depth', 'max_depth', 'max_size',
-                                       'keep_temporaries', 'kmer_size'))
+                                       'log_path', 'min_depth', 'max_depth',
+                                       'max_size', 'keep_temporaries', 'kmer_size'))
 
 def run(args):
     tasks = []
 
     for name, ref_path in ref_dict.items():
         if name not in read_dict:
-            print(f"No reads for reference file '{ref_path}'.")
+            print_log(args.log_file, f"No reads for gene {name}.")
             continue
 
-        tasks.append(Task(name, out_dir, ref_path, read_dict[name],
+        tasks.append(Task(name, out_dir, ref_path, read_dict[name], args.log_file,
                           args.min_depth, args.max_depth, args.max_size,
                           args.keep_temporaries, args.kmer_size))
 
@@ -394,6 +402,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--ref-dir', required=True, help='Directory with reference sequences')
     parser.add_argument('-o', '--out-dir', required=True, help='Output directory')
 
+    parser.add_argument('--log-file', default=None, help='Log file')
     parser.add_argument('--min-depth', default=50, help='Min allowed coverage', type=int)
     parser.add_argument('--max-depth', default=768, help='Max allowed coverage', type=int)
     parser.add_argument('--max-size', default=6, help='Max allowed size in million bases', type=int)

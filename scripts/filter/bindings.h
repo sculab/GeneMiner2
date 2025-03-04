@@ -252,7 +252,9 @@ public:
     }
 
     static inline ::String dynamic_key(std::string key) {
-        return ::String(key.c_str(), key.size()).dup();
+        char* s = hx::NewString(key.size());
+        ::memcpy(s, key.c_str(), key.size() * sizeof(char));
+        return ::String(s, key.size());
     }
 };
 
