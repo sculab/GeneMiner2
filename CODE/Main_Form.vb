@@ -209,7 +209,7 @@ Public Class Main_Form
                 Next
             End SyncLock
         Catch ex As Exception
-            MsgBox(ex.ToString, MsgBoxStyle.Information, "Infomation")
+            MsgBox(ex.ToString, MsgBoxStyle.Information, "Information")
         End Try
 
     End Sub
@@ -243,7 +243,7 @@ Public Class Main_Form
             If File.Exists(filePath) Then
                 ref_assemble_result(filePath)
             Else
-                MsgBox("Could not find assemble result, please check option and try again!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Could not find assemble result, please check option and try again!", MsgBoxStyle.Information, "Information")
             End If
         Else
             If File.Exists(filePath) = False Then
@@ -291,7 +291,7 @@ Public Class Main_Form
                                 'DataGridView1.Rows(i - 1).Cells(8).Value = (CInt(result_dict(refsView.Item(i - 1).Item(1).ToString).Split(","c)(1)) * reads_length / CInt(DataGridView1.Rows(i - 1).Cells(7).Value)).ToString("F0")
 
                             Catch ex As Exception
-                                MsgBox(ex.ToString, MsgBoxStyle.Information, "Infomation")
+                                MsgBox(ex.ToString, MsgBoxStyle.Information, "Information")
                                 If File.Exists(my_out_dir + "\results\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
                                     File.Delete(my_out_dir + "\results\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                 End If
@@ -305,7 +305,7 @@ Public Class Main_Form
                 End If
             Next
         Catch ex As Exception
-            MsgBox(ex.ToString, MsgBoxStyle.Information, "Infomation")
+            MsgBox(ex.ToString, MsgBoxStyle.Information, "Information")
         End Try
 
     End Sub
@@ -422,7 +422,7 @@ Public Class Main_Form
                 If init_output_folder Then
                     Timer1.Enabled = False
                     If TargetOS = "macos" Then
-                        MsgBox("Output directory: GeneMiner folder on desktop.", MsgBoxStyle.Information, "Infomation")
+                        MsgBox("Output directory: GeneMiner folder on desktop.", MsgBoxStyle.Information, "Information")
                         form_config_basic.CheckBox4.Checked = True
                     End If
                     init_output_folder = False
@@ -564,7 +564,7 @@ Public Class Main_Form
                 Dim RegCHZN As New Regex("[\u4e00-\u9fa5]")
                 Dim m As Match = RegCHZN.Match(Path.GetFileNameWithoutExtension(file_name))
                 If m.Success Then
-                    MsgBox("测序文件的文件名中不得含有中文（亚洲语言字符）！" + Chr(13) + "Sequencing file names must not include Asian language characters.", MsgBoxStyle.Information, "Infomation")
+                    MsgBox("测序文件的文件名中不得含有中文（亚洲语言字符）！" + Chr(13) + "Sequencing file names must not include Asian language characters.", MsgBoxStyle.Information, "Information")
                     Exit Sub
                 End If
             Next
@@ -605,7 +605,7 @@ Public Class Main_Form
                         Next
                         timer_id = 3
                     Else
-                        MsgBox("The files are not in pairs (the number of files cannot be divided by 2 evenly).", MsgBoxStyle.Information, "Infomation")
+                        MsgBox("The files are not in pairs (the number of files cannot be divided by 2 evenly).", MsgBoxStyle.Information, "Information")
                     End If
                 Else
                     data_loaded = False
@@ -664,11 +664,11 @@ Public Class Main_Form
             Dim RegCHZN As New Regex("[\u4e00-\u9fa5]")
             Dim m As Match = RegCHZN.Match(opendialog.SelectedPath)
             If m.Success Then
-                MsgBox("结果所在路径不得含有中文（亚洲语言字符）！" + Chr(13) + "The path for the results should not include Asian language characters.", MsgBoxStyle.Information, "Infomation")
+                MsgBox("结果所在路径不得含有中文（亚洲语言字符）！" + Chr(13) + "The path for the results should not include Asian language characters.", MsgBoxStyle.Information, "Information")
                 Exit Sub
             End If
             If opendialog.SelectedPath.EndsWith(":\") Then
-                MsgBox("Please do not save to the root directory!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please do not save to the root directory!", MsgBoxStyle.Information, "Information")
             Else
                 If Directory.GetFileSystemEntries(opendialog.SelectedPath).Length > 0 Then
                     Dim result As DialogResult = MessageBox.Show("The folder is not empty, its contents may be deleted. Are you sure to use this folder?", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
@@ -699,7 +699,7 @@ Public Class Main_Form
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -755,7 +755,7 @@ Public Class Main_Form
             Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "kmer_dict_k" + k1.ToString + ".dict", 0, "0", no_window, current_thread}
             th1.Start(my_options)
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -865,7 +865,7 @@ Public Class Main_Form
             Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "kmer_dict_k" + k1.ToString + ".dict", 0, "1", no_window, current_thread}
             th1.Start(my_options)
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub 从头过滤ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 从头过滤ToolStripMenuItem.Click
@@ -880,11 +880,11 @@ Public Class Main_Form
             form_config_basic.GroupBox2.Enabled = True
             form_config_basic.GroupBox3.Enabled = False
             form_config_basic.GroupBox4.Enabled = False
-            form_config_basic.NumericUpDown1.Value = 31
+            form_config_basic.NumericUpDown1.Value = If(form_config_calculate.kf = 0, 31, form_config_calculate.kf)
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -933,7 +933,7 @@ Public Class Main_Form
             Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "kmer_dict_k" + k1.ToString + ".dict", 0, "0", no_window, Math.Min(current_thread, filter_thread)}
             th1.Start(my_options)
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Function check_data_count()
@@ -1058,7 +1058,7 @@ Public Class Main_Form
         If resultdialog = DialogResult.OK Then
             If opendialog.FileName.ToLower.EndsWith(".csv") Then
                 save_datagrid1(opendialog.FileName)
-                MsgBox("Export Complete!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Export Complete!", MsgBoxStyle.Information, "Information")
             End If
         End If
     End Sub
@@ -1091,12 +1091,12 @@ Public Class Main_Form
             form_config_basic.GroupBox2.Enabled = True
             form_config_basic.GroupBox3.Enabled = True
             form_config_basic.GroupBox4.Enabled = True
-            form_config_basic.NumericUpDown1.Value = 31
+            form_config_basic.NumericUpDown1.Value = If(form_config_calculate.kf = 0, 31, form_config_calculate.kf)
             MenuClicked = "auto_assemble"
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -1152,7 +1152,7 @@ Public Class Main_Form
 
             th1.Start(my_options)
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub 导出参考序列ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 导出参考序列ToolStripMenuItem.Click
@@ -1164,7 +1164,7 @@ Public Class Main_Form
                     safe_copy(currentDirectory + "temp\org_seq\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", opendialog.SelectedPath + "\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", True)
                 End If
             Next
-            MsgBox("Export Complete!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Export Complete!", MsgBoxStyle.Information, "Information")
 
         End If
     End Sub
@@ -1180,7 +1180,7 @@ Public Class Main_Form
             Dim resultdialog As DialogResult = opendialog.ShowDialog()
             If resultdialog = DialogResult.OK Then
                 If opendialog.SelectedPath.EndsWith(":\") Then
-                    MsgBox("Please do not save to the root directory!", MsgBoxStyle.Information, "Infomation")
+                    MsgBox("Please do not save to the root directory!", MsgBoxStyle.Information, "Information")
                 Else
 
                     Dim my_input As String = InputBox("Number of Reads to SKIP (Million)", "SKIP", 0)
@@ -1199,7 +1199,7 @@ Public Class Main_Form
             End If
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -1225,7 +1225,7 @@ Public Class Main_Form
                 process_build_fq.Close()
             End If
         Next
-        MsgBox("Export Complete!", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Export Complete!", MsgBoxStyle.Information, "Information")
 
     End Sub
 
@@ -1264,7 +1264,7 @@ Public Class Main_Form
                                                                              do_mafft_align(in_path, out_path)
                                                                          End If
                                                                      Catch ex As Exception
-                                                                         File.AppendAllText(TextBox1.Text + "\log.txt", "Could not do muscle for " & DataGridView1.Rows(i - 1).Cells(2).ToString & Environment.NewLine)
+                                                                         File.AppendAllText(TextBox1.Text + "\log.txt", "Could not do alignment for " & DataGridView1.Rows(i - 1).Cells(2).ToString & Environment.NewLine)
                                                                      End Try
                                                                  End If
                                                              End Sub)
@@ -1298,7 +1298,7 @@ Public Class Main_Form
             MenuClicked = "iteration"
             form_config_basic.Show()
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub menu_iteration()
@@ -1338,7 +1338,7 @@ Public Class Main_Form
             Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "kmer_dict_k" + k1.ToString + ".dict", 0, "0", no_window, Math.Min(current_thread, filter_thread)}
             th1.Start(my_options)
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub 重新拼接ToolStripMenuItem_Click(sender As Object, e As EventArgs)
@@ -1379,16 +1379,16 @@ Public Class Main_Form
                 Dim my_options() As String = {k1, k2, q1, q2, ref_dir, out_dir, "kmer_dict_k" + k1.ToString + ".dict", 0, "0", no_window, current_thread}
                 th1.Start(my_options)
             Else
-                MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
     Public Sub do_muscle_align(ByVal in_path As String, ByVal out_path As String)
         Dim startInfo As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\muscle_warpper.exe",
+            .FileName = currentDirectory + "analysis\muscle_wrapper.exe",
             .WorkingDirectory = currentDirectory + "analysis\",
             .CreateNoWindow = True,
             .Arguments = "-i " + """" + in_path + """" + " -o " + """" + out_path + """"
@@ -1534,11 +1534,11 @@ Public Class Main_Form
             form_config_basic.GroupBox2.Enabled = True
             form_config_basic.GroupBox3.Enabled = True
             form_config_basic.GroupBox4.Enabled = True
-            form_config_basic.NumericUpDown1.Value = 31
+            form_config_basic.NumericUpDown1.Value = If(form_config_calculate.kf = 0, 31, form_config_calculate.kf)
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub menu_batch_auto_assemble()
@@ -1559,7 +1559,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf batch_filter_assemble)
             th1.Start()
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub batch_filter_assemble()
@@ -1845,7 +1845,7 @@ Public Class Main_Form
         End If
 
         DataGridView1.RefreshEdit()
-        MsgBox("Analysis completed! Please check 'combined_*' files and folders in output.", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed! Please check 'combined_*' files and folders in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Public Function FilterAndSaveFile(ByVal fileName As String, ByVal lineNumbers As List(Of Integer)) As Integer
@@ -1908,7 +1908,7 @@ Public Class Main_Form
                         sw.Write(sr.ReadToEnd)
                         sr.Close()
                     Catch ex As Exception
-                        MsgBox(mFileInfo.FullName, MsgBoxStyle.Information, "Infomation")
+                        MsgBox(mFileInfo.FullName, MsgBoxStyle.Information, "Information")
                     End Try
                 End If
             Next
@@ -1955,7 +1955,7 @@ Public Class Main_Form
                     If refs_count = 1 Then
                         safe_copy(currentDirectory + "temp\org_seq\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", currentDirectory + "temp\seed.fasta", True)
                     Else
-                        MsgBox("In this mode, you can only choose one reference sequence as a seed file.", MsgBoxStyle.Information, "Infomation")
+                        MsgBox("In this mode, you can only choose one reference sequence as a seed file.", MsgBoxStyle.Information, "Information")
                         Exit Sub
                     End If
                 End If
@@ -1978,16 +1978,16 @@ Public Class Main_Form
                 cpg_assemble_mode = -1
                 form_config_plasty.Show()
             Else
-                MsgBox("Please select one reference as seed and at least one sequencing data!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please select one reference as seed and at least one sequencing data!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
     Private Sub ToolStripMenuItem3_Click_1(sender As Object, e As EventArgs) Handles ToolStripMenuItem3.Click
         If check_batch_folder() = False Then
-            MsgBox("To assemble the plant mitochondrial genome, it is necessary to already possess the chloroplast genome first.", MsgBoxStyle.Information, "Infomation")
+            MsgBox("To assemble the plant mitochondrial genome, it is necessary to already possess the chloroplast genome first.", MsgBoxStyle.Information, "Information")
             Exit Sub
         End If
         DataGridView1.EndEdit()
@@ -2073,7 +2073,7 @@ Public Class Main_Form
                 DataGridView1.Rows(i - 1).Cells(0).Value = False
             End If
         Next
-        MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Infomation")
+        MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Information")
         DataGridView1.RefreshEdit()
     End Sub
 
@@ -2133,7 +2133,7 @@ Public Class Main_Form
             form_config_consensus.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub do_consensus(ByVal options() As String)
@@ -2215,7 +2215,7 @@ Public Class Main_Form
             form_config_consensus.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
 
@@ -2376,7 +2376,7 @@ Public Class Main_Form
         End If
 
         PB_value = -1
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
     End Sub
 
     Private Sub PPDToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PPDToolStripMenuItem.Click
@@ -2422,7 +2422,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf run_ppd)
             th1.Start(TextBox1.Text)
         Else
-            MsgBox("You should Generate Consensus first." + vbCrLf + "您需要先进行一致性重构.", MsgBoxStyle.Information, "Infomation")
+            MsgBox("You should Generate Consensus first." + vbCrLf + "您需要先进行一致性重构.", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -2480,7 +2480,7 @@ Public Class Main_Form
 
     Private Sub 植物叶绿体基因组ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 植物叶绿体基因组ToolStripMenuItem.Click
         If check_data_count(1) = 0 Then
-            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Information")
             Exit Sub
         End If
         DataGridView1.EndEdit()
@@ -2504,7 +2504,7 @@ Public Class Main_Form
 
     Private Sub 植物线粒体基因组ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 植物线粒体基因组ToolStripMenuItem.Click
         If check_data_count(1) = 0 Then
-            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Information")
             Exit Sub
         End If
         Dim result As DialogResult = MessageBox.Show("To assemble the plant mitochondrial genome, it is necessary to already possess the chloroplast genome of the plant. Click 'Yes' to choose the chloroplast genome.", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
@@ -2555,17 +2555,17 @@ Public Class Main_Form
             Dim my_input As String = InputBox("Input accuracy level: 1-8", "Input", 4)
             Dim word_size As Integer
             If Not Integer.TryParse(my_input, word_size) Then
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
                 Exit Sub
             End If
             If word_size >= 1 And word_size <= 8 Then
                 Dim th1 As New Thread(AddressOf do_split_barcode)
                 th1.Start(word_size)
             Else
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub do_split_barcode(ByVal word_size As Integer)
@@ -2584,7 +2584,7 @@ Public Class Main_Form
                 process_split_barcode.Close()
             End If
         Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
         PB_value = 0
     End Sub
 
@@ -2595,7 +2595,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf do_combine_barcode)
             th1.Start()
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub do_combine_barcode()
@@ -2617,7 +2617,7 @@ Public Class Main_Form
 
             End If
         Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
         PB_value = 0
     End Sub
 
@@ -2643,10 +2643,10 @@ Public Class Main_Form
                 Dim th1 As New Thread(AddressOf do_build_barcode)
                 th1.Start(level)
             Else
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -2665,7 +2665,7 @@ Public Class Main_Form
                 process_build_barcode.Close()
             End If
         Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
         PB_value = 0
     End Sub
 
@@ -2678,7 +2678,7 @@ Public Class Main_Form
 
     Private Sub 哺乳动物线粒体基因组ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles 哺乳动物线粒体基因组ToolStripMenuItem1.Click
         If check_data_count(1) = 0 Then
-            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one sequencing data!", MsgBoxStyle.Information, "Information")
             Exit Sub
         End If
         DataGridView1.EndEdit()
@@ -2751,7 +2751,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf check_paralogs)
             th1.Start()
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub check_paralogs()
@@ -2873,7 +2873,7 @@ Public Class Main_Form
             End If
         Next
         PB_value = -1
-        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Private Sub 全选ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 全选ToolStripMenuItem.Click
@@ -2992,9 +2992,9 @@ Public Class Main_Form
                 Next
             End Using
             PB_value = 0
-            MsgBox("Please check the 'summary.csv' in the output folder.", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please check the 'summary.csv' in the output folder.", MsgBoxStyle.Information, "Information")
         Catch ex As Exception
-            MsgBox(ex.ToString, MsgBoxStyle.Information, "Infomation")
+            MsgBox(ex.ToString, MsgBoxStyle.Information, "Information")
             PB_value = 0
 
         End Try
@@ -3069,7 +3069,7 @@ Public Class Main_Form
                 th1.Start()
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
 
     End Sub
@@ -3106,11 +3106,11 @@ Public Class Main_Form
             form_config_basic.GroupBox2.Enabled = False
             form_config_basic.GroupBox3.Enabled = False
             form_config_basic.GroupBox4.Enabled = True
-            form_config_basic.NumericUpDown1.Value = 31
+            form_config_basic.NumericUpDown1.Value = If(form_config_calculate.kf = 0, 31, form_config_calculate.kf)
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub menu_batch_re_assemble()
@@ -3131,7 +3131,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf batch_re_assemble)
             th1.Start()
         Else
-            MsgBox("Please select at least one reference And one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference And one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub batch_re_assemble()
@@ -3198,7 +3198,7 @@ Public Class Main_Form
         PB_value = -1
 
 
-        MsgBox("Analysis completed! Please check filtered folder in output.", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed! Please check filtered folder in output.", MsgBoxStyle.Information, "Information")
     End Sub
     Public Sub SplitFastqFile(inputFilePath As String)
         Dim directoryPath As String = Path.GetDirectoryName(inputFilePath)
@@ -3269,7 +3269,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf do_orthofinder)
             th1.Start(genome_dir)
         Else
-            MsgBox("Please select at least one genome data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one genome data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3287,7 +3287,7 @@ Public Class Main_Form
             MenuClicked = "muti_iteration"
             form_config_basic.Show()
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub menu_muti_iteration()
@@ -3313,7 +3313,7 @@ Public Class Main_Form
             Dim th1 As New Threading.Thread(AddressOf do_iteration)
             th1.Start(CInt(iterations_times))
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3387,7 +3387,7 @@ Public Class Main_Form
             Else
                 combine_file_horizontal(ref_dir, ".fasta", opendialog.FileName, "-")
             End If
-            MsgBox("Analysis complete!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Analysis complete!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3411,7 +3411,7 @@ Public Class Main_Form
                 End If
             Next
             combine_file_vertical(ref_dir, ".fasta", opendialog.FileName)
-            MsgBox("Analysis complete!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Analysis complete!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3444,10 +3444,10 @@ Public Class Main_Form
                 Dim th1 As New Thread(AddressOf do_align)
                 th1.Start()
             Else
-                MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3477,10 +3477,10 @@ Public Class Main_Form
                 End If
 
             Else
-                MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3490,7 +3490,7 @@ Public Class Main_Form
             MenuClicked = "trim_with_ref"
             form_config_trim.Show()
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub menu_align_blast()
@@ -3535,7 +3535,7 @@ Public Class Main_Form
                 Process.Start("explorer.exe", """" + TextBox1.Text + "\blast" + """")
             End If
         Else
-            MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -3589,7 +3589,7 @@ Public Class Main_Form
                                                               End Try
                                                           End Sub)
         PB_value = -1
-        MsgBox("Analysis Complete! All results has been trimed.", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis Complete! All results has been trimed.", MsgBoxStyle.Information, "Information")
     End Sub
 
 
@@ -3608,7 +3608,7 @@ Public Class Main_Form
         End If
 
 
-        'MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Infomation")
+        'MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Information")
         DataGridView1.RefreshEdit()
     End Sub
 
@@ -3703,13 +3703,13 @@ Public Class Main_Form
 
                     timer_id = 10
                 Else
-                    MsgBox("Analysis Complete! Please check the 'Concatenation.tree' in output folder.", MsgBoxStyle.Information, "Infomation")
+                    MsgBox("Analysis Complete! Please check the 'Concatenation.tree' in output folder.", MsgBoxStyle.Information, "Information")
                 End If
             Else
-                MsgBox("Analysis Failed!", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Analysis Failed!", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("You should Combine the results first!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("You should Combine the results first!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub Make_Coalescent_Tree(ByVal fasta_folder As String)
@@ -3782,10 +3782,10 @@ Public Class Main_Form
                 form_config_dated.tree_path = Path.Combine(form_main.TextBox1.Text, "Coalescent.tree")
                 timer_id = 10
             Else
-                MsgBox("Analysis Complete! Please check the 'Coalescent.tree' and 'combined_genes.trees' in output folder.", MsgBoxStyle.Information, "Infomation")
+                MsgBox("Analysis Complete! Please check the 'Coalescent.tree' and 'combined_genes.trees' in output folder.", MsgBoxStyle.Information, "Information")
             End If
         Else
-            MsgBox("You should Combine the results first!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("You should Combine the results first!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
 
@@ -4041,7 +4041,7 @@ Public Class Main_Form
                 End If
             Next
         End If
-        'MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Infomation")
+        'MsgBox(sel_count.ToString + " were selected!", MsgBoxStyle.Information, "Information")
         DataGridView1.RefreshEdit()
     End Sub
 
@@ -4080,11 +4080,11 @@ Public Class Main_Form
             form_config_basic.GroupBox2.Enabled = True
             form_config_basic.GroupBox3.Enabled = True
             form_config_basic.GroupBox4.Enabled = False
-            form_config_basic.NumericUpDown1.Value = 31
+            form_config_basic.NumericUpDown1.Value = If(form_config_calculate.kf = 0, 31, form_config_calculate.kf)
             form_config_basic.Show()
 
         Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Private Sub menu_batch_filter()
@@ -4105,7 +4105,7 @@ Public Class Main_Form
             Dim th1 As New Thread(AddressOf batch_filter)
             th1.Start()
         Else
-            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Infomation")
+            MsgBox("Please select at least one reference and one sequencing data!", MsgBoxStyle.Information, "Information")
         End If
     End Sub
     Public Sub batch_filter()
@@ -4353,7 +4353,7 @@ Public Class Main_Form
                                                                  End Try
                                                              End Sub)
         PB_value = -1
-        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Infomation")
+        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Public Sub find_best_ref(ByVal options() As String)
@@ -4657,5 +4657,9 @@ Public Class Main_Form
                          End Sub)
 
         PB_value = 0
+    End Sub
+
+    Private Sub 计算参数ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 计算参数ToolStripMenuItem.Click
+        form_config_calculate.Show()
     End Sub
 End Class

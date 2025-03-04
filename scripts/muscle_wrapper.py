@@ -15,14 +15,12 @@ def muscle5_wrapper(input_file, output_file):
     muscle5_path = ".\muscle5.1.win64.exe"
     if os.path.exists(r'..\analysis\muscle5.1.win64.exe'):
         muscle5_path = r"..\analysis\muscle5.1.win64.exe"
-    muscle5_command = [muscle5_path, "-align", f'"{input_file}"', f'-output "{output_file}"']
+    muscle5_command = [muscle5_path, "-align", input_file, "-output", output_file, '-nt', '-threads', '1']
     try:
-        subprocess.run(" ".join(muscle5_command), shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(muscle5_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         reorder_sequences(input_file, output_file)
-        return 0
     except Exception as e:
         print(f"An error occurred: {e}")
-        return 1
 
 def reorder_sequences(org_fas_file, aln_fas_file):
     # 读取 aln.fas 文件中的序列和名称
@@ -61,11 +59,7 @@ def main():
     parser.add_argument("-i", "--input", required=False, help="Path to the input file", default=r'E:\TPS2.fasta')
     parser.add_argument("-o", "--output", required=False, help="Path to the output file", default=r'E:\aln.fasta')
     args = parser.parse_args()
-    return_code = muscle5_wrapper(args.input, args.output)
-    if return_code == 0:
-        print("Muscle 5 completed successfully.")
-    else:
-        print("Muscle 5 encountered an error.")
+    muscle5_wrapper(args.input, args.output)
 
 if __name__ == "__main__":
     main()

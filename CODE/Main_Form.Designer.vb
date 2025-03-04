@@ -129,6 +129,8 @@ Partial Class Main_Form
         SplitContainer1 = New SplitContainer()
         ProgressBar1 = New ProgressBar()
         RichTextBox1 = New RichTextBox()
+        计算参数ToolStripMenuItem = New ToolStripMenuItem()
+        ToolStripSeparator2 = New ToolStripSeparator()
         MenuStrip1.SuspendLayout()
         CType(DataGridView1, ComponentModel.ISupportInitialize).BeginInit()
         ContextMenuStrip2.SuspendLayout()
@@ -496,7 +498,7 @@ Partial Class Main_Form
         ' 
         ' 三方工具ToolStripMenuItem
         ' 
-        三方工具ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {拆分fq文件ToolStripMenuItem, 序列比对ToolStripMenuItem1, 序列切片ToolStripMenuItem, 合并参考序列ToolStripMenuItem, ToolStripSeparator17, 参考序列建树ToolStripMenuItem, 修订树时间ToolStripMenuItem, 整理树格式ToolStripMenuItem, ToolStripSeparator15, EnglishToolStripMenuItem, DebugToolStripMenuItem})
+        三方工具ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {计算参数ToolStripMenuItem, ToolStripSeparator2, 拆分fq文件ToolStripMenuItem, 序列比对ToolStripMenuItem1, 序列切片ToolStripMenuItem, 合并参考序列ToolStripMenuItem, ToolStripSeparator17, 参考序列建树ToolStripMenuItem, 修订树时间ToolStripMenuItem, 整理树格式ToolStripMenuItem, ToolStripSeparator15, EnglishToolStripMenuItem, DebugToolStripMenuItem})
         三方工具ToolStripMenuItem.Name = "三方工具ToolStripMenuItem"
         三方工具ToolStripMenuItem.Size = New Size(44, 21)
         三方工具ToolStripMenuItem.Text = "工具"
@@ -504,14 +506,14 @@ Partial Class Main_Form
         ' 拆分fq文件ToolStripMenuItem
         ' 
         拆分fq文件ToolStripMenuItem.Name = "拆分fq文件ToolStripMenuItem"
-        拆分fq文件ToolStripMenuItem.Size = New Size(148, 22)
+        拆分fq文件ToolStripMenuItem.Size = New Size(180, 22)
         拆分fq文件ToolStripMenuItem.Text = "拆分过滤文件"
         ' 
         ' 序列比对ToolStripMenuItem1
         ' 
         序列比对ToolStripMenuItem1.DropDownItems.AddRange(New ToolStripItem() {比对ToolStripMenuItem, 切齐ToolStripMenuItem})
         序列比对ToolStripMenuItem1.Name = "序列比对ToolStripMenuItem1"
-        序列比对ToolStripMenuItem1.Size = New Size(148, 22)
+        序列比对ToolStripMenuItem1.Size = New Size(180, 22)
         序列比对ToolStripMenuItem1.Text = "结果加入参考"
         ' 
         ' 比对ToolStripMenuItem
@@ -529,66 +531,66 @@ Partial Class Main_Form
         ' 序列切片ToolStripMenuItem
         ' 
         序列切片ToolStripMenuItem.Name = "序列切片ToolStripMenuItem"
-        序列切片ToolStripMenuItem.Size = New Size(148, 22)
+        序列切片ToolStripMenuItem.Size = New Size(180, 22)
         序列切片ToolStripMenuItem.Text = "参考序列切片"
         ' 
         ' 合并参考序列ToolStripMenuItem
         ' 
         合并参考序列ToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {按物种合并ToolStripMenuItem, 合并文件ToolStripMenuItem})
         合并参考序列ToolStripMenuItem.Name = "合并参考序列ToolStripMenuItem"
-        合并参考序列ToolStripMenuItem.Size = New Size(148, 22)
+        合并参考序列ToolStripMenuItem.Size = New Size(180, 22)
         合并参考序列ToolStripMenuItem.Text = "合并参考序列"
         ' 
         ' 按物种合并ToolStripMenuItem
         ' 
         按物种合并ToolStripMenuItem.Name = "按物种合并ToolStripMenuItem"
-        按物种合并ToolStripMenuItem.Size = New Size(148, 22)
+        按物种合并ToolStripMenuItem.Size = New Size(180, 22)
         按物种合并ToolStripMenuItem.Text = "按序列名合并"
         ' 
         ' 合并文件ToolStripMenuItem
         ' 
         合并文件ToolStripMenuItem.Name = "合并文件ToolStripMenuItem"
-        合并文件ToolStripMenuItem.Size = New Size(148, 22)
+        合并文件ToolStripMenuItem.Size = New Size(180, 22)
         合并文件ToolStripMenuItem.Text = "直接合并文件"
         ' 
         ' ToolStripSeparator17
         ' 
         ToolStripSeparator17.Name = "ToolStripSeparator17"
-        ToolStripSeparator17.Size = New Size(145, 6)
+        ToolStripSeparator17.Size = New Size(177, 6)
         ' 
         ' 参考序列建树ToolStripMenuItem
         ' 
         参考序列建树ToolStripMenuItem.Name = "参考序列建树ToolStripMenuItem"
-        参考序列建树ToolStripMenuItem.Size = New Size(148, 22)
+        参考序列建树ToolStripMenuItem.Size = New Size(180, 22)
         参考序列建树ToolStripMenuItem.Text = "参考序列建树"
         ' 
         ' 修订树时间ToolStripMenuItem
         ' 
         修订树时间ToolStripMenuItem.Name = "修订树时间ToolStripMenuItem"
-        修订树时间ToolStripMenuItem.Size = New Size(148, 22)
+        修订树时间ToolStripMenuItem.Size = New Size(180, 22)
         修订树时间ToolStripMenuItem.Text = "修订树时间"
         ' 
         ' 整理树格式ToolStripMenuItem
         ' 
         整理树格式ToolStripMenuItem.Name = "整理树格式ToolStripMenuItem"
-        整理树格式ToolStripMenuItem.Size = New Size(148, 22)
+        整理树格式ToolStripMenuItem.Size = New Size(180, 22)
         整理树格式ToolStripMenuItem.Text = "整理树格式"
         ' 
         ' ToolStripSeparator15
         ' 
         ToolStripSeparator15.Name = "ToolStripSeparator15"
-        ToolStripSeparator15.Size = New Size(145, 6)
+        ToolStripSeparator15.Size = New Size(177, 6)
         ' 
         ' EnglishToolStripMenuItem
         ' 
         EnglishToolStripMenuItem.Name = "EnglishToolStripMenuItem"
-        EnglishToolStripMenuItem.Size = New Size(148, 22)
+        EnglishToolStripMenuItem.Size = New Size(180, 22)
         EnglishToolStripMenuItem.Text = "English"
         ' 
         ' DebugToolStripMenuItem
         ' 
         DebugToolStripMenuItem.Name = "DebugToolStripMenuItem"
-        DebugToolStripMenuItem.Size = New Size(148, 22)
+        DebugToolStripMenuItem.Size = New Size(180, 22)
         DebugToolStripMenuItem.Text = "Debug"
         ' 
         ' DataGridView1
@@ -832,6 +834,17 @@ Partial Class Main_Form
         RichTextBox1.TabIndex = 0
         RichTextBox1.Text = "双击此处查看最近的日志" & vbLf & vbLf
         ' 
+        ' 计算参数ToolStripMenuItem
+        ' 
+        计算参数ToolStripMenuItem.Name = "计算参数ToolStripMenuItem"
+        计算参数ToolStripMenuItem.Size = New Size(180, 22)
+        计算参数ToolStripMenuItem.Text = "计算参数"
+        ' 
+        ' ToolStripSeparator2
+        ' 
+        ToolStripSeparator2.Name = "ToolStripSeparator2"
+        ToolStripSeparator2.Size = New Size(177, 6)
+        ' 
         ' Main_Form
         ' 
         AutoScaleDimensions = New SizeF(7F, 17F)
@@ -975,4 +988,6 @@ Partial Class Main_Form
     Friend WithEvents 保存项目文件ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents 获取最佳参考序列ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents 获取最佳参考序列ToolStripMenuItem1 As ToolStripMenuItem
+    Friend WithEvents 计算参数ToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ToolStripSeparator2 As ToolStripSeparator
 End Class

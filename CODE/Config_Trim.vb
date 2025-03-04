@@ -58,7 +58,9 @@ Trim Terminal: 只使用参考序列切齐两端。"
     End Sub
     Private Sub Config_Trim_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ComboBox1.SelectedIndex = 0
-        ComboBox2.SelectedIndex = 2
+        If ComboBox2.SelectedIndex < 0 Then
+            ComboBox2.SelectedIndex = 2
+        End If
         If language = "EN" Then
             TextBox1.Text = "Refine the results to align with the reference sequences. It is essential to modify parameters in accordance with the specific types of sequencing data and reference sequences utilized. The refined results will be stored in the 'blast' folder located in the output directory."
         Else

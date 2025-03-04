@@ -31,6 +31,7 @@ Module Module_Var
     Public form_config_mcmc As New Config_MCMC
     Public form_config_combine As New Config_Combine
     Public form_config_consensus As New Config_Consensus
+    Public form_config_calculate As New Config_Calculate
     Public form_main As New Main_Form
     Public PB_value As Integer = 0
     Public info_text As String = ""
