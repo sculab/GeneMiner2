@@ -171,11 +171,11 @@ Partial Class Config_Calculate
         ' 
         Label3.Anchor = AnchorStyles.Right
         Label3.AutoSize = True
-        Label3.Location = New Point(185, 65)
+        Label3.Location = New Point(209, 65)
         Label3.Name = "Label3"
-        Label3.Size = New Size(80, 17)
+        Label3.Size = New Size(56, 17)
         Label3.TabIndex = 13
-        Label3.Text = "参考序列来源"
+        Label3.Text = "参考类型"
         Label3.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' ComboBox_Ref
@@ -183,7 +183,7 @@ Partial Class Config_Calculate
         ComboBox_Ref.Anchor = AnchorStyles.Left
         ComboBox_Ref.DropDownStyle = ComboBoxStyle.DropDownList
         ComboBox_Ref.FormattingEnabled = True
-        ComboBox_Ref.Items.AddRange(New Object() {"基因组", "转录组"})
+        ComboBox_Ref.Items.AddRange(New Object() {"Genome", "Transcriptome"})
         ComboBox_Ref.Location = New Point(271, 61)
         ComboBox_Ref.Name = "ComboBox_Ref"
         ComboBox_Ref.Size = New Size(90, 25)
@@ -193,11 +193,11 @@ Partial Class Config_Calculate
         ' 
         Label4.Anchor = AnchorStyles.Right
         Label4.AutoSize = True
-        Label4.Location = New Point(3, 65)
+        Label4.Location = New Point(27, 65)
         Label4.Name = "Label4"
-        Label4.Size = New Size(80, 17)
+        Label4.Size = New Size(56, 17)
         Label4.TabIndex = 15
-        Label4.Text = "测序数据来源"
+        Label4.Text = "样本类型"
         Label4.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' ComboBox_Seq
@@ -205,7 +205,7 @@ Partial Class Config_Calculate
         ComboBox_Seq.Anchor = AnchorStyles.Left
         ComboBox_Seq.DropDownStyle = ComboBoxStyle.DropDownList
         ComboBox_Seq.FormattingEnabled = True
-        ComboBox_Seq.Items.AddRange(New Object() {"基因组", "转录组"})
+        ComboBox_Seq.Items.AddRange(New Object() {"Genome", "Transcriptome"})
         ComboBox_Seq.Location = New Point(89, 61)
         ComboBox_Seq.Name = "ComboBox_Seq"
         ComboBox_Seq.Size = New Size(90, 25)

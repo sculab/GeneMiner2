@@ -51,12 +51,12 @@
         End If
 
         If ComboBox_Ref.SelectedIndex < 0 Then
-            MsgBox("Please select the source of reference sequences.", MsgBoxStyle.Exclamation, "Invalid value")
+            MsgBox("Please select a reference type.", MsgBoxStyle.Exclamation, "Invalid value")
             Return
         End If
 
         If ComboBox_Seq.SelectedIndex < 0 Then
-            MsgBox("Please select the source of sequencing data.", MsgBoxStyle.Exclamation, "Invalid value")
+            MsgBox("Please select a sample type.", MsgBoxStyle.Exclamation, "Invalid value")
             Return
         End If
 
