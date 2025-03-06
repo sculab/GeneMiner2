@@ -275,9 +275,9 @@ Partial Class Config_Basic
         CheckBox1.CheckState = CheckState.Checked
         CheckBox1.Location = New Point(8, 20)
         CheckBox1.Name = "CheckBox1"
-        CheckBox1.Size = New Size(139, 21)
+        CheckBox1.Size = New Size(119, 21)
         CheckBox1.TabIndex = 12
-        CheckBox1.Text = "自动估算拼接K值(慢)"
+        CheckBox1.Text = "自动估算拼接K值"
         CheckBox1.UseVisualStyleBackColor = True
         ' 
         ' NumericUpDown7

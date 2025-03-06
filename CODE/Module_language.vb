@@ -406,7 +406,7 @@ Module Module_Language
         form_config_basic.Label5.Text = "固定拼接K值："
         form_config_basic.Label7.Text = "错误阈值："
         form_config_basic.Label6.Text = "->"
-        form_config_basic.CheckBox1.Text = "自动估算拼接K值(慢)"
+        form_config_basic.CheckBox1.Text = "自动估算拼接K值"
         form_config_basic.GroupBox3.Text = "进一步过滤"
         form_config_basic.Label8.Text = "文件大小限制："
         form_config_basic.Label9.Text = "搜索深度："
