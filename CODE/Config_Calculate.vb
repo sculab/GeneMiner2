@@ -109,12 +109,14 @@
         ElseIf read_depth > 15 Then
             error_limit = 2
             soft_boundary = "Auto"
-        ElseIf read_depth > 3 Then
+        Else
             error_limit = 1
             soft_boundary = "Unlimited"
-        Else
-            error_limit = 0
-            soft_boundary = "Unlimited"
+
+            If read_depth <= 5 Then
+                kf -= 2 * (6 - read_depth)
+                kf = Math.Max(kf, 17)
+            End If
         End If
 
         TextBox_Kf.Text = kf.ToString
