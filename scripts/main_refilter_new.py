@@ -97,25 +97,34 @@ def get_ref_dict(ref_dir):
 
     return ref_dict
 
-def build_kmer_dict(ref_path, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
+def load_ref_info(ref_path, kmer_size):
+    with open(ref_path, 'r') as f:
+        ref_set = {seq for _, seq in SimpleFastaParser(f) if len(seq) >= kmer_size}
 
+    if not ref_set:
+        return ref_set, 0
+
+    length_list = [len(seq) for seq in ref_set]
+    effective_len = int(max(length_list) * (math.log10(len(length_list)) + 1))
+    return ref_set, effective_len
+
+def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
     # Values: 0=unused; 1=forward; 2=reverse; 3=both
     kmer_dict = collections.defaultdict(lambda: 0)
     mask_bin  = (1 << (kmer_size << 1)) - 1
 
-    with open(ref_path, 'r') as f:
-        for _, seq in SimpleFastaParser(f):
-            seq       = ''.join(filter(str.isalpha, seq)).upper()
-            seq_str   = seq.translate(trans)
-            seq_str_r = seq.translate(rtrans)[::-1]
-            seq_int   = int(seq_str, 4)
-            seq_int_r = int(seq_str_r, 4)
+    for seq in ref_set:
+        seq       = ''.join(filter(str.isalpha, seq)).upper()
+        seq_str   = seq.translate(trans)
+        seq_str_r = seq.translate(rtrans)[::-1]
+        seq_int   = int(seq_str, 4)
+        seq_int_r = int(seq_str_r, 4)
 
-            for _ in range(0, len(seq_str) - kmer_size + 1):
-                kmer_dict[seq_int   & mask_bin] |= 1
-                kmer_dict[seq_int_r & mask_bin] |= 2
-                seq_int   >>= 2
-                seq_int_r >>= 2
+        for _ in range(0, len(seq_str) - kmer_size + 1):
+            kmer_dict[seq_int   & mask_bin] |= 1
+            kmer_dict[seq_int_r & mask_bin] |= 2
+            seq_int   >>= 2
+            seq_int_r >>= 2
 
     return kmer_dict
 
@@ -175,7 +184,7 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
 
     return hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
 
-def run_length_filter(name, out_dir, ref_path, ref_length, read_info, file_type, kmer_size, keep_temporaries):
+def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
     # 1e-5
     THRESHOLD = 3.74
 
@@ -188,7 +197,7 @@ def run_length_filter(name, out_dir, ref_path, ref_length, read_info, file_type,
     if os.name == 'nt' and not keep_temporaries:
         open_flags |= os.O_SHORT_LIVED
 
-    kmer_dict = build_kmer_dict(ref_path, kmer_size)
+    kmer_dict = build_kmer_dict(ref_set, kmer_size)
 
     with contextlib.ExitStack() as stack:
         read_iters  = [read_iter(stack.enter_context(open(path, 'r'))) for path in read_info]
@@ -261,7 +270,7 @@ def run_length_filter(name, out_dir, ref_path, ref_length, read_info, file_type,
 
     return output_path
 
-def kmer_filter(name, out_dir, ref_path, log_path, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
+def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
     output_ext  = FILE_EXTENSION[file_type]
     output_path = os.path.join(out_dir, name + output_ext)
     format_func = FORMAT_FUNCTIONS[file_type]
@@ -292,7 +301,7 @@ def kmer_filter(name, out_dir, ref_path, log_path, ref_length, temp_path, file_t
 
         print_log(log_path, f'K-mer size for {name}: {kmer_size}')
 
-        kmer_dict = build_kmer_dict(ref_path, kmer_size)
+        kmer_dict = build_kmer_dict(ref_set, kmer_size)
 
         with open(temp_path, 'r') as f:
             total_length = sum(len(tp[1])
@@ -313,7 +322,7 @@ def kmer_filter(name, out_dir, ref_path, log_path, ref_length, temp_path, file_t
     if kmer_size == initial_kmer_size and not too_large:
         return shutil.copyfile(temp_path, output_path)
 
-    kmer_dict = build_kmer_dict(ref_path, kmer_size)
+    kmer_dict = build_kmer_dict(ref_set, kmer_size)
     interval = max(int(total_length / 1e6 / max_size), 2)
     i = 0
 
@@ -327,12 +336,6 @@ def kmer_filter(name, out_dir, ref_path, log_path, ref_length, temp_path, file_t
 
                 fo.write(format_func(tp))
 
-def calc_effective_len(ref_path):
-    with open(ref_path, 'r') as f:
-        length_list = [len(seq) for _, seq in SimpleFastaParser(f)]
-
-    return max(length_list) * ((math.log1p(len(length_list)) + 1) // 2)
-
 def filter_gene(task):
     file_ext = os.path.splitext(task.read_path[0])[1]
 
@@ -342,15 +345,19 @@ def filter_gene(task):
 
     print_log(task.log_path, f'Filtering gene {task.name}.')
 
-    effective_len = calc_effective_len(task.ref_path)
     file_type = FILE_TYPES[file_ext]
+    ref_set, effective_len = load_ref_info(task.ref_path, task.kmer_size)
 
-    tmp_path = run_length_filter(task.name, task.out_dir, task.ref_path,
-                                 effective_len, task.read_path, file_type,
-                                 (task.kmer_size - 8) | 1, task.keep_temporaries)
+    if not effective_len:
+        print_log(task.log_path, f'Gene {task.name} has no valid reference.')
+        return
 
-    kmer_filter(task.name, task.out_dir, task.ref_path, task.log_path,
-                effective_len, tmp_path, file_type,
+    tmp_path = run_length_filter(task.name, task.out_dir, ref_set, effective_len,
+                                 task.read_path, file_type, (task.kmer_size - 8) | 1,
+                                 task.keep_temporaries)
+
+    kmer_filter(task.name, task.out_dir, task.log_path,
+                ref_set, effective_len, tmp_path, file_type,
                 task.kmer_size, task.min_depth, task.max_depth,
                 task.max_size, task.keep_temporaries)
 

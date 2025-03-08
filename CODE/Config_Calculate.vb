@@ -114,7 +114,7 @@
             soft_boundary = "Unlimited"
 
             If read_depth <= 5 Then
-                kf -= 2 * (6 - read_depth)
+                kf -= 2 * (5 - read_depth)
                 kf = Math.Max(kf, 17)
             End If
         End If
