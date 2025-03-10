@@ -97,14 +97,14 @@ def get_ref_dict(ref_dir):
 
     return ref_dict
 
-def load_ref_info(ref_path, kmer_size):
+def load_reference(ref_path, kmer_size):
     with open(ref_path, 'r') as f:
         ref_set = {seq for _, seq in SimpleFastaParser(f) if len(seq) >= kmer_size}
 
     if not ref_set:
         return ref_set, 0
 
-    length_list = [len(seq) for seq in ref_set]
+    length_list = list(map(len, ref_set))
     effective_len = int(max(length_list) * (math.log10(len(length_list)) + 1))
     return ref_set, effective_len
 
@@ -128,22 +128,6 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
 
     return kmer_dict
 
-def filter_read(read, kmer_dict, kmer_size, trans=FWD_TRANS):
-    if len(read) < kmer_size:
-        return False
-
-    mask_bin = (1 << (kmer_size << 1)) - 1
-    read_str = read.upper().translate(trans)
-    read_int = int(read_str, 4)
-
-    for j in range(0, len(read_str) - kmer_size + 1):
-        if (read_int & mask_bin) in kmer_dict:
-            return True
-
-        read_int >>= 2
-
-    return False
-
 def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     read_str = read.upper().translate(trans)
 
@@ -160,10 +144,8 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     hit_cnt  = [0] * 4
     run_cnt  = [0] * 4
 
-    for _ in range(0, len(read_str) - kmer_size + 1):
-        kmer = read_int & mask_bin
-        read_int >>= 2
-        orient = int(kmer in kmer_dict and kmer_dict[kmer])
+    for i in range(0, len(read_str) - kmer_size + 1):
+        orient = kmer_dict.get((read_int >> (2 * i)) & mask_bin, 0)
 
         if orient != curr_dir:
             run_cnt[curr_dir] += 1
@@ -240,7 +222,7 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                     orient[i] = 0
                     continue
 
-                # E[max{R_n}] has a rather small variance
+                # max{R_n} has a rather small variance
                 # For any run, the expected extension length is
                 # 1/2 * 0 + 1/4 * 1 + 1/8 * 2 + 1/16 * 3 + ... < 2
                 # Taking the first 5 terms
@@ -266,9 +248,22 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
             if len(orient) == 2 and 1 <= orient[0] <= 2 and orient[0] == orient[1]:
                 continue
 
-            output_file.writelines(format_func(t) for i, t in enumerate(linked_reads) if orient[i])
+            output_file.writelines(format_func(tp) for i, tp in enumerate(linked_reads) if orient[i])
 
     return output_path
+
+def filter_read(read, kmer_dict, kmer_size, trans=FWD_TRANS):
+    mask_bin = (1 << (kmer_size << 1)) - 1
+    read_str = read.upper().translate(trans)
+
+    if len(read_str) < kmer_size:
+        return False
+
+    read_int = int(read_str, 4)
+
+    return any(True
+               for i in range(0, len(read_str) - kmer_size + 1)
+               if ((read_int >> (2 * i)) & mask_bin) in kmer_dict)
 
 def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
     output_ext  = FILE_EXTENSION[file_type]
@@ -277,7 +272,7 @@ def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_ty
     read_iter   = READ_ITERATORS[file_type]
 
     with open(temp_path, 'r') as f:
-        total_length = sum(len(t[1]) for t in read_iter(f))
+        total_length = sum(len(tp[1]) for tp in read_iter(f))
 
     coverage  = total_length / ref_length
     too_deep  = coverage > max_depth
@@ -346,7 +341,7 @@ def filter_gene(task):
     print_log(task.log_path, f'Filtering gene {task.name}.')
 
     file_type = FILE_TYPES[file_ext]
-    ref_set, effective_len = load_ref_info(task.ref_path, task.kmer_size)
+    ref_set, effective_len = load_reference(task.ref_path, task.kmer_size)
 
     if not effective_len:
         print_log(task.log_path, f'Gene {task.name} has no valid reference.')
