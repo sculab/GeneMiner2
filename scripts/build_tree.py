@@ -37,25 +37,12 @@ def process_bootstrap_sample(input_file, bootstrap_output_dir, sequence_length, 
     fasttree_warpper(output_file,  os.path.join(bootstrap_output_dir, f"bootstrap_{i + 1}.tree"), model)
     os.remove(output_file)
 
-def fasttree_warpper(input_file, output_tree, model, boot):
-    cmd = f"..\\analysis\\FastTree.exe -out {output_tree} -{model} -boot {boot} -nt {input_file}"
-    print(cmd,"\n")
-    subprocess.run(cmd, check=True)
-
 def main(input_file, output_file, bootstrap_output_dir, model, outgroup, num_bootstraps, num_processes):
     records = list(SeqIO.parse(input_file, "fasta"))
     # os.makedirs(bootstrap_output_dir, exist_ok=True)
     sequence_length = len(records[0].seq)
     print("Building Tree...")
-    # if num_bootstraps>0:
-    #     fasttree_warpper(input_file,  os.path.join(bootstrap_output_dir, "input.tree"), model)
-    #     if os.path.exists(outgroup):
-    #         cmd = r'..\analysis\newick.exe -rootbyoutgroup "'+os.path.join(bootstrap_output_dir, "input.tree")+ '" -labels "'+outgroup+'" -output "' + os.path.join(bootstrap_output_dir, "input.tree") +'"'
-    #         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    #         cmd = r'..\analysis\newick.exe -ladderize "' + os.path.join(bootstrap_output_dir, "input.tree") +'" -output "' + os.path.join(bootstrap_output_dir, "input.tree") +'"'
-    #         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # else:
-    fasttree_warpper(input_file,  output_file, model, num_bootstraps)
+    subprocess.run([r"..\analysis\FastTree.exe", "-out", output_file, "-" + model, "-boot", str(num_bootstraps), "-nt", input_file], check=True)
     if os.path.exists(outgroup):
         cmd = r'..\analysis\newick.exe -rootbyoutgroup "'+output_file+ '" -labels "'+outgroup+'" -output "' + output_file +'"'
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
