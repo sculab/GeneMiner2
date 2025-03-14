@@ -108,7 +108,7 @@ Module Module_Language
         form_config_tree.RadioButton3.Text = "Original Data Matrix"
         form_config_tree.Button2.Text = "Cancel"
         form_config_tree.Button1.Text = "OK"
-        form_config_tree.CheckBox1.Text = "Build Rotted Tree"
+        form_config_tree.CheckBox1.Text = "Build Rooted Tree"
         form_config_tree.CheckBox2.Text = "Do Calibration"
         form_config_tree.Label2.Text = "Enter the names of the outgroup, one per line:"
 

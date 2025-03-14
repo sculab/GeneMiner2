@@ -117,6 +117,10 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
         seq       = ''.join(filter(str.isalpha, seq)).upper()
         seq_str   = seq.translate(trans)
         seq_str_r = seq.translate(rtrans)[::-1]
+
+        if not seq_str:
+            continue
+
         seq_int   = int(seq_str, 4)
         seq_int_r = int(seq_str_r, 4)
 
@@ -168,6 +172,7 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     return hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
 
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
+    LN2 = math.log(2)
     # 1e-5
     THRESHOLD = 3.74
 
@@ -213,13 +218,28 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                 rma = dpr / ttn + 1
                 va1 = dpr * (dpr - ttn) / (dpr * dpr * (dpr - 1))
                 va2 = dpf * (dpf - ttn) / (dpf * dpf * (dpf - 1))
-                zto = abs((fwd_r + rev_r - rma) / math.sqrt(va1))
+                zto = (fwd_r + rev_r - rma) / math.sqrt(va1)
                 zcf = abs((fwd_r - rev_r) / math.sqrt(va2 / 2))
 
-                # Number of runs does not differ significantly from random
-                # and the difference between the numbers of forward and reverse
-                # runs is insignificant
-                if zto < THRESHOLD and zcf < THRESHOLD:
+                # Note that we count the runs for all four states
+                # (mismatch, forward, reverse, ambiguous)
+                # but we calculate the expected number of runs with two states
+                # This is equivalent to spliting a run into two whenever
+                # a mismatch is encountered
+                # In principle, E[R] = 2*n1*n2/(n1+n2)+mutation_rate*(n1+n2)+1
+                # However, we choose to ignore the mutation term and tolerate
+                # a bounded multiplier on E[R], implying much higher stringency
+                # Nevertheless, we also check whether the difference between
+                # forward and reverse of runs, only rejecting a read if
+                # the profiles of forward and reverse hits are too similar
+                # This will generally reject inverted chimeras in MDA and
+                # medium-sized inversions which cause poor alignment quality
+                # while keeping very few false rejections
+
+                # The number of runs does not autocorrelate enough and
+                # the difference between the numbers of forward and
+                # reverse runs is insignificant
+                if zto > -THRESHOLD and zcf < THRESHOLD:
                     orient[i] = 0
                     continue
 
@@ -231,9 +251,20 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                 # Giving a confidence level at
                 # 1/2 + 1/4 + 1/8 + 1/16 + 1/32 = 0.96875 > 0.95
                 # See https://math.stackexchange.com/a/1414950
-                rle = max(math.log2(ttn) + 0.5772156649 / math.log(2) - 3 / 2, 0) + 0.8125
+                rle = max(math.log2(ttn) + 0.5772156649 / LN2 - 1.5, 0) + 0.8125
                 orient[i] = (fwd_l > rle) + (rev_l > rle) * 2
 
+                # If the longest forward and reverse runs are both much longer
+                # than the expected run-length, reject the read as long as
+                # the proportion of the longest forward and reverse runs of all
+                # k-mer matches are similar
+                # It is not that such reads are biologically special, just that
+                # we are unable to efficiently assemble such reads because they
+                # make spurious loops in the de Bruijn graph
+                # As a rule of thumb, we reject reads if the forward region and
+                # the reverse region share the same distribution, only because
+                # their chimeric appearance impedes reference-guided assembly,
+                # not because they are really chimeric sequences
                 if orient[i] == 3:
                     pfl = fwd_l / fwd_n
                     prl = rev_l / rev_n

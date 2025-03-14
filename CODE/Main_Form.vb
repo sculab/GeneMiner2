@@ -569,66 +569,56 @@ Public Class Main_Form
                 End If
             Next
 
-            If opendialog.FileNames.Length = 1 Then
-                'mydata_Dataset.Tables("Data Table").Clear()
-                data_loaded = False
-                Dim newrow(2) As String
-                seqsView.AllowNew = True
-                seqsView.AddNew()
-                newrow(0) = seqsView.Count
-                newrow(1) = opendialog.FileNames(0)
-                newrow(2) = opendialog.FileNames(0)
-                seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
+            Dim paired As Boolean = False
 
-                timer_id = 3
-            Else
-                Dim result As DialogResult = MessageBox.Show("Are these paired sequencing files?", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-                ' 根据用户的选择执行相应的操作
-                If result = DialogResult.Yes Then
-                    If opendialog.FileNames.Length Mod 2 = 0 Then
-                        data_loaded = False
-                        Dim sortedFileNames As String() = opendialog.FileNames.OrderBy(Function(path) path).ToArray()
-                        For i As Integer = 1 To opendialog.FileNames.Length / 2
-                            Dim newrow(2) As String
-                            seqsView.AllowNew = True
-                            seqsView.AddNew()
-                            newrow(0) = seqsView.Count
-                            newrow(1) = sortedFileNames((i - 1) * 2)
-                            newrow(2) = sortedFileNames((i - 1) * 2 + 1)
-                            seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
+            If opendialog.FileNames.Length > 1 Then
+                paired = (MessageBox.Show("Are these paired sequencing files?", "Confirm Operation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes)
+            End If
 
-                            Dim newrow_taxon(0) As String
-                            taxonView.AllowNew = True
-                            taxonView.AddNew()
-                            newrow_taxon(0) = i.ToString + "_" + make_out_name(Path.GetFileNameWithoutExtension(sortedFileNames((i - 1) * 2)), Path.GetFileNameWithoutExtension(sortedFileNames((i - 1) * 2 + 1)))
-                            taxonView.Item(taxonView.Count - 1).Row.ItemArray = newrow_taxon
-                        Next
-                        timer_id = 3
-                    Else
-                        MsgBox("The files are not in pairs (the number of files cannot be divided by 2 evenly).", MsgBoxStyle.Information, "Information")
-                    End If
-                Else
+            If paired Then
+                If opendialog.FileNames.Length Mod 2 = 0 Then
                     data_loaded = False
                     Dim sortedFileNames As String() = opendialog.FileNames.OrderBy(Function(path) path).ToArray()
-                    For i As Integer = 1 To opendialog.FileNames.Length
+                    For i As Integer = 1 To opendialog.FileNames.Length \ 2
                         Dim newrow(2) As String
                         seqsView.AllowNew = True
                         seqsView.AddNew()
                         newrow(0) = seqsView.Count
-                        newrow(1) = sortedFileNames(i - 1)
-                        newrow(2) = sortedFileNames(i - 1)
-                        seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
+                        newrow(1) = sortedFileNames((i - 1) * 2)
+                        newrow(2) = sortedFileNames((i - 1) * 2 + 1)
 
                         Dim newrow_taxon(0) As String
                         taxonView.AllowNew = True
                         taxonView.AddNew()
-                        newrow_taxon(0) = i.ToString + "_" + make_out_name(Path.GetFileNameWithoutExtension(sortedFileNames(i - 1)), Path.GetFileNameWithoutExtension(sortedFileNames(i - 1)))
-                        taxonView.Item(taxonView.Count - 1).Row.ItemArray = newrow_taxon
+                        newrow_taxon(0) = taxonView.Count.ToString + "_" + make_out_name(Path.GetFileNameWithoutExtension(sortedFileNames((i - 1) * 2)), Path.GetFileNameWithoutExtension(sortedFileNames((i - 1) * 2 + 1)))
 
+                        seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
+                        taxonView.Item(taxonView.Count - 1).Row.ItemArray = newrow_taxon
                     Next
                     timer_id = 3
+                Else
+                    MsgBox("The files are not in pairs (the number of files cannot be divided by 2 evenly).", MsgBoxStyle.Information, "Information")
                 End If
+            Else
+                data_loaded = False
+                Dim sortedFileNames As String() = opendialog.FileNames.OrderBy(Function(path) path).ToArray()
+                For i As Integer = 1 To opendialog.FileNames.Length
+                    Dim newrow(2) As String
+                    seqsView.AllowNew = True
+                    seqsView.AddNew()
+                    newrow(0) = seqsView.Count
+                    newrow(1) = sortedFileNames(i - 1)
+                    newrow(2) = sortedFileNames(i - 1)
 
+                    Dim newrow_taxon(0) As String
+                    taxonView.AllowNew = True
+                    taxonView.AddNew()
+                    newrow_taxon(0) = taxonView.Count.ToString + "_" + make_out_name(Path.GetFileNameWithoutExtension(sortedFileNames(i - 1)), Path.GetFileNameWithoutExtension(sortedFileNames(i - 1)))
+
+                    seqsView.Item(seqsView.Count - 1).Row.ItemArray = newrow
+                    taxonView.Item(taxonView.Count - 1).Row.ItemArray = newrow_taxon
+                Next
+                timer_id = 3
             End If
         End If
     End Sub

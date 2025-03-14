@@ -36,7 +36,11 @@ def Seq_To_Int(dna_str, trans=FWD_TRANS, rtrans=REV_TRANS):
     """
     dna_fw_str = dna_str.translate(trans)
     dna_rc_str = dna_str.translate(rtrans)[::-1]
-    return (int(dna_fw_str, 4), int(dna_rc_str, 4)), len(dna_str)
+
+    if not dna_fw_str:
+        return (), 0
+
+    return (int(dna_fw_str, 4), int(dna_rc_str, 4)), len(dna_fw_str)
 
 def Int_To_Seq(seq_bin, seq_length, seq_dict=BIN_DICT):
     """
@@ -90,18 +94,15 @@ def Make_Kmer_Dict(_kmer_dict, file_path, kmer_size):
         file_id = 1 << 35  # 设置当前文件的符号位
 
         for _, seq in SimpleFastaParser(f):
-            refseq = ''.join(filter(str.isalpha, seq)).upper()  # 只保留字母
-
-            if not refseq:
-                continue
-
-            intseqs, ref_len = Seq_To_Int(refseq)  # 序列转整数，获取长度
+            # 序列转整数，获取长度
+            intseqs, ref_len = Seq_To_Int(''.join(filter(str.isalpha, seq)).upper())
+            ref_kmer_count = ref_len - kmer_size + 1
 
             for x, y in enumerate(intseqs):
                 # 初始化符号位和文件位，反向互补序列的31位符号位为1
                 SIGN_BIN = (1 << 30) + (1 << 10) + file_id if x else (1 << 10) + file_id
 
-                for j in range(0, ref_len-kmer_size+1):
+                for j in range(0, ref_kmer_count):
                     temp_int = SIGN_BIN  # 初始化文件位和深度
                     kmer_int = y >> (j << 1) & MASK_BIN  # 获取kmer的整数形式
 
@@ -110,7 +111,7 @@ def Make_Kmer_Dict(_kmer_dict, file_path, kmer_size):
                         temp_int += DEPTH_BIN  # 深度加1，深度大于2**20会溢出,不太可能这么深的kmer
                         temp_int |= file_id  # 赋值文件位
                     else:
-                        temp_int += int((j + 1) / len(refseq) * 1000)
+                        temp_int += int((j + 1) / ref_kmer_count * 1000)
 
                     _kmer_dict[kmer_int] = temp_int
 
@@ -405,6 +406,10 @@ def Calculate_Kmer_Size(ref_path, reads, slice_len, k_min, k_max, error_limit):
     for seq in reads:
         seq_str   = seq.translate(trans)
         seq_str_r = seq.translate(rtrans)[::-1]
+
+        if not seq_str:
+            continue
+
         seq_int   = int(seq_str, 4)
         seq_int_r = int(seq_str_r, 4)
 
@@ -422,6 +427,10 @@ def Calculate_Kmer_Size(ref_path, reads, slice_len, k_min, k_max, error_limit):
         for _, seq in SimpleFastaParser(f):
             seq       = ''.join(filter(str.isalpha, seq)).upper()
             seq_str   = seq.translate(trans)
+
+            if not seq_str:
+                continue
+
             seq_int   = int(seq_str, 4)
 
             run_length_list = [0]
@@ -557,8 +566,8 @@ def process_key_value(args, key, ref_path, ref_count, iteration, soft_boundary, 
         v[0] = min(v[0], depth_upper)
 
     # 在每个参考序列中出现且只出现一次的kmer优先作为种子
-    # 长度位置在1~999之间，与参考序列方向一致v[2] == 0
-    seed_list = [(k, v[0], v[1], v[3]) for k, v in filtered_dict.items() if v[1] > 1 and v[1] < 999 and not v[2]]
+    # 长度位置在1~1000之间，与参考序列方向一致v[2] == 0
+    seed_list = [(k, v[0], v[1], v[3]) for k, v in filtered_dict.items() if v[1] > 1 and v[1] < 1000 and not v[2]]
     seed_list.sort(key=lambda x: (x[3], x[1]), reverse=True)
 
     # 必须有seed_list, 否则意味着跟参考序列差别过大
