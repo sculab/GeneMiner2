@@ -136,8 +136,9 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     read_str = read.upper().translate(trans)
 
     if len(read_str) < kmer_size:
-        return 0, 0, 0, 0, 0, 0, 0
+        return 0, 0, 0, 0, 0, 0, 0, 0
 
+    kmer_cnt = len(read_str) - kmer_size + 1
     mask_bin = (1 << (kmer_size << 1)) - 1
     read_int = int(read_str, 4)
 
@@ -148,7 +149,7 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     hit_cnt  = [0, 0, 0, 0]
     run_cnt  = [0, 0, 0, 0]
 
-    for i in range(0, len(read_str) - kmer_size + 1):
+    for i in range(0, kmer_cnt):
         orient = kmer_dict.get((read_int >> (2 * i)) & mask_bin, 0)
 
         if orient != curr_dir:
@@ -169,12 +170,13 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     if curr_len > best_len[curr_dir]:
         best_len[curr_dir] = curr_len
 
-    return hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
+    return kmer_cnt, hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
 
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
     LN2 = math.log(2)
-    # 1e-5
-    THRESHOLD = 3.74
+    THR_P95_2T = 1.96
+    THR_1e5_1T = 3.74
+    TOLERANCE = 1e-5
 
     output_ext  = FILE_EXTENSION[file_type]
     output_path = os.path.join(out_dir, 'large_files', name + output_ext)
@@ -194,7 +196,7 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
         for linked_reads in zip(*read_iters):
             orient = [0] * len(linked_reads)
 
-            for i, (fwd_n, rev_n, amb_n,
+            for i, (tot_n, fwd_n, rev_n, amb_n,
                     fwd_r, rev_r, fwd_l, rev_l) in enumerate(collect_runs_stats(tp[1], kmer_dict, kmer_size)
                                                              for tp in linked_reads):
 
@@ -212,36 +214,46 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                     orient[i] = 1
                     continue
 
-                dpr = 2 * fwd_n * rev_n
-                ttn = fwd_n + rev_n
-                dpf = ttn * ttn / 2
-                rma = dpr / ttn + 1
-                va1 = dpr * (dpr - ttn) / (dpr * dpr * (dpr - 1))
-                va2 = dpf * (dpf - ttn) / (dpf * dpf * (dpf - 1))
-                zto = (fwd_r + rev_r - rma) / math.sqrt(va1)
-                zcf = abs((fwd_r - rev_r) / math.sqrt(va2 / 2))
-
                 # Note that we count the runs for all four states
                 # (mismatch, forward, reverse, ambiguous)
                 # but we calculate the expected number of runs with two states
                 # This is equivalent to spliting a run into two whenever
                 # a mismatch is encountered
-                # In principle, E[R] = 2*n1*n2/(n1+n2)+mutation_rate*(n1+n2)+1
+                # In principle, E(R) = 2*n1*n2/(n1+n2)+mutation_rate*(n1+n2)+1
                 # However, we choose to ignore the mutation term and tolerate
-                # a bounded multiplier on E[R], implying much higher stringency
-                # Nevertheless, we also check whether the difference between
-                # forward and reverse of runs, only rejecting a read if
-                # the profiles of forward and reverse hits are too similar
-                # This will generally reject inverted chimeras in MDA and
-                # medium-sized inversions which cause poor alignment quality
-                # while keeping very few false rejections
+                # a bounded multiplier on E(R), implying much higher stringency
+                npr = 2 * fwd_n * rev_n
+                nht = fwd_n + rev_n
 
-                # The number of runs does not autocorrelate enough and
-                # the difference between the numbers of forward and
-                # reverse runs is insignificant
-                if zto > -THRESHOLD and zcf < THRESHOLD:
-                    orient[i] = 0
-                    continue
+                # E(R) in standard runs test
+                # 2*n1*n2/(n1+n2)+1
+                erc = npr / nht + 1
+
+                # Var(R) in standard runs test
+                # 2*n1*n2*(2*n1*n2-n1-n2)/(n1+n2)^2*(n1+n2-1)
+                vrn = npr * (npr - nht) / (nht * nht * (nht - 1))
+
+                # The direction of runs does not autocorrelate enough
+                # i.e. the runs are either random or somehow periodic
+                if (fwd_r + rev_r - erc) / math.sqrt(vrn) > -THR_1e5_1T:
+
+                    # Next, we assume some mismatches caused the difference of
+                    # the numbers of runs
+                    # Let pf be the error rate in the forward matching region
+                    # pf = (fwd_r - true_fwd_r) / (fwd_n / (1 - pf))
+                    if fwd_r > rev_r:
+                        ntt = fwd_n + fwd_r - rev_r
+                        rex = fwd_n / ntt
+                    else:
+                        ntt = fwd_n + rev_r - fwd_r
+                        rex = fwd_n / ntt
+
+                    # If we cannot infer that the direction with more runs has
+                    # a significant proportion of mismatches against reference
+                    # then call a chimera
+                    if math.isclose(rex, 1.0, abs_tol=TOLERANCE) or (1 - rex) / math.sqrt(rex * (1 - rex) / ntt) < THR_P95_2T:
+                        orient[i] = 0
+                        continue
 
                 # max{R_n} has a rather small variance
                 # For any run, the expected extension length is
@@ -251,30 +263,35 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                 # Giving a confidence level at
                 # 1/2 + 1/4 + 1/8 + 1/16 + 1/32 = 0.96875 > 0.95
                 # See https://math.stackexchange.com/a/1414950
-                rle = max(math.log2(ttn) + 0.5772156649 / LN2 - 1.5, 0) + 0.8125
-                orient[i] = (fwd_l > rle) + (rev_l > rle) * 2
+                erl = max(math.log2(tot_n) + 0.5772156649 / LN2 - 1.5, 0) + 0.8125
+                orient[i] = (fwd_l > erl) + (rev_l > erl) * 2
+
+                # The orientation is unambiguous
+                if orient[i] != 3:
+                    continue
 
                 # If the longest forward and reverse runs are both much longer
-                # than the expected run-length, reject the read as long as
-                # the proportion of the longest forward and reverse runs of all
-                # k-mer matches are similar
-                # It is not that such reads are biologically special, just that
-                # we are unable to efficiently assemble such reads because they
-                # make spurious loops in the de Bruijn graph
+                # than the expected run-length, assume all forward and reverse
+                # matches are contiguous and calculate an approximate mutation
+                # rate (https://math.stackexchange.com/a/5027331)
+                # If the mutation rates are too similar, we consider matches in
+                # both directions 'similarly good', thereby calling a chimera
                 # As a rule of thumb, we reject reads if the forward region and
-                # the reverse region share the same distribution, only because
-                # their chimeric appearance impedes reference-guided assembly,
-                # not because they are really chimeric sequences
-                if orient[i] == 3:
-                    pfl = fwd_l / fwd_n
-                    prl = rev_l / rev_n
-                    epr = (fwd_l + rev_l) / ttn
-                    ept = epr / 2
-                    vpr = math.sqrt(epr * (1 - epr) / ttn)
-                    vph = math.sqrt(ept * (1 - ept) / ttn)
+                # the reverse region share the same distribution, because their
+                # chimeric appearance impedes reference-guided assembly
+                lpf = math.exp(math.log(1 / (1 - fwd_l + fwd_n)) / fwd_l)
+                lpr = math.exp(math.log(1 / (1 - rev_l + rev_n)) / rev_l)
+                fpz = math.isclose(lpf, 0.0, abs_tol=TOLERANCE)
+                rpz = math.isclose(lpr, 0.0, abs_tol=TOLERANCE)
 
-                    if (epr != 1 and abs((pfl - prl) / vpr) < THRESHOLD) or abs((fwd_l - rev_l) / ttn / vph) < THRESHOLD:
-                        orient[i] = 0
+                if fpz:
+                    orient[i] = 2 - 2 * rpz
+                elif rpz:
+                    orient[i] = 1
+                elif math.isclose(lpf, 1.0, abs_tol=TOLERANCE) and math.isclose(lpr, 1.0, abs_tol=TOLERANCE):
+                    orient[i] = 0
+                elif abs(lpf - lpr) / math.sqrt(lpf ** 2 * (1 - lpf) / fwd_n + lpr ** 2 * (1 - lpr) / rev_n) < THR_P95_2T:
+                    orient[i] = 0
 
             # Discordant paired reads
             if len(orient) == 2 and 1 <= orient[0] <= 2 and orient[0] == orient[1]:
