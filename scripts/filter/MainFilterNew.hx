@@ -810,7 +810,7 @@ class KmerMap {
 
                 if (seqBuffer.length < rawSeqLen) {
                     if (rawSeqLen > maxBufferSize) {
-                        throw new EncodingError('Sequence is too long (buffer size is ${seqBuffer.length} bytes)');
+                        throw new EncodingError('Sequence is too long (buffer size is ${maxBufferSize} bytes)');
                     }
 
                     seqBuffer = Bytes.alloc(rawSeqLen);
@@ -1149,10 +1149,12 @@ class KmerMap {
         final longMap     = longKmerMap?.reference();
         final shortMap    = shortKmerMap?.reference();
         final usePatterns = expectedSkipLength >= 0.5 && skipLength > step;
+        final tailOffset  = seqEnd - kmerLength;
+
         var checkPattern  = usePatterns;
         var offset        = 0;
 
-        while (offset + kmerLength <= seqEnd) {
+        while (offset <= tailOffset) {
             var kmer = FastaHelper.fromBytes(seq, offset, kmerLength);
 
             if (checkPattern) {
@@ -1199,8 +1201,6 @@ class KmerMap {
             offset += step;
         }
 
-        var tailOffset = seqEnd - kmerLength;
-
         if (offset - step < tailOffset) {
             var kmer = FastaHelper.fromBytes(seq, tailOffset, kmerLength);
 
@@ -1232,6 +1232,7 @@ class KmerMap {
         final kmerOffset  = 64 - 2 * kmerLength;
         final kmerMask    = ~((1 << kmerOffset) - 1);
         final usePatterns = expectedSkipLength >= 0.5 && skipLength > step;
+        final tailOffset  = seqEnd - kmerLength;
 
         var checkPattern = usePatterns;
         var offset       = 0;
@@ -1260,7 +1261,7 @@ class KmerMap {
         var actualStep = step;
         offset = step;
 
-        while (offset + kmerLength <= seqEnd) {
+        while (offset <= tailOffset) {
             pattern  <<= actualStep;
             sk       <<= 2 * actualStep;
             skr     >>>= 2 * actualStep;
@@ -1303,7 +1304,6 @@ class KmerMap {
             offset += step;
         }
 
-        var tailOffset = seqEnd - kmerLength;
         offset -= actualStep;
 
         if (offset != tailOffset) {
@@ -2011,7 +2011,7 @@ class MainFilterNew {
 
                 if (seqBuffer.length < maxRawSeqLen) {
                     if (maxRawSeqLen > maxBufferSize) {
-                        throw new EncodingError('Read is too long (buffer size is ${seqBuffer.length} bytes)');
+                        throw new EncodingError('Read is too long (buffer size is ${maxBufferSize} bytes)');
                     }
 
                     seqBuffer = Bytes.alloc(maxRawSeqLen);
