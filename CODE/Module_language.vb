@@ -1,8 +1,4 @@
-﻿Imports System.Reflection.Emit
-Imports System.Runtime.ConstrainedExecution
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Button
-
-Module Module_Language
+﻿Module Module_Language
     Public Sub to_en()
         form_main.Text = "GeneMiner" + version + " " + TargetOS
         form_main.文件ToolStripMenuItem.Text = "File"

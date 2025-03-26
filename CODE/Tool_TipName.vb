@@ -1,6 +1,4 @@
-﻿Imports System.Threading
-Imports System.IO
-Imports System.ComponentModel.DataAnnotations
+﻿Imports System.IO
 Public Class Tool_TipName
     Public mytree_Dataset As New DataSet
     Public mytree_View As New DataView

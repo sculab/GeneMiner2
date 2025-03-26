@@ -1,6 +1,4 @@
-﻿Imports System.Windows.Forms.VisualStyles.VisualStyleElement
-
-Public Class Config_Fossil
+﻿Public Class Config_Fossil
     Public Event ConfirmClicked()
     Public Event CancelClicked()
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click

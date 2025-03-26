@@ -1,8 +1,4 @@
 ﻿Imports System.IO
-Imports System.Text.Json
-Imports System.Windows.Forms.LinkLabel
-Imports System.Net
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Button
 
 Public Class Config_CP
     Public GenusDictionary As New Dictionary(Of String, String)
@@ -217,8 +213,8 @@ Public Class Config_CP
         End Using
 
         Dim SI_build_database As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\build_database.exe", 
-            .WorkingDirectory = currentDirectory + "analysis\", 
+            .FileName = currentDirectory + "analysis\build_database.exe",
+            .WorkingDirectory = currentDirectory + "analysis\",
             .CreateNoWindow = False,
             .Arguments = "-i " + """" + currentDirectory + "temp\AGS353" + """"
         }
@@ -312,7 +308,7 @@ Public Class Config_CP
             File.Delete(count_file)
         End If
         SI_filter.FileName = currentDirectory + "analysis\MainFilterNew.exe"
-        SI_filter.WorkingDirectory = currentDirectory + "temp\" 
+        SI_filter.WorkingDirectory = currentDirectory + "temp\"
         SI_filter.CreateNoWindow = False
         SI_filter.Arguments = "-r " + """" + ref_dir + """"
         SI_filter.Arguments += " -q1" + q1 + " -q2" + q2

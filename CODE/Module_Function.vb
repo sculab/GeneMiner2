@@ -1,15 +1,9 @@
 ﻿Imports System.IO
-Imports System.Net
 Imports System.Net.Http
-Imports System.Threading
-Imports System.Text.RegularExpressions
-Imports System.Text
 Imports System.Security.Cryptography
-
-
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement
-Imports System.Security.Policy
-Imports System.Runtime.InteropServices
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
 Module Module_Function
     Public Function ReadSettings(filePath As String) As Dictionary(Of String, String)
         Dim settings As New Dictionary(Of String, String)()
