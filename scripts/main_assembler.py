@@ -1,5 +1,5 @@
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from collections import Counter, defaultdict, deque
+from collections import Counter, deque
 from itertools import chain
 from operator import itemgetter
 import argparse
@@ -16,7 +16,7 @@ FWD_TRANS  = str.maketrans("ACGTU", "01233", "RYMKSWHBVDN\n\r")
 REV_TRANS  = str.maketrans("ACGTU", "32100", "RYMKSWHBVDN\n\r")
 BIN_DICT   = {'00': 'A', '01': 'C', '10': 'G', '11': 'T'}
 
-ref_path_dict = defaultdict(str)  # 序列路径字典
+ref_path_dict = {}  # 序列路径字典
 ref_count_dict = {} # 参考序列条数字典
 kmer_dict = {}  # kmer字典
 ref_reads_count_dict = {}  # reads计数的字典
@@ -263,13 +263,6 @@ def Get_Weight(_pos, new_pos, weight = 4):
     """ 
     return int.bit_length((1024 - abs(_pos - new_pos)) >> 2) if (_pos and new_pos) else weight
 
-def Forward_Bin(seq_int, mask):
-    """
-    正向的迭代器
-    """ 
-    for x in range(4):
-        yield ((seq_int & mask) << 2) + x
-
 def Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration = 1024):
     """
     带权重的DBG贪婪拼接
@@ -283,10 +276,13 @@ def Get_Forward_Contig_v6(_dict, seed, kmer_size, iteration = 1024):
     temp_list, kmer_set, stack_list, pos_list = [seed], set([seed]), [], []
     temp_dict = Counter(temp_list)
     cur_kmc, cur_seq, contigs = deque(), deque(), []
-    _pos, node_distance, best_kmc_sum  = 0, 0, 0
+    _pos, node_distance, best_kmc_sum = 0, 0, 0
     MASK = (1 << ((kmer_size << 1) - 2)) - 1
     while iteration:
-        node = [(i, _dict[i][1], _dict[i][0] + _dict[i][3]) for i in Forward_Bin(temp_list[-1], MASK) if i in _dict and not temp_dict[i]]
+        next_kmer = (temp_list[-1] & MASK) << 2
+        node = [(i, _dict[i][1], _dict[i][0] + _dict[i][3])
+                for i in range(next_kmer, next_kmer + 4)
+                if i in _dict and not temp_dict[i]]
         node.sort(key=itemgetter(2), reverse=True)
         if not node: 
             iteration -= 1

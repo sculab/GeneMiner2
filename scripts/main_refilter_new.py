@@ -173,7 +173,7 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     return kmer_cnt, hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
 
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
-    LN2 = math.log(2)
+    RUN_LEN_CONST = 0.5772156649 / math.log(2) - 1.5
     THR_P95_2T = 1.96
     THR_1e5_1T = 3.74
     TOLERANCE = 1e-5
@@ -255,15 +255,7 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
                         orient[i] = 0
                         continue
 
-                # max{R_n} has a rather small variance
-                # For any run, the expected extension length is
-                # 1/2 * 0 + 1/4 * 1 + 1/8 * 2 + 1/16 * 3 + ... < 2
-                # Taking the first 5 terms
-                # 1/2 * 0 + 1/4 * 1 + 1/8 * 2 + 1/16 * 3 + 1/32 * 4 = 0.8125
-                # Giving a confidence level at
-                # 1/2 + 1/4 + 1/8 + 1/16 + 1/32 = 0.96875 > 0.95
-                # See https://math.stackexchange.com/a/1414950
-                erl = max(math.log2(tot_n) + 0.5772156649 / LN2 - 1.5, 0) + 0.8125
+                erl = max(math.log2(tot_n) + RUN_LEN_CONST, 0) + 4
                 orient[i] = (fwd_l > erl) + (rev_l > erl) * 2
 
                 # The orientation is unambiguous
@@ -396,8 +388,13 @@ def filter_gene(task):
         print_log(task.log_path, f'Gene {task.name} has no valid reference.')
         return
 
+    # On the weird choice of k-mer size
+    # Assume the sequencing error rate to be 0.95
+    # 1 - 0.95^13 = 0.4867 < 0.5
+    # On average, one of two clusters of biological k-mer matches is error-free
+    # Also, when n<=1000, a matching k-mer can always pass the longest run test
     tmp_path = run_length_filter(task.name, task.out_dir, ref_set, effective_len,
-                                 task.read_path, file_type, (task.kmer_size - 8) | 1,
+                                 task.read_path, file_type, max(task.kmer_size // 2, task.kmer_size - 13) | 1,
                                  task.keep_temporaries)
 
     kmer_filter(task.name, task.out_dir, task.log_path,
