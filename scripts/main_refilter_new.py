@@ -392,7 +392,6 @@ def filter_gene(task):
     # Assume the sequencing error rate to be 0.95
     # 1 - 0.95^13 = 0.4867 < 0.5
     # On average, one of two clusters of biological k-mer matches is error-free
-    # Also, when n<=1000, a matching k-mer can always pass the longest run test
     tmp_path = run_length_filter(task.name, task.out_dir, ref_set, effective_len,
                                  task.read_path, file_type, max(task.kmer_size // 2, task.kmer_size - 13) | 1,
                                  task.keep_temporaries)
