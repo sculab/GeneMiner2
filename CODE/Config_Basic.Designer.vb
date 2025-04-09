@@ -187,7 +187,7 @@ Partial Class Config_Basic
         ' NumericUpDown10
         ' 
         NumericUpDown10.Location = New Point(106, 177)
-        NumericUpDown10.Maximum = New Decimal(New Integer() {8192, 0, 0, 0})
+        NumericUpDown10.Maximum = New Decimal(New Integer() {9999, 0, 0, 0})
         NumericUpDown10.Minimum = New Decimal(New Integer() {1024, 0, 0, 0})
         NumericUpDown10.Name = "NumericUpDown10"
         NumericUpDown10.Size = New Size(54, 23)

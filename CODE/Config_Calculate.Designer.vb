@@ -39,22 +39,24 @@ Partial Class Config_Calculate
         Label12 = New Label()
         TextBox_Kf = New TextBox()
         Label5 = New Label()
-        Label10 = New Label()
-        TextBox_TrimMode = New TextBox()
         Label6 = New Label()
         TextBox_StepSize = New TextBox()
         TextBox_TrimThr = New TextBox()
-        Label8 = New Label()
-        TextBox_Boundary = New TextBox()
         TextBox_ErrorLimit = New TextBox()
-        Label7 = New Label()
         Label9 = New Label()
         TextBox_CombineThr = New TextBox()
+        Label10 = New Label()
+        TextBox_TrimMode = New TextBox()
+        Label8 = New Label()
+        TextBox_Boundary = New TextBox()
+        Label7 = New Label()
         GroupBox1 = New GroupBox()
         GroupBox2 = New GroupBox()
         Button_Calculate = New Button()
         Button_Apply = New Button()
         Button_Close = New Button()
+        Label14 = New Label()
+        TextBox_SearchDepth = New TextBox()
         TableLayoutPanel1.SuspendLayout()
         TableLayoutPanel2.SuspendLayout()
         GroupBox1.SuspendLayout()
@@ -218,20 +220,22 @@ Partial Class Config_Calculate
         TableLayoutPanel2.ColumnStyles.Add(New ColumnStyle())
         TableLayoutPanel2.ColumnStyles.Add(New ColumnStyle())
         TableLayoutPanel2.ColumnStyles.Add(New ColumnStyle())
+        TableLayoutPanel2.Controls.Add(TextBox_SearchDepth, 3, 1)
+        TableLayoutPanel2.Controls.Add(Label14, 2, 1)
         TableLayoutPanel2.Controls.Add(Label12, 0, 3)
         TableLayoutPanel2.Controls.Add(TextBox_Kf, 1, 0)
         TableLayoutPanel2.Controls.Add(Label5, 0, 0)
-        TableLayoutPanel2.Controls.Add(Label10, 2, 2)
-        TableLayoutPanel2.Controls.Add(TextBox_TrimMode, 3, 2)
         TableLayoutPanel2.Controls.Add(Label6, 0, 1)
         TableLayoutPanel2.Controls.Add(TextBox_StepSize, 1, 1)
         TableLayoutPanel2.Controls.Add(TextBox_TrimThr, 1, 2)
-        TableLayoutPanel2.Controls.Add(Label8, 2, 1)
-        TableLayoutPanel2.Controls.Add(TextBox_Boundary, 3, 1)
         TableLayoutPanel2.Controls.Add(TextBox_ErrorLimit, 3, 0)
-        TableLayoutPanel2.Controls.Add(Label7, 2, 0)
         TableLayoutPanel2.Controls.Add(Label9, 0, 2)
         TableLayoutPanel2.Controls.Add(TextBox_CombineThr, 1, 3)
+        TableLayoutPanel2.Controls.Add(Label10, 2, 3)
+        TableLayoutPanel2.Controls.Add(TextBox_TrimMode, 3, 3)
+        TableLayoutPanel2.Controls.Add(Label8, 2, 2)
+        TableLayoutPanel2.Controls.Add(TextBox_Boundary, 3, 2)
+        TableLayoutPanel2.Controls.Add(Label7, 2, 0)
         TableLayoutPanel2.Location = New Point(15, 22)
         TableLayoutPanel2.Name = "TableLayoutPanel2"
         TableLayoutPanel2.RowCount = 4
@@ -239,6 +243,7 @@ Partial Class Config_Calculate
         TableLayoutPanel2.RowStyles.Add(New RowStyle())
         TableLayoutPanel2.RowStyles.Add(New RowStyle())
         TableLayoutPanel2.RowStyles.Add(New RowStyle())
+        TableLayoutPanel2.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
         TableLayoutPanel2.Size = New Size(364, 116)
         TableLayoutPanel2.TabIndex = 12
         ' 
@@ -272,26 +277,6 @@ Partial Class Config_Calculate
         Label5.Text = "过滤K值"
         Label5.TextAlign = ContentAlignment.MiddleCenter
         ' 
-        ' Label10
-        ' 
-        Label10.Anchor = AnchorStyles.Right
-        Label10.AutoSize = True
-        Label10.Location = New Point(160, 64)
-        Label10.Name = "Label10"
-        Label10.Size = New Size(56, 17)
-        Label10.TabIndex = 5
-        Label10.Text = "切齐方式"
-        Label10.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' TextBox_TrimMode
-        ' 
-        TextBox_TrimMode.Anchor = AnchorStyles.Left
-        TextBox_TrimMode.Enabled = False
-        TextBox_TrimMode.Location = New Point(222, 61)
-        TextBox_TrimMode.Name = "TextBox_TrimMode"
-        TextBox_TrimMode.Size = New Size(140, 23)
-        TextBox_TrimMode.TabIndex = 14
-        ' 
         ' Label6
         ' 
         Label6.Anchor = AnchorStyles.Right
@@ -319,26 +304,6 @@ Partial Class Config_Calculate
         TextBox_TrimThr.Size = New Size(65, 23)
         TextBox_TrimThr.TabIndex = 10
         ' 
-        ' Label8
-        ' 
-        Label8.Anchor = AnchorStyles.Right
-        Label8.AutoSize = True
-        Label8.Location = New Point(160, 35)
-        Label8.Name = "Label8"
-        Label8.Size = New Size(56, 17)
-        Label8.TabIndex = 3
-        Label8.Text = "边界长度"
-        Label8.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' TextBox_Boundary
-        ' 
-        TextBox_Boundary.Anchor = AnchorStyles.Left
-        TextBox_Boundary.Enabled = False
-        TextBox_Boundary.Location = New Point(222, 32)
-        TextBox_Boundary.Name = "TextBox_Boundary"
-        TextBox_Boundary.Size = New Size(140, 23)
-        TextBox_Boundary.TabIndex = 13
-        ' 
         ' TextBox_ErrorLimit
         ' 
         TextBox_ErrorLimit.Anchor = AnchorStyles.Left
@@ -347,17 +312,6 @@ Partial Class Config_Calculate
         TextBox_ErrorLimit.Name = "TextBox_ErrorLimit"
         TextBox_ErrorLimit.Size = New Size(65, 23)
         TextBox_ErrorLimit.TabIndex = 12
-        ' 
-        ' Label7
-        ' 
-        Label7.Anchor = AnchorStyles.Right
-        Label7.AutoSize = True
-        Label7.Location = New Point(160, 6)
-        Label7.Name = "Label7"
-        Label7.Size = New Size(56, 17)
-        Label7.TabIndex = 2
-        Label7.Text = "错误阈值"
-        Label7.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' Label9
         ' 
@@ -377,6 +331,57 @@ Partial Class Config_Calculate
         TextBox_CombineThr.Name = "TextBox_CombineThr"
         TextBox_CombineThr.Size = New Size(65, 23)
         TextBox_CombineThr.TabIndex = 11
+        ' 
+        ' Label10
+        ' 
+        Label10.Anchor = AnchorStyles.Right
+        Label10.AutoSize = True
+        Label10.Location = New Point(160, 93)
+        Label10.Name = "Label10"
+        Label10.Size = New Size(56, 17)
+        Label10.TabIndex = 5
+        Label10.Text = "切齐方式"
+        Label10.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' TextBox_TrimMode
+        ' 
+        TextBox_TrimMode.Anchor = AnchorStyles.Left
+        TextBox_TrimMode.Enabled = False
+        TextBox_TrimMode.Location = New Point(222, 90)
+        TextBox_TrimMode.Name = "TextBox_TrimMode"
+        TextBox_TrimMode.Size = New Size(140, 23)
+        TextBox_TrimMode.TabIndex = 14
+        ' 
+        ' Label8
+        ' 
+        Label8.Anchor = AnchorStyles.Right
+        Label8.AutoSize = True
+        Label8.Location = New Point(160, 64)
+        Label8.Name = "Label8"
+        Label8.Size = New Size(56, 17)
+        Label8.TabIndex = 3
+        Label8.Text = "边界长度"
+        Label8.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' TextBox_Boundary
+        ' 
+        TextBox_Boundary.Anchor = AnchorStyles.Left
+        TextBox_Boundary.Enabled = False
+        TextBox_Boundary.Location = New Point(222, 61)
+        TextBox_Boundary.Name = "TextBox_Boundary"
+        TextBox_Boundary.Size = New Size(140, 23)
+        TextBox_Boundary.TabIndex = 13
+        ' 
+        ' Label7
+        ' 
+        Label7.Anchor = AnchorStyles.Right
+        Label7.AutoSize = True
+        Label7.Location = New Point(160, 6)
+        Label7.Name = "Label7"
+        Label7.Size = New Size(56, 17)
+        Label7.TabIndex = 2
+        Label7.Text = "错误阈值"
+        Label7.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' GroupBox1
         ' 
@@ -428,6 +433,26 @@ Partial Class Config_Calculate
         Button_Close.TabIndex = 16
         Button_Close.Text = "关闭"
         Button_Close.UseVisualStyleBackColor = True
+        ' 
+        ' Label14
+        ' 
+        Label14.Anchor = AnchorStyles.Right
+        Label14.AutoSize = True
+        Label14.Location = New Point(160, 35)
+        Label14.Name = "Label14"
+        Label14.Size = New Size(56, 17)
+        Label14.TabIndex = 21
+        Label14.Text = "搜索深度"
+        Label14.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' TextBox_SearchDepth
+        ' 
+        TextBox_SearchDepth.Anchor = AnchorStyles.Left
+        TextBox_SearchDepth.Enabled = False
+        TextBox_SearchDepth.Location = New Point(222, 32)
+        TextBox_SearchDepth.Name = "TextBox_SearchDepth"
+        TextBox_SearchDepth.Size = New Size(65, 23)
+        TextBox_SearchDepth.TabIndex = 21
         ' 
         ' Config_Calculate
         ' 
@@ -488,4 +513,6 @@ Partial Class Config_Calculate
     Friend WithEvents TextBox_CombineThr As TextBox
     Friend WithEvents TextBox_RefLen As TextBox
     Friend WithEvents Label13 As Label
+    Friend WithEvents TextBox_SearchDepth As TextBox
+    Friend WithEvents Label14 As Label
 End Class

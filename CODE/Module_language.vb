@@ -235,6 +235,7 @@
         form_config_calculate.Label9.Text = "Retent. Thr."
         form_config_calculate.Label10.Text = "Trim Method"
         form_config_calculate.Label12.Text = "Max Diff."
+        form_config_calculate.Label14.Text = "Search Depth"
         form_config_calculate.Button_Apply.Text = "Apply"
         form_config_calculate.Button_Close.Text = "Close"
 
@@ -472,6 +473,7 @@
         form_config_calculate.Label9.Text = "保留长度阈值"
         form_config_calculate.Label10.Text = "切齐方式"
         form_config_calculate.Label12.Text = "清理差异阈值"
+        form_config_calculate.Label14.Text = "搜索深度"
         form_config_calculate.Button_Apply.Text = "应用设置"
         form_config_calculate.Button_Close.Text = "关闭"
 

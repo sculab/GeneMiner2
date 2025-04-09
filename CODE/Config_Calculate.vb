@@ -1,7 +1,7 @@
 ﻿Public Class Config_Calculate
     Dim max_diff As Double, gene_len As Integer, read_depth As Double, read_len As Integer
     Public kf As Integer = 0
-    Dim error_limit As Integer, soft_boundary As String, step_size As Integer
+    Dim error_limit As Integer, search_depth As Integer, soft_boundary As String, step_size As Integer
     Dim combine_thr As Double, trim_mode As String, trim_thr As Integer
 
     Private Sub Button_Apply_Click(sender As Object, e As EventArgs) Handles Button_Apply.Click
@@ -13,6 +13,7 @@
         form_config_basic.NumericUpDown1.Value = kf
         form_config_basic.NumericUpDown2.Value = step_size
         form_config_basic.NumericUpDown8.Value = error_limit
+        form_config_basic.NumericUpDown10.Value = search_depth
         form_config_basic.ComboBox1.SelectedIndex = If(soft_boundary = "Auto", 0, If(soft_boundary = "Unlimited", 2, -1))
         form_config_combine.TextBox2.Text = Math.Round(combine_thr, 3).ToString
         form_config_trim.NumericUpDown1.Value = trim_thr
@@ -25,6 +26,7 @@
         TextBox_Kf.Clear()
         TextBox_StepSize.Clear()
         TextBox_ErrorLimit.Clear()
+        TextBox_SearchDepth.Clear()
         TextBox_Boundary.Clear()
         TextBox_CombineThr.Clear()
         TextBox_TrimThr.Clear()
@@ -119,13 +121,26 @@
             End If
         End If
 
+        If gene_len >= 6000 Then
+            search_depth = 9999
+        ElseIf gene_len >= 4800 Then
+            search_depth = 8192
+        Else
+            search_depth = 4096
+        End If
+
         TextBox_Kf.Text = kf.ToString
         TextBox_StepSize.Text = step_size.ToString
         TextBox_ErrorLimit.Text = error_limit.ToString
+        TextBox_SearchDepth.Text = search_depth.ToString
         TextBox_Boundary.Text = soft_boundary
         TextBox_CombineThr.Text = Math.Round(combine_thr, 3).ToString
         TextBox_TrimThr.Text = trim_thr.ToString
         TextBox_TrimMode.Text = trim_mode
+
+        If gene_len >= 10000 Then
+            MsgBox("Please note that assembling genes beyond 10kbp might be inefficient.", MsgBoxStyle.Information, "Information")
+        End If
     End Sub
 
     Private Sub Button_Close_Click(sender As Object, e As EventArgs) Handles Button_Close.Click
