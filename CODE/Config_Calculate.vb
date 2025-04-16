@@ -67,13 +67,18 @@
 
         If ComboBox_Ref.SelectedIndex = ComboBox_Seq.SelectedIndex Then
             trim_mode = "Trim Terminal"
-            trim_thr = If(read_depth <= 30, If(read_depth <= 10, 0, 15), 50)
-        ElseIf ComboBox_Ref.SelectedIndex = 1 AndAlso ComboBox_Seq.SelectedIndex = 0 Then
-            trim_mode = "All Fragments"
-            trim_thr = If(read_depth <= 10, 0, 15)
         Else
             trim_mode = "All Fragments"
+        End If
+
+        If ComboBox_Seq.SelectedIndex = 1 Then
             trim_thr = 0
+        ElseIf ComboBox_Ref.SelectedIndex = 1 Then
+            ' Fitting a poisson distribution is too much work here
+            ' Just use a discount factor on the read depth and call it a day
+            trim_thr = If(read_depth <= 15, 0, CInt(Math.Floor(Math.Min(read_depth * 2 / 3, 25) / 5) * 5))
+        Else
+            trim_thr = If(read_depth <= 15, 0, CInt(Math.Floor(Math.Min(read_depth, 50) / 5) * 5))
         End If
 
         For k As Integer = 39 To 17 Step -1
