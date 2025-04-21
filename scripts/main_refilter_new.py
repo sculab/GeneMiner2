@@ -149,8 +149,12 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     hit_cnt  = [0, 0, 0, 0]
     run_cnt  = [0, 0, 0, 0]
 
-    for i in range(0, kmer_cnt):
-        orient = kmer_dict.get((read_int >> (2 * i)) & mask_bin, 0)
+    for _ in range(0, kmer_cnt):
+        kmer = read_int & mask_bin
+        orient = 0
+
+        if kmer in kmer_dict:
+            orient = kmer_dict[kmer]
 
         if orient != curr_dir:
             run_cnt[curr_dir] += 1
@@ -164,6 +168,8 @@ def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
         if curr_dir != 0:
             curr_len += 1
             hit_cnt[curr_dir] += 1
+
+        read_int >>= 2
 
     run_cnt[curr_dir] += 1
 
