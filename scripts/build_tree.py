@@ -1,13 +1,13 @@
 import argparse
 import os
 import sys
-import multiprocessing
+# import multiprocessing
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 import random
 import shutil
-from multiprocessing import Manager, Pool
+# from multiprocessing import Manager, Pool
 import subprocess
 
 def generate_bootstrap_sample(records, sequence_length):
@@ -37,25 +37,12 @@ def process_bootstrap_sample(input_file, bootstrap_output_dir, sequence_length, 
     fasttree_warpper(output_file,  os.path.join(bootstrap_output_dir, f"bootstrap_{i + 1}.tree"), model)
     os.remove(output_file)
 
-def fasttree_warpper(input_file, output_tree, model, boot):
-    cmd = f"..\\analysis\\FastTree.exe -nt -{model} -boot {boot} < {input_file} > {output_tree}"
-    print(cmd,"\n")
-    subprocess.run(cmd, shell=True, check=True)
-
 def main(input_file, output_file, bootstrap_output_dir, model, outgroup, num_bootstraps, num_processes):
     records = list(SeqIO.parse(input_file, "fasta"))
-    os.makedirs(bootstrap_output_dir, exist_ok=True)
+    # os.makedirs(bootstrap_output_dir, exist_ok=True)
     sequence_length = len(records[0].seq)
     print("Building Tree...")
-    # if num_bootstraps>0:
-    #     fasttree_warpper(input_file,  os.path.join(bootstrap_output_dir, "input.tree"), model)
-    #     if os.path.exists(outgroup):
-    #         cmd = r'..\analysis\newick.exe -rootbyoutgroup "'+os.path.join(bootstrap_output_dir, "input.tree")+ '" -labels "'+outgroup+'" -output "' + os.path.join(bootstrap_output_dir, "input.tree") +'"'
-    #         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    #         cmd = r'..\analysis\newick.exe -ladderize "' + os.path.join(bootstrap_output_dir, "input.tree") +'" -output "' + os.path.join(bootstrap_output_dir, "input.tree") +'"'
-    #         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # else:
-    fasttree_warpper(input_file,  output_file, model, num_bootstraps)
+    subprocess.run([r"..\analysis\FastTree.exe", "-out", output_file, "-" + model, "-boot", str(num_bootstraps), "-nt", input_file], check=True)
     if os.path.exists(outgroup):
         cmd = r'..\analysis\newick.exe -rootbyoutgroup "'+output_file+ '" -labels "'+outgroup+'" -output "' + output_file +'"'
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -92,8 +79,8 @@ def main(input_file, output_file, bootstrap_output_dir, model, outgroup, num_boo
     print("DONE!")
 
 if __name__ == "__main__":
-    if sys.platform.startswith('win'):
-        multiprocessing.freeze_support()
+    # if sys.platform.startswith('win'):
+        # multiprocessing.freeze_support()
     parser = argparse.ArgumentParser(description="Generate Bootstrap Samples from a FASTA file and Build Tree.")
     parser.add_argument("-input", metavar='<str>', type=str, help="Input FASTA file", default=r'..\temp\input.fas')
     parser.add_argument("-output", metavar='<str>', type=str, help="Output TREE file", default=r'..\temp\output.tree')
@@ -101,6 +88,6 @@ if __name__ == "__main__":
     parser.add_argument("-model", metavar='<str>', type=str, help="model of fasttree", default='gtr')
     parser.add_argument("-outgroup", metavar='<str>', type=str, help="outgroup", default=r'..\temp\og.txt')
     parser.add_argument("-num_bootstraps", metavar='<int>', type=int, help="Number of Bootstrap samples to generate", default=1000)
-    parser.add_argument("-num_processes", metavar='<int>', type=int, help="Number of processes to use", default=multiprocessing.cpu_count())
+    parser.add_argument("-num_processes", metavar='<int>', type=int, help="Number of processes to use", default=1)
     args = parser.parse_args()
     main(args.input, args.output, args.bootstrap_output_dir, args.model, args.outgroup, args.num_bootstraps, args.num_processes)

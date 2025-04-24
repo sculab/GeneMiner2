@@ -1,5 +1,4 @@
-﻿Imports System.Diagnostics.Eventing
-Imports System.IO
+﻿Imports System.IO
 
 Public Class Config_Tree
     Public Event ConfirmClicked()

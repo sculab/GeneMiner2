@@ -1,13 +1,9 @@
 ﻿Imports System.IO
-Imports System.Text.RegularExpressions
-Imports System.Windows
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Button
 Imports Microsoft.VisualBasic.Devices
 
 Public Class Config_Plasty
     Private Sub Config_Plasty_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        NumericUpDown2.Value = Math.Min(CInt(totalPhysicalMemory), 4)
+        NumericUpDown2.Value = Math.Min(New ComputerInfo().AvailablePhysicalMemory / (1024 * 1024 * 1024), 4)
     End Sub
 
     Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
@@ -74,8 +70,8 @@ Public Class Config_Plasty
             For i As Integer = 1 To seqsView.Count
                 If form_main.DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
                     Dim SI_build_fq As New ProcessStartInfo With {
-                        .FileName = currentDirectory + "analysis\build_fq.exe", 
-                        .WorkingDirectory = currentDirectory + "analysis\", 
+                        .FileName = currentDirectory + "analysis\build_fq.exe",
+                        .WorkingDirectory = currentDirectory + "analysis\",
                         .CreateNoWindow = False,
                         .Arguments = "-i1 " + """" + form_main.DataGridView2.Rows(i - 1).Cells(2).Value.ToString + """"
                     }
@@ -97,8 +93,8 @@ Public Class Config_Plasty
         End If
 
         Dim SI_build_plasty As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe", 
-            .WorkingDirectory = currentDirectory + "temp\", 
+            .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe",
+            .WorkingDirectory = currentDirectory + "temp\",
             .CreateNoWindow = False,
             .Arguments = "-c NOVO_config.txt"
         }

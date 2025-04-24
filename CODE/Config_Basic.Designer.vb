@@ -187,7 +187,7 @@ Partial Class Config_Basic
         ' NumericUpDown10
         ' 
         NumericUpDown10.Location = New Point(106, 177)
-        NumericUpDown10.Maximum = New Decimal(New Integer() {8192, 0, 0, 0})
+        NumericUpDown10.Maximum = New Decimal(New Integer() {9999, 0, 0, 0})
         NumericUpDown10.Minimum = New Decimal(New Integer() {1024, 0, 0, 0})
         NumericUpDown10.Name = "NumericUpDown10"
         NumericUpDown10.Size = New Size(54, 23)
@@ -275,9 +275,9 @@ Partial Class Config_Basic
         CheckBox1.CheckState = CheckState.Checked
         CheckBox1.Location = New Point(8, 20)
         CheckBox1.Name = "CheckBox1"
-        CheckBox1.Size = New Size(139, 21)
+        CheckBox1.Size = New Size(119, 21)
         CheckBox1.TabIndex = 12
-        CheckBox1.Text = "自动估算拼接K值(慢)"
+        CheckBox1.Text = "自动估算拼接K值"
         CheckBox1.UseVisualStyleBackColor = True
         ' 
         ' NumericUpDown7
@@ -321,7 +321,7 @@ Partial Class Config_Basic
         NumericUpDown4.Name = "NumericUpDown4"
         NumericUpDown4.Size = New Size(54, 23)
         NumericUpDown4.TabIndex = 9
-        NumericUpDown4.Value = New Decimal(New Integer() {512, 0, 0, 0})
+        NumericUpDown4.Value = New Decimal(New Integer() {768, 0, 0, 0})
         ' 
         ' NumericUpDown9
         ' 
@@ -331,7 +331,7 @@ Partial Class Config_Basic
         NumericUpDown9.Name = "NumericUpDown9"
         NumericUpDown9.Size = New Size(54, 23)
         NumericUpDown9.TabIndex = 20
-        NumericUpDown9.Value = New Decimal(New Integer() {8, 0, 0, 0})
+        NumericUpDown9.Value = New Decimal(New Integer() {6, 0, 0, 0})
         ' 
         ' Label8
         ' 

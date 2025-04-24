@@ -2,7 +2,7 @@
 
 Module Module_Var
     Public TargetOS As String = "win64"
-    Public version As String = "2.1 build 20240320"
+    Public version As String = "2.3 build 20250421"
     Public exe_mode As String
     Public database_url As String
     Public settings As Dictionary(Of String, String)
@@ -31,6 +31,7 @@ Module Module_Var
     Public form_config_mcmc As New Config_MCMC
     Public form_config_combine As New Config_Combine
     Public form_config_consensus As New Config_Consensus
+    Public form_config_calculate As New Config_Calculate
     Public form_main As New Main_Form
     Public PB_value As Integer = 0
     Public info_text As String = ""
@@ -46,7 +47,6 @@ Module Module_Var
     Public utf8WithoutBom As New UTF8Encoding(False)
     Public cpg_down_mode As Integer = 0
     Public cpg_assemble_mode As Integer = 0
-    Public totalPhysicalMemory As Double
     Public MenuClicked As String
 
 

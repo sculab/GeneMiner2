@@ -22,8 +22,8 @@ def main():
     output_blast = args.output_blast + r"\blast_output.txt"
 
     if os.path.exists(output_db + ".nhr"): os.remove(output_db + ".nhr")
-    if os.path.exists(output_db + ".nhr"): os.remove(output_db + ".nin")
-    if os.path.exists(output_db + ".nhr"): os.remove(output_db + ".nsq")
+    if os.path.exists(output_db + ".nin"): os.remove(output_db + ".nin")
+    if os.path.exists(output_db + ".nsq"): os.remove(output_db + ".nsq")
     if os.path.exists(output_blast): os.remove(output_blast)
 
     # 用于存储所有序列的长度

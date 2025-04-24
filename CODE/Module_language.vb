@@ -1,8 +1,4 @@
-﻿Imports System.Reflection.Emit
-Imports System.Runtime.ConstrainedExecution
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Button
-
-Module Module_Language
+﻿Module Module_Language
     Public Sub to_en()
         form_main.Text = "GeneMiner" + version + " " + TargetOS
         form_main.文件ToolStripMenuItem.Text = "File"
@@ -48,6 +44,7 @@ Module Module_Language
         form_main.获取最佳参考序列ToolStripMenuItem.Text = "Get Best Reference"
         form_main.获取最佳参考序列ToolStripMenuItem1.Text = "Get Best Reference"
 
+        form_main.计算参数ToolStripMenuItem.Text = "Calculate Parameters"
         form_main.构建系统发育树ToolStripMenuItem.Text = "Build Phylogenetic Tree"
         form_main.参考序列建树ToolStripMenuItem.Text = "Build Tree with Reference"
         form_main.统计结果ToolStripMenuItem.Text = "Summary Statistics"
@@ -90,8 +87,8 @@ Module Module_Language
         form_config_combine.CheckBox1.Text = "Use missing(?) instead of gap(-)"
         form_config_combine.CheckBox2.Text = "Use results trimed with reference"
         form_config_combine.CheckBox3.Text = "Automatically clean up sequences"
-        form_config_combine.Label1.Text = "Maximum difference greater than"
-        form_config_combine.Label2.Text = "Number of sequences less than"
+        form_config_combine.Label1.Text = "Maximum difference >"
+        form_config_combine.Label2.Text = "Number of sequences <"
         form_config_combine.Button2.Text = "Cancel"
         form_config_combine.Button1.Text = "OK"
         form_config_combine.Label3.Text = "Alignment program"
@@ -107,7 +104,7 @@ Module Module_Language
         form_config_tree.RadioButton3.Text = "Original Data Matrix"
         form_config_tree.Button2.Text = "Cancel"
         form_config_tree.Button1.Text = "OK"
-        form_config_tree.CheckBox1.Text = "Build Rotted Tree"
+        form_config_tree.CheckBox1.Text = "Build Rooted Tree"
         form_config_tree.CheckBox2.Text = "Do Calibration"
         form_config_tree.Label2.Text = "Enter the names of the outgroup, one per line:"
 
@@ -221,6 +218,27 @@ Module Module_Language
         form_config_split.Label2.Text = "Minimum Gene Length"
         form_config_split.CheckBox1.Text = "Exclude Exonic Regions"
 
+        form_config_calculate.Text = "Calculate Parameters"
+        form_config_calculate.GroupBox2.Text = "Input"
+        form_config_calculate.Label11.Text = "Read Length"
+        form_config_calculate.Label2.Text = "Mean Depth"
+        form_config_calculate.Label1.Text = "Max Variation"
+        form_config_calculate.Label13.Text = "Mean Gene Size"
+        form_config_calculate.Label4.Text = "Sample Type"
+        form_config_calculate.Label3.Text = "Reference Type"
+        form_config_calculate.Button_Calculate.Text = "Calculate"
+        form_config_calculate.GroupBox1.Text = "Result"
+        form_config_calculate.Label5.Text = "Filter K"
+        form_config_calculate.Label6.Text = "Step Size"
+        form_config_calculate.Label7.Text = "Error Thr."
+        form_config_calculate.Label8.Text = "Boundary"
+        form_config_calculate.Label9.Text = "Retent. Thr."
+        form_config_calculate.Label10.Text = "Trim Method"
+        form_config_calculate.Label12.Text = "Max Diff."
+        form_config_calculate.Label14.Text = "Search Depth"
+        form_config_calculate.Button_Apply.Text = "Apply"
+        form_config_calculate.Button_Close.Text = "Close"
+
         language = "EN"
 
     End Sub
@@ -279,6 +297,7 @@ Module Module_Language
         form_main.Label3.Text = "进程数量:"
         form_main.Button1.Text = "更改目录"
         form_main.Button2.Text = "打开目录"
+        form_main.计算参数ToolStripMenuItem.Text = "计算参数"
         form_main.构建系统发育树ToolStripMenuItem.Text = "构建系统发育树"
         form_main.参考序列建树ToolStripMenuItem.Text = "参考序列建树"
         form_main.获取单拷贝基因ToolStripMenuItem.Text = "获取单拷贝基因"
@@ -384,7 +403,7 @@ Module Module_Language
         form_config_basic.Label5.Text = "固定拼接K值："
         form_config_basic.Label7.Text = "错误阈值："
         form_config_basic.Label6.Text = "->"
-        form_config_basic.CheckBox1.Text = "自动估算拼接K值(慢)"
+        form_config_basic.CheckBox1.Text = "自动估算拼接K值"
         form_config_basic.GroupBox3.Text = "进一步过滤"
         form_config_basic.Label8.Text = "文件大小限制："
         form_config_basic.Label9.Text = "搜索深度："
@@ -436,6 +455,27 @@ Module Module_Language
         form_config_split.Label3.Text = "基因最大长度"
         form_config_split.Label2.Text = "基因最小长度"
         form_config_split.CheckBox1.Text = "去除外显子区"
+
+        form_config_calculate.Text = "计算参数"
+        form_config_calculate.GroupBox2.Text = "输入数据"
+        form_config_calculate.Label11.Text = "测序读长"
+        form_config_calculate.Label2.Text = "平均测序深度"
+        form_config_calculate.Label1.Text = "最大差异度"
+        form_config_calculate.Label13.Text = "平均基因长度"
+        form_config_calculate.Label4.Text = "样本类型"
+        form_config_calculate.Label3.Text = "参考类型"
+        form_config_calculate.Button_Calculate.Text = "计算"
+        form_config_calculate.GroupBox1.Text = "计算结果"
+        form_config_calculate.Label5.Text = "过滤K值"
+        form_config_calculate.Label6.Text = "过滤步长"
+        form_config_calculate.Label7.Text = "错误阈值"
+        form_config_calculate.Label8.Text = "边界长度"
+        form_config_calculate.Label9.Text = "保留长度阈值"
+        form_config_calculate.Label10.Text = "切齐方式"
+        form_config_calculate.Label12.Text = "清理差异阈值"
+        form_config_calculate.Label14.Text = "搜索深度"
+        form_config_calculate.Button_Apply.Text = "应用设置"
+        form_config_calculate.Button_Close.Text = "关闭"
 
         language = "CH"
 

@@ -933,7 +933,7 @@ def main():
     parser.add_argument("-th", "--thread", dest='threads_num', type=int, default=8,
                         help='the number of CPUs you are using. Default is 1.')
     
-    parser.add_argument("-aln", "--alignment", dest='aligment', type=str, default="muscle",
+    parser.add_argument("-aln", "--alignment", dest='alignment_app', type=str, default="muscle",
                         help='the app to aligment. Default is 1.')
 
     args = parser.parse_args()
@@ -990,7 +990,7 @@ def main():
         ### s4
         output_directory_s4 = output_directory + "/" + args.seq_type + "/" + "s4_alignments/"
         if os.path.isdir(output_directory_s4) == False:
-            muscle_alignment(seq_result_path, threads = args.threads_num, align=args.aligment)
+            muscle_alignment(seq_result_path, threads = args.threads_num, align=args.alignment_app)
             Write_Print("../temp/PPD.log",args.threads_num)
             Write_Print("../temp/PPD.log","s4 finished and ready for s5")
 

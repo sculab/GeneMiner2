@@ -1,6 +1,4 @@
-﻿Imports System.Threading
-Imports System.IO
-Imports System.ComponentModel.DataAnnotations
+﻿Imports System.IO
 Public Class Tool_TipName
     Public mytree_Dataset As New DataSet
     Public mytree_View As New DataView
@@ -128,6 +126,7 @@ Public Class Tool_TipName
                 sr.ReadLine()
                 While (Not sr.EndOfStream)
                     Dim newrow() As String = sr.ReadLine().Split(",")
+                    ReDim Preserve newrow(2)
                     mytree_View.AllowNew = True
                     mytree_View.AddNew()
                     mytree_View.Item(mytree_View.Count - 1).Row.ItemArray = newrow

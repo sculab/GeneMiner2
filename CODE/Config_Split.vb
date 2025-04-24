@@ -1,7 +1,4 @@
-﻿Imports System.IO
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Button
-
-Public Class Config_Split
+﻿Public Class Config_Split
     Private Sub Config_Split_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
     End Sub
@@ -30,8 +27,8 @@ Public Class Config_Split
 
 
         Dim SI_build_gb As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\build_gb.exe", 
-            .WorkingDirectory = currentDirectory + "temp\", 
+            .FileName = currentDirectory + "analysis\build_gb.exe",
+            .WorkingDirectory = currentDirectory + "temp\",
             .CreateNoWindow = False,
             .Arguments = "-input " + """" + current_file + """" + " -outdir " + """" + "out_gb" + """"
         }
@@ -41,8 +38,8 @@ Public Class Config_Split
 
         DeleteDir(root_path + "temp\org_seq")
         Dim SI_split_genes As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\split_genes.exe", 
-            .WorkingDirectory = currentDirectory + "temp\", 
+            .FileName = currentDirectory + "analysis\split_genes.exe",
+            .WorkingDirectory = currentDirectory + "temp\",
             .CreateNoWindow = False,
             .Arguments = "-input out_gb"
         }

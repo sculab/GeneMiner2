@@ -1,11 +1,8 @@
 ﻿
-Imports System.IO
-Imports System.Drawing
 Imports System.Drawing.Drawing2D
+Imports System.IO
 Imports System.Math
 Imports System.Threading
-Imports System.Data
-Imports System.Windows.Forms.VisualStyles.VisualStyleElement
 
 Public Class Config_Dated
 

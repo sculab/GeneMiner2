@@ -1,5 +1,4 @@
-﻿Imports System.Drawing
-Module Module_Brushes
+﻿Module Module_Brushes
     Public Function Distributiton_to_Integer(ByVal D_str As String) As Integer
         If IsNumeric(D_str) Then
             Return D_str

@@ -30,7 +30,9 @@
     End Sub
 
     Private Sub Config_Basic_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        ComboBox1.SelectedIndex = 0
+        If ComboBox1.SelectedIndex < 0 Then
+            ComboBox1.SelectedIndex = 0
+        End If
     End Sub
     Private Sub NumericUpDown3_GotFocus(sender As Object, e As EventArgs) Handles NumericUpDown3.GotFocus
         If language = "EN" Then
