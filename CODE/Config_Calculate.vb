@@ -146,6 +146,10 @@
         If gene_len >= 10000 Then
             MsgBox("Please note that assembling genes beyond 10kbp might be inefficient.", MsgBoxStyle.Information, "Information")
         End If
+
+        If read_depth >= 200 Then
+            MsgBox("Please consider limiting reads per file because read depth is too high.", MsgBoxStyle.Information, "Information")
+        End If
     End Sub
 
     Private Sub Button_Close_Click(sender As Object, e As EventArgs) Handles Button_Close.Click
