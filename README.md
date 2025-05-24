@@ -21,7 +21,7 @@ If mining angiosperm 353 genes, please cite our paper on Easy353:
 
 
 # Install
-**You could download GeneMiner from [SourceForge](https://sourceforge.net/projects/geneminer/files/) or [our site](http://life-bioinfo.tpddns.cn:8445/database/app/GeneMiner/).**
+**You could download GeneMiner from [SourceForge](https://sourceforge.net/projects/geneminer/files/).**
 
 If you require the command-line version of gene mining tools, please visit:
 - GeneMiner: https://github.com/sculab/GeneMiner
