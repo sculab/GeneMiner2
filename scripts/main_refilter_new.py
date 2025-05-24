@@ -30,8 +30,8 @@ READ_ITERATORS = {
    'fastq': FastqGeneralIterator
 }
 
-FWD_TRANS = str.maketrans("ACGTU", "01233", "RYMKSWHBVDN\n\r")
-REV_TRANS = str.maketrans("ACGTU", "32100", "RYMKSWHBVDN\n\r")
+FWD_TRANS = collections.defaultdict(lambda: None, str.maketrans("ACGTUacgtu", "0123301233"))
+REV_TRANS = collections.defaultdict(lambda: None, str.maketrans("ACGTUacgtu", "3210032100"))
 
 def print_log(log_path, *args, **kwargs):
     if log_path:
@@ -114,7 +114,6 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
     mask_bin  = (1 << (kmer_size << 1)) - 1
 
     for seq in ref_set:
-        seq       = ''.join(filter(str.isalpha, seq)).upper()
         seq_str   = seq.translate(trans)
         seq_str_r = seq.translate(rtrans)[::-1]
 
@@ -132,51 +131,48 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
 
     return kmer_dict
 
-def collect_runs_stats(read, kmer_dict, kmer_size, trans=FWD_TRANS):
-    read_str = read.upper().translate(trans)
-
-    if len(read_str) < kmer_size:
-        return 0, 0, 0, 0, 0, 0, 0, 0
-
-    kmer_cnt = len(read_str) - kmer_size + 1
+def collect_runs_stats(reads, kmer_dict, kmer_size, trans=FWD_TRANS, zero_stats=(0, ) * 12):
+    # Return values: [0:4]=best length; [4:8]=run count; [8:12]=hit count; [12]=k-mer count
     mask_bin = (1 << (kmer_size << 1)) - 1
-    read_int = int(read_str, 4)
 
-    curr_dir = 0
-    curr_len = 0
+    for tp in reads:
+        read_str = tp[1].translate(trans)
+        kmer_cnt = len(read_str) - kmer_size + 1
+        results  = [*zero_stats, kmer_cnt]
 
-    best_len = [0, 0, 0, 0]
-    hit_cnt  = [0, 0, 0, 0]
-    run_cnt  = [0, 0, 0, 0]
+        if kmer_cnt > 0:
+            curr_dir    = 0
+            curr_len    = 0
+            read_int    = int(read_str, 4)
 
-    for _ in range(0, kmer_cnt):
-        kmer = read_int & mask_bin
-        orient = 0
+            for _ in range(0, kmer_cnt):
+                kmer = read_int & mask_bin
+                orient = 0
+                read_int >>= 2
 
-        if kmer in kmer_dict:
-            orient = kmer_dict[kmer]
+                if kmer in kmer_dict:
+                    orient = kmer_dict[kmer]
 
-        if orient != curr_dir:
-            run_cnt[curr_dir] += 1
+                if orient != curr_dir:
+                    if curr_len > results[curr_dir]:
+                        results[curr_dir] = curr_len
 
-            if curr_len > best_len[curr_dir]:
-                best_len[curr_dir] = curr_len
+                    results[curr_dir + 4] += 1
+                    curr_dir = orient
+                    curr_len = 0
 
-            curr_dir = orient
-            curr_len = 0
+                if curr_dir != 0:
+                    curr_len += 1
+                    results[curr_dir + 8] += 1
 
-        if curr_dir != 0:
-            curr_len += 1
-            hit_cnt[curr_dir] += 1
+            if curr_len > results[curr_dir]:
+                results[curr_dir] = curr_len
 
-        read_int >>= 2
+            results[curr_dir + 4] += 1
+        else:
+            results[12] = 0
 
-    run_cnt[curr_dir] += 1
-
-    if curr_len > best_len[curr_dir]:
-        best_len[curr_dir] = curr_len
-
-    return kmer_cnt, hit_cnt[1], hit_cnt[2], hit_cnt[3], run_cnt[1], run_cnt[2], best_len[1], best_len[2]
+        yield results
 
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
     RUN_LEN_CONST = 0.5772156649 / math.log(2) - 1.5
@@ -202,9 +198,9 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
         for linked_reads in zip(*read_iters):
             orient = [0] * len(linked_reads)
 
-            for i, (tot_n, fwd_n, rev_n, amb_n,
-                    fwd_r, rev_r, fwd_l, rev_l) in enumerate(collect_runs_stats(tp[1], kmer_dict, kmer_size)
-                                                             for tp in linked_reads):
+            for i, (_, fwd_l, rev_l, _,
+                    _, fwd_r, rev_r, _,
+                    _, fwd_n, rev_n, amb_n, tot_n) in enumerate(collect_runs_stats(linked_reads, kmer_dict, kmer_size)):
 
                 # Forward hits    Reverse hits    Ambiguous hits    Verdict
                 # -----------------------------------------------------------
@@ -301,7 +297,7 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
 
 def filter_read(read, kmer_dict, kmer_size, trans=FWD_TRANS):
     mask_bin = (1 << (kmer_size << 1)) - 1
-    read_str = read.upper().translate(trans)
+    read_str = read.translate(trans)
 
     if len(read_str) < kmer_size:
         return False
