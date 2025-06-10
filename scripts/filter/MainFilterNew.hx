@@ -54,6 +54,7 @@ class EncodingError extends Exception {}
 
 #if cpp
 
+@:buildXml('<target id="haxe" unless="windows"><lib name="-lz"/></target>')
 @:include('../../bindings.h')
 @:native('::cpp::Reference<::GzipReader>')
 extern class GzipReader {

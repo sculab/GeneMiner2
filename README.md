@@ -21,11 +21,10 @@ If mining angiosperm 353 genes, please cite our paper on Easy353:
 
 
 # Install
+
 **You could download GeneMiner from [SourceForge](https://sourceforge.net/projects/geneminer/files/).**
 
-If you require the command-line version of gene mining tools, please visit:
-- GeneMiner: https://github.com/sculab/GeneMiner
-- Easy353: https://github.com/plant720/Easy353
+If you wish to use the command-line version on a Unix-like system, please refer to **[build instructions](manual/EN_US/command_line.md)**.
 
 You can also use the Python scripts in the scripts folder of GeneMiner2. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on Windows, macOS, or Linux.
 

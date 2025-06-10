@@ -1232,7 +1232,7 @@ private:
         if (_pairs[bucket].second == INACTIVE)
             return bucket;
 
-        constexpr auto linear_probe_length = std::max((unsigned int)(128 / sizeof(PairT)) + 2, 4u);//cpu cache line 64 byte,2-3 cache line miss
+        auto linear_probe_length = std::max((unsigned int)(128 / sizeof(PairT)) + 2, 4u);//cpu cache line 64 byte,2-3 cache line miss
         auto offset = 1u;
 
         for (; offset < linear_probe_length; offset ++) {
