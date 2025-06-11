@@ -11,6 +11,18 @@
  
 
 
+### Calculating Parameters
+
+Click [Tools > Calculate Parameters] to obtain Genes.
+
+![](gif/parameter.gif)
+
+
+- **[Sequencing Data](DATA/seq/)**: Second-generation sequencing data files, in .gz or .fq format.
+
+
+- **[Reference Sequence](DATA/A_lyrata/)**: Reference gene sequences from closely related species in fasta or genbank format.
+ 
 
 ### Loading the data files
 
@@ -37,3 +49,18 @@ NOTE: For importing multiple pairs of sequencing files, select [Batch > Filter &
 
 Click [Open] to view the  results located in the 'results' folder.
 
+
+
+### Data Cleaning
+
+
+Click [Analysis > Trim With Reference].
+
+**NOTE:** Parameters was calculate by "Calculate Parameters".
+
+
+NOTE: For importing multiple pairs of sequencing files, select [Batch > Filter & Assemble] to extract.
+
+![](gif/gene_DEMO1.gif)
+
+Click [Open] to view the  results located in the 'results' folder.

@@ -37,6 +37,8 @@ Due to GeneMiner2 operating on macOS through Wine technology, its running effici
 
 **Note:** Avoid installing the software on a portable drive.
 
+
+**Note:** Parallel execution: do not run multiple windows in parallel within the same folder. Instead, copy the GeneMiner directory(including **analysis** folder and **GeneMiner.exe**)  and run the second instance from the duplicated folder. (Note: folder paths must not contain Chinese characters.)
 ---
 
 

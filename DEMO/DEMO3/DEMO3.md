@@ -1,4 +1,4 @@
-# Tutorial 3 - Tree Construction Process for Single-Copy Genes
+# Tutorial 3 - Tree Construction Process for Single-Copy Genes(batch)
 
 
 
@@ -10,6 +10,18 @@
 - **[Transcript Data](DATA/Phytozome/)**: Assembled transcript data from a closely related species, obtained post-transcriptome assembly, in .fa format
 
 
+
+### Calculating Parameters
+
+Click [Tools > Calculate Parameters] to obtain Genes.
+
+![](gif/parameter.gif)
+
+
+- **[Sequencing Data](DATA/seq/)**: Second-generation sequencing data files, in .gz or .fq format.
+
+
+- **[Reference Sequence](DATA/A_lyrata/)**: Reference gene sequences from closely related species in fasta or genbank format.
 
 
 
