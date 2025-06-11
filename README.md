@@ -28,9 +28,11 @@ If mining angiosperm 353 genes, please cite our paper on Easy353:
 
 **Note:** Avoid installing the software on a portable drive.
 
+**On Parallel execution:** Do not run multiple windows in parallel within the same folder. Instead, copy the GeneMiner directory (including **analysis** folder and **GeneMiner.exe**) and run a second instance from the duplicated folder. (Note: folder paths must not contain Chinese characters.)
 
-**Note:** Parallel execution: do not run multiple windows in parallel within the same folder. Instead, copy the GeneMiner directory(including **analysis** folder and **GeneMiner.exe**)  and run the second instance from the duplicated folder. (Note: folder paths must not contain Chinese characters.)
----
+**For macOS users**: GeneMiner is packaged with Wineskin to run on macOS. Please try to use the latest version of macOS. Due to limited conditions, GeneMiner has not been tested on all macOS versions. If you meet an error like "GeneMiner.app is damaged", type this in terminal:
+- xattr -cr **/path/to/GeneMiner.app**
+- Example: xattr -cr /Applications/GeneMiner.app
 
 It is not recommended to run GeneMiner2 on macOS for large-scale analyses because the efficiency is significantly lower than running on Windows.
 
