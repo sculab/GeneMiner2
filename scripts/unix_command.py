@@ -106,6 +106,9 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
     if do_filter:
         filter_bin = find_executable('MainFilterNew', internal=True)
 
+        if os.path.isfile(kmer_dict_path):
+            os.remove(kmer_dict_path)
+
         try:
             subprocess.run([filter_bin, '-r', args.r, '-o', out_loc, '-kf', str(args.kf), '-s', str(args.step_size),
                             '-gr', '-lkd', kmer_dict_path, '-m', '2'], check=True)
@@ -314,7 +317,7 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
                 if do_assemble:
                     run_assembler(name)
             except Exception as e:
-                print(f'An error occurred while processing {sample}: {e}')
+                print(f'An error occurred while processing {name}: {e}')
                 continue
 
 def generate_consensus(args, samples):
@@ -559,15 +562,16 @@ def combine_genes(args, samples):
         in_name = 'results'
 
     def merge_gene(gene):
-        with open(os.path.join(combine_dir, gene + '.fasta'), 'wb') as f:
+        with open(os.path.join(combine_dir, gene + '.fasta'), 'w+') as f:
             for name in sorted(samples.keys()):
                 in_path = os.path.join(out_loc, name, in_name, gene + '.fasta')
 
                 if not os.path.isfile(in_path):
                     continue
 
-                with open(in_path, 'rb') as r:
-                    shutil.copyfileobj(r, f)
+                with open(in_path, 'r') as r:
+                    _, seq = next(SimpleFastaParser(r))
+                    f.write(f'>{name}\n{seq}\n')
 
     def align_gene(gene):
         in_path = os.path.join(combine_dir, gene + '.fasta')
