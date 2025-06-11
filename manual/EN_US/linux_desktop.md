@@ -12,19 +12,19 @@ GeneMiner2 is designed to be very friendly to novice users. While [native Linux 
 
 3. Launch Steam and navigate to your Library. Click "Add a Game" in the left bottom corner, and then select "Add a Non-Steam Game".
 
-        ![](../../images/steam/en-add-menu.png)
+    ![](../../images/steam/en-add-menu.png)
 
 4. Click "Browse..." in the left bottom corner and choose `GeneMiner.exe`. Click "Add Selected Programs" to add GeneMiner2 to your library.
 
-        ![](../../images/steam/en-add-dialog.png)
+    ![](../../images/steam/en-add-dialog.png)
 
 5. Right click the "GeneMiner.exe" entry in the library and select "Properties..." in the menu.
 
-        ![](../../images/steam/en-game-menu.png)
+    ![](../../images/steam/en-game-menu.png)
 
 6. In the popup window, switch to the "Compatibility" tab. Check "Force the use of a specific Steam Play compatibility tool" and select "Proton 9.0-4" below.
 
-        ![](../../images/steam/en-prop-dialog.png)
+    ![](../../images/steam/en-prop-dialog.png)
 
 7. Click "Play" to launch GeneMiner2. The program should work as if it were running on Windows.
 

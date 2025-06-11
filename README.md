@@ -36,7 +36,8 @@ It is not recommended to run GeneMiner2 on macOS for large-scale analyses becaus
 
 ## Linux and other \*nix systems
 
-**[Running on desktop Linux systems](manual/EN_US/linux_dekstop.md)**
+**[Running on desktop Linux systems](manual/EN_US/linux_desktop.md)**
+
 **[Build instructions on Unix-like platforms](manual/EN_US/command_line.md)**
 
 You can also use the Python scripts in the `scripts` folder. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on Windows, macOS, or Linux.
