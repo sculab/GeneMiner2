@@ -21,19 +21,10 @@ If mining angiosperm 353 genes, please cite our paper on Easy353:
 
 
 # Install
-**You could download GeneMiner from [SourceForge](https://sourceforge.net/projects/geneminer/files/).**
 
-If you require the command-line version of gene mining tools, please visit:
-- GeneMiner: https://github.com/sculab/GeneMiner
-- Easy353: https://github.com/plant720/Easy353
+## Windows and macOS
 
-You can also use the Python scripts in the scripts folder of GeneMiner2. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on Windows, macOS, or Linux.
-
-**For macOS**: GeneMiner is packaged with Wineskin to run on macOS. Please try to use the latest version of macOS. Due to limited conditions, GeneMiner has not been tested on all macOS versions. If you meet error like "XXX is damaged" You can type this in terminal:
-- xattr -cr /location_of_GeneMinerO.app
-- Example: xattr -cr /Applications/GeneMiner.app
-
-Due to GeneMiner2 operating on macOS through Wine technology, its running efficiency is significantly lower compared to Windows. Therefore, it is not recommended to use GeneMiner2 on macOS for large-scale analyses.
+**[Download GeneMiner2 from SourceForge](https://sourceforge.net/projects/geneminer/files/)**
 
 **Note:** Avoid installing the software on a portable drive.
 
@@ -41,6 +32,17 @@ Due to GeneMiner2 operating on macOS through Wine technology, its running effici
 **Note:** Parallel execution: do not run multiple windows in parallel within the same folder. Instead, copy the GeneMiner directory(including **analysis** folder and **GeneMiner.exe**)  and run the second instance from the duplicated folder. (Note: folder paths must not contain Chinese characters.)
 ---
 
+It is not recommended to run GeneMiner2 on macOS for large-scale analyses because the efficiency is significantly lower than running on Windows.
+
+## Linux and other \*nix systems
+
+**[Running on desktop Linux systems](manual/EN_US/linux_desktop.md)**
+
+**[Build instructions on Unix-like platforms](manual/EN_US/command_line.md)**
+
+You can also use the Python scripts in the `scripts` folder. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on Windows, macOS, or Linux.
+
+---
 
 # Tutorials
 
@@ -56,17 +58,11 @@ Due to GeneMiner2 operating on macOS through Wine technology, its running effici
 [Tutorial 4 - For Obtaining Angiosperms353 Genes](DEMO/DEMO4/DEMO4.md)
 
 
-# Command Line (cmd)
-
-For users interested in the command line version, please refer to our [Easy353](https://github.com/plant720/Easy353) or [GeneMiner](https://github.com/sculab/GeneMiner)
-
-
 # Detailed Description
 
 For detailed GeneMiner2 documentation, [please see here](manual/EN_US/readme_detailed.md).
 
 For a further explanation of the output directory,  [please see here](manual/EN_US/output.md).
-
 
 
 # Questions

@@ -1,5 +1,5 @@
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 import os
-from Bio import SeqIO
 import statistics
 import argparse
 import subprocess
@@ -26,11 +26,9 @@ def main():
     if os.path.exists(output_db + ".nsq"): os.remove(output_db + ".nsq")
     if os.path.exists(output_blast): os.remove(output_blast)
 
-    # 用于存储所有序列的长度
-    sequence_lengths = []
     # 逐个读取FASTA文件中的序列并获取其长度
-    for record in SeqIO.parse(subject_file, "fasta"):
-        sequence_lengths.append(len(record.seq))
+    with open(subject_file, 'r') as f:
+        sequence_lengths = [len(seq) for _, seq in SimpleFastaParser(f)]
     # 计算序列长度的中值
     median_length = statistics.median(sequence_lengths)
 
