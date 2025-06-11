@@ -30,11 +30,11 @@ GeneMiner2的源代码在Github和Gitee上均可获取，
 
 **[SourceForge](https://sourceforge.net/projects/geneminer/files/)**
 
-**注意：**请勿在移动磁盘上运行GeneMiner2。请勿将GeneMiner2安装到带有中文的文件夹中。
+**注意:** 请勿在移动磁盘上运行GeneMiner2。请勿将GeneMiner2安装到带有中文的文件夹中。
 
-**关于并行运行：**不要在同一个文件夹下打开多个窗口并行运行，可以复制GeneMiner所在的文件夹，并在副本文件中运行第二个窗口。文件夹路径不能有中文名。
+**关于并行运行:** 不要在同一个文件夹下打开多个窗口并行运行，可以复制GeneMiner所在的文件夹，并在副本文件中运行第二个窗口。文件夹路径不能有中文名。
 
-**macOS用户：**在macOS上运行GeneMiner2时，如果遇到 "GeneMiner.app已损坏，无法打开"之类的错误，请打开终端，运行类似下面的命令:
+**macOS用户:** 在macOS上运行GeneMiner2时，如果遇到 "GeneMiner.app已损坏，无法打开"之类的错误，请打开终端，运行类似下面的命令:
 - xattr -cr **把GeneMiner.app拖放到此处**
 - 例如: xattr -cr /Applications/GeneMiner.app
 

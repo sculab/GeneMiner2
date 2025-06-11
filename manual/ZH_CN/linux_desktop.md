@@ -2,7 +2,7 @@
 
 ## 动机
 
-GeneMiner2 致力于为初学者提供友好的使用体验。尽管可以编译[原生Linux版本](command_line.md)，我们推荐桌面Linux用户运行带有图形界面的Windows版。目前来说，[Proton](https://github.com/ValveSoftware/Proton)是兼容性最好的工具，可以用[Steam](https://store.steampowered.com/)或者[umu-launcher](https://github.com/Open-Wine-Components/umu-launcher)来安装。用其他Wine前端也是可行的，例如[PlayOnLinux](https://www.playonlinux.com/)，或者完全手动配置[Wine](https://www.winehq.org/)本体，但这样需要更多的配置工作，
+GeneMiner2 致力于为初学者提供友好的使用体验。尽管可以编译[原生Linux版本](command_line.md)，我们推荐桌面Linux用户运行带有图形界面的Windows版。目前来说，[Proton](https://github.com/ValveSoftware/Proton)是兼容性最好的工具，可以用[Steam](https://store.steampowered.com/)或者[umu-launcher](https://github.com/Open-Wine-Components/umu-launcher)来安装。用其他Wine前端也是可行的，例如[PlayOnLinux](https://www.playonlinux.com/)，或者完全手动配置[Wine](https://www.winehq.org/)本体，但这样需要更多的配置工作。
 
 ## Steam
 
