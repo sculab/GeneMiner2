@@ -59,6 +59,8 @@ You can also use the Python scripts in the `scripts` folder. These scripts offer
 
 
 # Detailed Description
+
+
 For the complete user manual, please refer to [manual](manual/manual_geneminer.pdf)
 
 For detailed GeneMiner2 documentation, [please see here](manual/EN_US/readme_detailed.md).
