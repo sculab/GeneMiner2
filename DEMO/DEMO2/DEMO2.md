@@ -4,33 +4,29 @@
 ## Genes
 
 
-### Data Preparation
-
-
-- **[Sequencing Data](DATA/PLANT/GENE/)**: Second-generation sequencing data files, in .gz or .fq format.
-
-- **[Reference Sequence](DATA/ref/OK166971.gb)**: Reference gene sequences from closely related species in fasta or genbank format.
-
 ### Loading the data files
 
-Click [File>Load Sequencing Files] select sequencing data file.
+
+- **[Sequencing Data](DATA/PLANT/GENE/)**: Click [**File>Load Sequencing Files**] select sequencing data in .gz or .fq format.
 
 
-Click [File>Load Reference] select  genbank format reference sequence file. 
+- **[Reference Sequence](DATA/ref/OK166971.gb)**: Reference gene sequences from closely related species in fasta or genbank format. Click [**File>Load Reference**] select  genbank format reference sequence file. 
 
-Confirm to report the file as a gene list.
 
-Optionally, expand the left or right intronic regions [Extend Left][Extend Right].
+If no reference file is available locally, you can download standard references by selecting **[Files > Download References >]** from the top menu. Available datasets include:
 
-The imported files display details such as reference sequence ID, gene name, number of sequences, and average sequence length.
-
+        •	Plant Chloroplast Genome
+        •	Plant Mitochondrial Genome
+        •	Animal Mitochondrial Genome
+        (Note:Select Download as single gene if you want to extract genes.)
+        
 
 ### Obtaining Genes
 Click [Analysis > Filter & Assemble] to obtain Genes.
 
 **NOTE:** Do not manually close the command line window; it will close automatically once the process is complete.
 
-NOTE: For importing multiple pairs of sequencing files, select [Batch > Filter & Assemble] to extract.
+NOTE: For importing **multiple** pairs of sequencing files, select [**Batch** > Filter & Assemble] to extract.
 
 
 ![](gif/GENOME_GENE2.gif)
@@ -43,15 +39,10 @@ Click [Open] to access the  results located in the 'results' folder.
 ## Genomes
 
 
-### Data Preparation
-
-
-- **[Sequencing Data](DATA/PLANT/GENOME/)**: Second-generation sequencing data files, in .gz or .fq format.
-
 ### Loading the data files
 
 
-Click [File>Load Sequencing Files] select sequencing data file.
+- **[Sequencing Data](DATA/PLANT/GENOME/)**: Click [**File>Load Sequencing Files**] select sequencing data file.
 
 
 ### Obtaining Plant Chloroplast Genome
@@ -88,7 +79,19 @@ Click [OK] proceed with the default parameters for assembly.
 
 Click [Open] to view the  results located in the 'Organelle' folder named "Gennome_mito_plant.fasta"
 
-
-
-
 ---
+
+The **output** folder **Organelle** includes:
+
+•	Gennome_cp.fasta: Assembled chloroplast genome sequence (plants).
+
+•	Gennome_cp.gb: Annotated chloroplast genome in GenBank format.
+
+•	Gennome_mito_plant.fasta: Assembled mitochondrial genome (plants).
+
+•	Gennome_mito.fasta: Assembled mitochondrial genome (animals).
+
+•	temp/: Temporary files from incomplete runs (e.g., interrupted sessions).
+
+
+

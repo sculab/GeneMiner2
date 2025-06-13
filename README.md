@@ -46,16 +46,14 @@ You can also use the Python scripts in the `scripts` folder. These scripts offer
 
 # Tutorials
 
-[Tutorial 1 - A Quick Tutorial For General Use](/DEMO/DEMO1/DEMO1.md)
+[Tutorial 1 - A Quick Tutorial For General Use(single sample)](/DEMO/DEMO1/DEMO1.md)
 
 
-[Tutorial 2 - For Obtaining Organelle Genes (Genome)](/DEMO/DEMO2/DEMO2.md)
+[Tutorial 2 - Obtain Organelle Genes (Genome)](/DEMO/DEMO2/DEMO2.md)
 
   
-[Tutorial 3 - For Obtaining Single Copy Genes](DEMO/DEMO3/DEMO3.md)
+[Tutorial 3 - 353 genes and Single-Copy Gene Workflow(Batch Example)](DEMO/DEMO3/DEMO3.md)
 
-
-[Tutorial 4 - For Obtaining Angiosperms353 Genes](DEMO/DEMO4/DEMO4.md)
 
 
 # Detailed Description

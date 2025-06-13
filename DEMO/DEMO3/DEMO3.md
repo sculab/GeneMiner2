@@ -1,27 +1,13 @@
-# Tutorial 3 - Tree Construction Process for Single-Copy Genes(batch)
-
-
+# Tutorial 3 - 353 genes and Single-Copy Gene Workflow(Batch Example)
 
 ### Data Preparation
 
 
 - **[Sequencing Data](DATA/PLANT/)**: Second-generation sequencing data files, in .gz or .fq format.
 
-- **[Transcript Data](DATA/Phytozome/)**: Assembled transcript data from a closely related species, obtained post-transcriptome assembly, in .fa format
+- **[Transcript Data](DATA/Phytozome/)**: Assembled transcript data from a closely related species, obtained post-transcriptome assembly, in .fa format.
 
-
-
-### Calculating Parameters
-
-Click [Tools > Calculate Parameters] to obtain Genes.
-
-![](gif/parameter.gif)
-
-
-- **[Sequencing Data](DATA/seq/)**: Second-generation sequencing data files, in .gz or .fq format.
-
-
-- **[Reference Sequence](DATA/A_lyrata/)**: Reference gene sequences from closely related species in fasta or genbank format.
+These transcripts will serve as the basis for identifying single-copy gene candidates.
 
 
 
@@ -30,23 +16,49 @@ Click [Tools > Calculate Parameters] to obtain Genes.
 
 Click [**File > Load References**] select all **Transcript Data** .
 
-Click [**Analysis > Find Single Copy Genes**] to get SCG reference.
+Click [**Analysis > Find Single Copy Genes**]  to scan the transcript reference and extract genes present as a single ortholog across the dataset.
+
+These SCGs(in folder:**OrthoFinder>Single_Copy_Orthologue_Sequences**) will serve as the working reference for downstream extraction.
 
 
 ![](gif/SCG_ref.gif)
 
+---
 
+**Loading the data files(353 genes)**
+
+
+- **[Sequencing Data]**: Click [**File>Load Sequencing Files**] select sequencing data file in .gz or .fq format.
+
+
+- **[Reference Sequence]**: Click [File>Load Reference] select  fasta format reference sequences. 
+
+
+If no reference file is available locally, you can download standard references by selecting **[Files > Download References >]** from the top menu. Available datasets include:
+        •	Angiosperm 353 Genes
+
+---
+
+
+
+### Calculating Parameters
+
+Click [Tools > Calculate Parameters] .
+
+![](gif/parameter.gif)
+
+Click **Calculate** to estimate , and then click **Apply** to finalize the settings.
 
 
 
 ### Obtaining Single Copy Genes
 
+
 Click [Change] to modify the folder for results.
 
-Click [**File > Load References**] select the SCG (Single-Copy Gene) reference you have obtained.
+Click [**File > Load References**] select the SCG ((in folder:**OrthoFinder>Single_Copy_Orthologue_Sequences**)) reference you have obtained.
 
 Click [**File > Load Sequencing Files**] to import **Sequencing Data** in batch
-
 
 Click [**Batch > Filter & Assemble**] to obtain Single Copy Genes.
 
@@ -65,33 +77,34 @@ Click [Open] to view the SCG (Single-Copy Gene) results located in the 'results'
 
 
 
+### Trim low-quality regions
 
 
-
-### Data Cleaning
-
-Click [**Batch > Trim With Reference**]to remove two segments of low-quality sequence. 
+Click [**Batch > Trim With Reference**] to remove low-quality regions and sequences.
 
 [**Retention Length Threshold**] can be adjusted based on the data source to prevent over-filtering.
 
-The trimming results can be previewed in the 'BLAST' folder.
+Trimmed results can be previewed in the BLAST/ directory.
 
 
 ![](gif/SCG_datacleaning1.gif)
 
 
-Click [**Batch > Combine Results**]. 
 
-[**Maximum difference**] and [**Number of sequeces**] can be adjusted to filter sequences after alignment and trimming.
 
-The filered results can be previewed in the 'combined_*' files and folders.
+### Combine aligned sequences
 
-'combined_results.fasta','combined_trimed.fasta' stores **concatenated sequences**.
+
+Click [**Batch > Combine Results**] to merge and filter aligned genes across samples (Parameters were set using the Calculate Parameters function).
+
+Concatenated gene alignments are saved as:
+    **combined_results.fasta**: All aligned SCGs.
+    **combined_trimmed.fasta**: SCGs after quality trimming.
+The coalescented results are stored in **combined_results** and **combined_trimed**.
+
 
 
 ![](gif/SCG_datacleaning2.gif)
-
-
 
 
 
@@ -101,7 +114,17 @@ The filered results can be previewed in the 'combined_*' files and folders.
 
 Click [**Batch > Build Phylogenetic Tree**]. 
 
-The type of phylogenetic tree to be constructed can be selected, and if a rooted tree is required, an outgroup must be chosen.
+Select the matrix type and tree-building method, enable bootstrap. Choose whether to build a rooted tree, specify the outgroup, and decide whether to perform tree time calibration. 
+
+
+The **output** file include Coalescent.tree and Concatenation.tree.
 
 
 ![](gif/SCG_datacleaning3.gif)
+
+
+
+### Tree time calibration
+
+
+Double-click a branch in the tree to edit its divergence time.

@@ -1,38 +1,36 @@
 # Tutorial 1 - A Quick Tutorial For General Use
 
 
-### Data Preparation
+### Loading the data files
 
 
-- **[Sequencing Data](DATA/seq/)**: Second-generation sequencing data files, in .gz or .fq format.
+- **[Sequencing Data](DATA/seq/)**: Click [**File>Load Sequencing Files**] select sequencing data in .gz or .fq format.
+  (For batch processing with **multiple samples**, see **Demo 3(../DEMO3/DEMO3.md)** for details.)
 
 
-- **[Reference Sequence](DATA/A_lyrata/)**: Reference gene sequences from closely related species in fasta or genbank format.
- 
+- **[Reference Sequence](DATA/A_lyrata/)**: Click [File>Load Reference] select  fasta format reference sequences in fasta or genbank format. 
+
+
+If no reference file is available locally, you can download standard references by selecting **[Files > Download References >]** from the top menu. Available datasets include:
+
+        •	Plant Chloroplast Genome
+        •	Plant Mitochondrial Genome
+        •	Animal Mitochondrial Genome
+        (Note:Select Download as single gene if you want to extract genes.)
+        •	Angiosperm 353 Genes
+
+
+
 
 
 ### Calculating Parameters
 
-Click [Tools > Calculate Parameters] to obtain Genes.
+Click [Tools > Calculate Parameters] .
 
 ![](gif/parameter.gif)
 
+Click **Calculate** to estimate , and then click **Apply** to finalize the settings.
 
-- **[Sequencing Data](DATA/seq/)**: Second-generation sequencing data files, in .gz or .fq format.
-
-
-- **[Reference Sequence](DATA/A_lyrata/)**: Reference gene sequences from closely related species in fasta or genbank format.
- 
-
-### Loading the data files
-
-
-Click [File>Load Sequencing Files]  select sequencing data file.
-
-Click [File>Load Reference] select  fasta format reference sequence file. 
-
-
-The imported files display details such as reference sequence ID, gene name, number of sequences, and average sequence length.
 
 
 ### Obtain Genes
