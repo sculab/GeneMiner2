@@ -52,16 +52,16 @@ GeneMiner2的源代码在Github和Gitee上均可获取。
 
 # 示例演示
 
-[Tutorial 1 - 快速掌握使用方法](/DEMO/DEMO1/DEMO1.md)
+[Tutorial 1 - 快速掌握使用方法(单个样品)](/DEMO/DEMO1/DEMO1.md)
 
 
 [Tutorial 2 - 获取质体基因组和质体基因](/DEMO/DEMO2/DEMO2.md)
 
   
-[Tutorial 3 - 单拷贝基因建树流程](DEMO/DEMO3/DEMO3.md)
+[Tutorial 3 - 单拷贝基因和353基因建树流程(批量)](DEMO/DEMO3/DEMO3.md)
 
 
-[Tutorial 4 - 获取被子植物353基因集](DEMO/DEMO4/DEMO4.md)
+
 
 
 # 详细说明
