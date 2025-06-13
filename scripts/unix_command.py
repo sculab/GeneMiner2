@@ -351,6 +351,9 @@ def generate_consensus(args, samples):
         cns_dir  = os.path.join(out_loc, sample, 'consensus')
         filt_dir = os.path.join(out_loc, sample, 'filtered')
 
+        if os.path.isdir(cns_dir):
+            shutil.rmtree(cns_dir, ignore_errors=True)
+
         os.makedirs(cns_dir, exist_ok=True)
 
         for name in genes:
@@ -438,6 +441,9 @@ def blast_trim(args, samples):
             return
 
         blast_dir = os.path.join(out_loc, sample, 'blast')
+
+        if os.path.isdir(blast_dir):
+            shutil.rmtree(blast_dir, ignore_errors=True)
 
         os.makedirs(blast_dir, exist_ok=True)
 
@@ -545,11 +551,17 @@ def combine_genes(args, samples):
 
     combine_dir = os.path.join(out_loc, 'combined_results')
 
+    if os.path.isdir(combine_dir):
+        shutil.rmtree(combine_dir, ignore_errors=True)
+
     os.makedirs(combine_dir, exist_ok=True)
 
     if not args.no_alignment:
         alignment_dir = os.path.join(out_loc, 'combined_results', 'aligned')
         trim_dir = os.path.join(out_loc, 'combined_trimed')
+
+        if os.path.isdir(trim_dir):
+            shutil.rmtree(trim_dir, ignore_errors=True)
 
         os.makedirs(alignment_dir, exist_ok=True)
         os.makedirs(trim_dir, exist_ok=True)
@@ -562,7 +574,10 @@ def combine_genes(args, samples):
         in_name = 'results'
 
     def merge_gene(gene):
-        with open(os.path.join(combine_dir, gene + '.fasta'), 'w+') as f:
+        out_path = os.path.join(combine_dir, gene + '.fasta')
+        written  = False
+
+        with open(out_path, 'w+') as f:
             for name in sorted(samples.keys()):
                 in_path = os.path.join(out_loc, name, in_name, gene + '.fasta')
 
@@ -572,6 +587,11 @@ def combine_genes(args, samples):
                 with open(in_path, 'r') as r:
                     _, seq = next(SimpleFastaParser(r))
                     f.write(f'>{name}\n{seq}\n')
+
+                written = True
+
+        if not written:
+            os.remove(out_path)
 
     def align_gene(gene):
         in_path = os.path.join(combine_dir, gene + '.fasta')
@@ -602,9 +622,10 @@ def combine_genes(args, samples):
         seq_count = len(seq_list)
 
         if seq_count <= 1:
+            os.remove(gene_path)
             return
 
-        dist_mat = [[0] * seq_count] * seq_count
+        dist_mat = [[0] * seq_count for _ in range(seq_count)]
 
         for i in range(seq_count - 1):
             for j in range(i + 1, seq_count):
@@ -616,34 +637,49 @@ def combine_genes(args, samples):
                 nuc_i = seq_i.replace("-", "").replace("?", "")
                 nuc_j = seq_j.replace("-", "").replace("?", "")
 
-                if not nuc_i or not nuc_j:
-                    dist_mat[i][j] = 1
-                    dist_mat[j][i] = 1
-                    continue
+                if nuc_i and nuc_j:
+                    diff_pct = diff_count / min(len(nuc_i), len(nuc_j))
+                else:
+                    diff_pct = 1
 
-                diff_pct = diff_count / min(len(nuc_i), len(nuc_j))
-                dist_mat[i][j] = diff_pct
-                dist_mat[j][i] = diff_pct
+                dist_mat[i][j] = dist_mat[j][i] = 1 if diff_pct <= args.clean_difference else 0
+
+        def find_parent(p, x):
+            while p[x] != x:
+                x, p[x] = p[x], p[p[x]]
+            return x
+
+        def merge_sets(p, x, y):
+            px = find_parent(p, x)
+            py = find_parent(p, y)
+            if px != py:
+                p[px] = py
+
+        def find_cc(adj):
+            p = list(range(len(adj)))
+
+            for i, vec in enumerate(adj[:-1]):
+                for j, con in enumerate(vec[i + 1:], i + 1):
+                    if con:
+                        merge_sets(p, i, j)
+
+            for i, _ in enumerate(p):
+                p[i] = find_parent(p, i)
+
+            m = {}
+
+            for i, r in enumerate(p):
+                m.setdefault(r, []).append(i)
+
+            return m.values()
 
         max_count  = 0
         max_subset = []
 
-        for i in range(seq_count):
-            subset = [i]
-
-            for j in range(seq_count):
-                if i == j:
-                    continue
-
-                for k in subset:
-                    if dist_mat[j][k] > args.clean_difference:
-                        break
-                else:
-                    subset.append(j)
-
-            if len(subset) > max_count:
-                max_count = len(subset)
-                max_subset = subset
+        for cc in find_cc(dist_mat):
+            if len(cc) > max_count:
+                max_count  = len(cc)
+                max_subset = cc
 
         max_subset = frozenset(max_subset)
 
