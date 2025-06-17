@@ -52,7 +52,7 @@ conda install -c bioconda blast clustalo mafft minimap2 muscle trimal
 ln -s /home/user/.local/bin/mafft cli/bin/mafft
 ```
 
-GeneMiner2的入口点是`cli/geneminer2`。在运行之前，需要准备一个tsv格式的样本列表。具体格式是`<物种名><Tab><数据文件1>`（单端）或者`<物种名><Tab><数据文件1><Tab><数据文件2>`（双端），每一行代表一个样本。例如，[DEMO 3](../../DEMO/DEMO3)的样本列表大概是这样：
+GeneMiner2的入口点是`cli/geneminer2`。在运行之前，需要准备一个tsv格式的样本列表。具体格式是`<物种名><Tab><数据文件1>`（单端）或者`<物种名><Tab><数据文件1><Tab><数据文件2>`（双端），每一行代表一个样本。例如，[DEMO 3](../../DEMO/DEMO3/DEMO3.md)的样本列表大概是这样：
 
 ```
 Bupleurum_chinense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_2.fq.gz

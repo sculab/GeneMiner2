@@ -52,7 +52,7 @@ GeneMiner2 will work as long as these tools are in `PATH`. To specify a particul
 ln -s /home/user/.local/bin/mafft cli/bin/mafft
 ```
 
-The entry point is `cli/geneminer2`. To run an analysis, GeneMiner2 requires a a tab-delimited sample list, with format `<Species Name><Tab><Read File 1>` (single read) or `<Species Name><Tab><Read File 1><Tab><Read File 2>` (paired-end reads), each line denoting a sample. For example, the sample list for [DEMO 3](../../DEMO/DEMO3) looks as follows:
+The entry point is `cli/geneminer2`. To run an analysis, GeneMiner2 requires a a tab-delimited sample list, with format `<Species Name><Tab><Read File 1>` (single read) or `<Species Name><Tab><Read File 1><Tab><Read File 2>` (paired-end reads), each line denoting a sample. For example, the sample list for [DEMO 3](../../DEMO/DEMO3/DEMO3.md) looks as follows:
 
 ```
 Bupleurum_chinense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_2.fq.gz
