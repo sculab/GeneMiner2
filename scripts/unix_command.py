@@ -792,10 +792,13 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--error-threshold', default=2, help='Error threshold', metavar='INT', type=int)
     parser.add_argument('-sb', '--soft-boundary', choices=('0', 'auto', 'unlimited'), default='auto', help='Soft boundary (default = auto)', type=str)
     parser.add_argument('-i', '--iteration', default=4096, help='Search depth', metavar='INT', type=int)
+
     parser.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
+
+    parser.add_argument('-t', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
     parser.add_argument('-m', '--trim-mode', choices=('all', 'longest', 'terminal'), default='terminal', help='Trim mode (default = terminal)', type=str)
     parser.add_argument('-n', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
-    parser.add_argument('-t', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
+
     parser.add_argument('-x', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
     parser.add_argument('-d', '--clean-difference', default=1, help='Maximum acceptable pairwise difference in an alignment (default = 1.0)', metavar='FLOAT', type=float)
     parser.add_argument('-q', '--clean-sequences', default=0, help='Number of sequences required in an alignment (default = 0)', metavar='INT', type=int)

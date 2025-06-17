@@ -4,23 +4,33 @@
 
 To run GeneMiner2 natively on Unix-like environments, a custom build is necessary. The general rule of binary compatibility on Linux applies: the compiled binaries will work on similar distributions with identical or newer libraries.
 
-First, install [Haxe 4](https://haxe.org/) in the build environment. It is also necessary to [configure the C++ target](https://haxe.org/manual/target-cpp-getting-started.html), which basically boils down to two commands:
+First, install the default C++ compiler and [zlib](https://zlib.net/) for the platform. On Ubuntu 20.04 and later, this can be done as follows:
 
 ```
-haxelib setup
+sudo apt install build-essential zlib1g zlib1g-dev
+```
+
+Advanced users can install [zlib-ng](https://github.com/zlib-ng/zlib-ng) or [cloudflare-zlib](https://github.com/cloudflare/zlib) in place of zlib to improve performance.
+
+Second, install [Haxe 4](https://haxe.org/) and [configure the C++ target](https://haxe.org/manual/target-cpp-getting-started.html). On Ubuntu 20.04 and later, the following lines are sufficient:
+
+```
+sudo apt install haxe
+haxelib setup ~/haxelib
 haxelib install hxcpp
 ```
 
-Then, use the following commands to install build dependencies with conda. Alternatively, it is also possible to install them manually using other package managers.
+Third, install Python dependencies. If conda is available, run the following commands. Otherwise, it would be necessary to install them manually using the system package manager.
 
 ```
-conda create -n geneminer python=3.11 numpy=2.1.3 biopython matplotlib pyinstaller scipy
+conda create -c conda-forge -n geneminer python=3.11 numpy=2.1.3 biopython matplotlib pyinstaller scipy
 conda activate geneminer
 ```
 
-Finally, build the binaries themselves:
+Finally, download the source code of GeneMiner2 and build the binaries themselves:
 
 ```
+cd GeneMiner2
 make
 ```
 
@@ -28,29 +38,35 @@ The binaries are placed under the `cli` directory.
 
 ## Usage
 
-The binaries depend on a few essential libraries. Therefore, pre-built GeneMiner2 binaries can generally work on a wide range of similar distributions. Nevertheless, several important tools must be available at run time. These tools can be installed using conda as follows:
+The binaries themselves have few dependencies and can generally work on a wide range of similar distributions. For example, GeneMiner2 built on Ubuntu 20.04 runs on Debian bullseye and later, Ubuntu 20.04 and later, and Ubuntu derivatives based on Ubuntu 20.04 or later.
+
+Nevertheless, several important tools must be available at run time. With conda, these tools can be installed as follows:
 
 ```
 conda install -c bioconda blast clustalo mafft minimap2 muscle trimal
 ```
 
-GeneMiner2 will work as long as these tools are in `PATH`. To specify a particular executable, place it under `cli/bin`. For example, creating a symbolic link at `cli/bin/mafft` forces GeneMiner2 to use that certain executable.
+GeneMiner2 will work as long as these tools are in `PATH`. To specify a particular executable, place it under `cli/bin`. For example, creating such a symbolic link at `cli/bin/mafft` forces GeneMiner2 to use that certain executable.
 
 ```
 ln -s /home/user/.local/bin/mafft cli/bin/mafft
 ```
 
-The entry point is `cli/geneminer2`. Before running the pipeline, prepare a tab-delimited sample list. The format is `<Species Name><Tab><Read File 1>` (single read) or `<Species Name><Tab><Read File 1><Tab><Read File 2>` (paired-end reads), with each line denoting a sample. For example, given paired-end data from _Aegopodium podagraria_ and single read data from _Torilis scabra_, the file will look as follows:
+The entry point is `cli/geneminer2`. To run an analysis, GeneMiner2 requires a a tab-delimited sample list, with format `<Species Name><Tab><Read File 1>` (single read) or `<Species Name><Tab><Read File 1><Tab><Read File 2>` (paired-end reads), each line denoting a sample. For example, the sample list for [DEMO 3](../../DEMO/DEMO3) looks as follows:
 
 ```
-Aegopodium_podagraria	/mnt/data/Aegopodium_podagraria_1.fq.gz	/mnt/data/Aegopodium_podagraria_2.fq.gz
-Torilis_scabra	/mnt/data/Torilis_scabra.fq.gz
+Bupleurum_chinense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_chinense_2.fq.gz
+Bupleurum_fruticosum	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_fruticosum_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_fruticosum_2.fq.gz
+Bupleurum_krylovianum	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_krylovianum_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_krylovianum_2.fq.gz
+Bupleurum_malconense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_malconense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_malconense_2.fq.gz
+Bupleurum_wenchuanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_wenchuanense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_wenchuanense_2.fq.gz
+Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunnanense_1.fq.gz	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunnanense_2.fq.gz
 ```
 
-Next, assuming the sample list is saved at `/mnt/data/samples.tsv` and Angiosperm353 genes saved as FASTA files (one per gene) under `/mnt/data/angiosperm353`, run GeneMiner2 with default settings:
+Next, assuming the sample list is saved to `/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv` and Angiosperm353 genes saved as FASTA files (one per gene) under `/home/user/Angiosperm353`, run GeneMiner2 with default settings:
 
 ```
-cli/geneminer2 -f /mnt/data/samples.tsv -r /mnt/data/angiosperm353 -o /mnt/data/output
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
 Note, the command line interface **DO NOT** build trees. You might need to build the tree manually using `combined_trimed.fasta` (concatenation) or every FASTA file in `combined_trimed` (coalescent).
@@ -69,7 +85,7 @@ It is also possible to run only specific steps. For example, given a set of para
 The following line runs Trim With Reference and Combine Results with them:
 
 ```
-cli/geneminer2 -f /mnt/data/samples.tsv -r /mnt/data/angiosperm353 -o /mnt/data/output -t consensus -n 0.5 -m all --msa-program muscle -d 0.2 -q 5 trim combine
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -t consensus -n 0.5 -m all --msa-program muscle -d 0.2 -q 5 trim combine
 ```
 
-Run `cli/geneminer2 -h` to view all command line switches. All parameters and output are analogus to their counterparts in the graphical version, except that the command line interface only accepts decimal values between 0.0 and 1.0 for percentages. Additionally, several internal options (such as `--min-depth`) are also exposed. This provides more flexibility in large-scale runs.
+Run `cli/geneminer2 -h` to view all command line switches. All parameters and output are analogus to their counterparts in the graphical version, except that the command line interface only accepts decimal values between 0.0 and 1.0 for percentages. Additionally, several internal options (such as `--min-depth`) are also exposed, providing extra flexibility for advanced users.
