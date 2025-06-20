@@ -2618,7 +2618,7 @@ Public Class Main_Form
     End Sub
     Public Sub check_paralogs()
         If My.Computer.FileSystem.DirectoryExists(Path.Combine(out_dir, "results")) Then
-            Dim paralogs_dir As String = Path.Combine(out_dir, "muticopy")
+            Dim paralogs_dir As String = Path.Combine(out_dir, "multicopy")
             DeleteDir(paralogs_dir)
             Directory.CreateDirectory(paralogs_dir)
             Dim count As Integer = 0
@@ -2651,7 +2651,7 @@ Public Class Main_Form
                                                                                  process_build_barcode.Close()
                                                                              End If
                                                                          Catch ex As Exception
-                                                                             File.AppendAllText(TextBox1.Text + "\log.txt", "Could not check muticopy for " & DataGridView1.Rows(i - 1).Cells(2).ToString & Environment.NewLine)
+                                                                             File.AppendAllText(TextBox1.Text + "\log.txt", "Could not check multicopy for " & DataGridView1.Rows(i - 1).Cells(2).ToString & Environment.NewLine)
                                                                          End Try
 
                                                                      End If
@@ -2673,18 +2673,18 @@ Public Class Main_Form
         DataGridView2.Refresh()
         timer_id = 4
         PB_value = 0
-        Dim th1 As New Thread(AddressOf batch_muticopy)
+        Dim th1 As New Thread(AddressOf batch_multicopy)
         th1.Start()
     End Sub
 
-    Public Sub batch_muticopy()
+    Public Sub batch_multicopy()
         For batch_i As Integer = 1 To seqsView.Count
             PB_value = batch_i / seqsView.Count * 100
             If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
                 Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
                 out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
 
-                Dim paralogs_dir As String = Path.Combine(out_dir, "muticopy")
+                Dim paralogs_dir As String = Path.Combine(out_dir, "multicopy")
                 safe_delete(paralogs_dir)
                 Directory.CreateDirectory(paralogs_dir)
                 Dim count As Integer = 0
@@ -2715,13 +2715,13 @@ Public Class Main_Form
                                                                                      process_build_barcode.WaitForExit()
                                                                                      process_build_barcode.Close()
                                                                                  Catch ex As Exception
-                                                                                     File.AppendAllText(TextBox1.Text + "\log.txt", "Could not check muticopy for " & DataGridView1.Rows(i - 1).Cells(2).ToString & " in " & folder_name & Environment.NewLine)
+                                                                                     File.AppendAllText(TextBox1.Text + "\log.txt", "Could not check multicopy for " & DataGridView1.Rows(i - 1).Cells(2).ToString & " in " & folder_name & Environment.NewLine)
                                                                                  End Try
 
                                                                              End If
                                                                          End If
                                                                      End Sub)
-                RichTextBox1.AppendText("Muticopy in " + folder_name + ":" + vbCrLf)
+                RichTextBox1.AppendText("Multicopy in " + folder_name + ":" + vbCrLf)
                 For i As Integer = 1 To refsView.Count
                     If File.Exists(Path.Combine(paralogs_dir, refsView.Item(i - 1).Item(1).ToString + ".fasta")) Then
                         RichTextBox1.AppendText(refsView.Item(i - 1).Item(1).ToString + vbCrLf)
@@ -2731,7 +2731,7 @@ Public Class Main_Form
             End If
         Next
         PB_value = -1
-        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Information")
+        MsgBox("Analysis completed! Please check multicopy folder in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Private Sub 全选ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 全选ToolStripMenuItem.Click
@@ -2833,8 +2833,8 @@ Public Class Main_Form
                                 Else
                                     result_list.Add("0")
                                 End If
-                                If Directory.Exists(Path.Combine(my_out_dir, "muticopy")) Then
-                                    If File.Exists(Path.Combine(my_out_dir, "muticopy", refsView.Item(i - 1).Item(1).ToString + ".fasta")) Then
+                                If Directory.Exists(Path.Combine(my_out_dir, "multicopy")) Then
+                                    If File.Exists(Path.Combine(my_out_dir, "multicopy", refsView.Item(i - 1).Item(1).ToString + ".fasta")) Then
                                         result_list.Add("1")
                                     Else
                                         result_list.Add("0")
@@ -4223,7 +4223,7 @@ Public Class Main_Form
                                                                  End Try
                                                              End Sub)
         PB_value = -1
-        MsgBox("Analysis completed! Please check muticopy foler in output.", MsgBoxStyle.Information, "Information")
+        MsgBox("Analysis completed! Please check multicopy folder in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Public Sub find_best_ref(ByVal options() As String)
@@ -4454,11 +4454,11 @@ Public Class Main_Form
                                          Dim assemble_file As String = plasty_dir + "\Circularized_assembly_1_Project1.fasta"
                                          If File.Exists(plasty_dir + "\Option_1_Project1.fasta") Then
                                              Dim process_check_option As Process = Process.Start(New ProcessStartInfo With {
-                                             .FileName = currentDirectory + "analysis\check_option_blast.exe",
-                                             .WorkingDirectory = plasty_dir,
-                                             .CreateNoWindow = False,
-                                             .Arguments = "-i " + """" + plasty_dir + """" + " -r " + """" + best_ref + ".fasta" + """" + " -o " + "best.fasta"
-                                         }）
+                                                 .FileName = currentDirectory + "analysis\check_option_blast.exe",
+                                                 .WorkingDirectory = currentDirectory + "temp\",
+                                                 .CreateNoWindow = False,
+                                                 .Arguments = "-i " + """" + plasty_dir + """" + " -r " + """" + plasty_dir + "\" + best_ref + ".fasta" + """" + " -o " + """" + plasty_dir + "\" + "best.fasta" + """"
+                                             })
                                              process_check_option.WaitForExit()
                                              process_check_option.Close()
                                              If File.Exists(plasty_dir + "\best.fasta") Then

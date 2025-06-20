@@ -248,7 +248,7 @@ def muscle_alignment(seq_directory, threads=1, align = "muscle"):
             output_name = os.path.join(genes_result_s4, file).replace("\\","/").replace("//","/")
             if file != ".DS_Store":
                 if align == "muscle":
-                    cmd = r"..\analysis\muscle_warpper.exe -i" + " " + '"' + fname + '"' + " -o " + '"' + output_name + '"'
+                    cmd = r"..\analysis\muscle_wrapper.exe -i" + " " + '"' + fname + '"' + " -o " + '"' + output_name + '"'
                 else:
                     cmd = r"..\analysis\mafft-win\mafft.bat --adjustdirection --auto --thread " + str(threads) + " " + '"' + fname + '"' + " > " + '"' + output_name + '"'
                 commands.append(cmd)

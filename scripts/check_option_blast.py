@@ -25,7 +25,7 @@ def main():
 
     # 如果数据库文件不存在，就创建
     if not os.path.exists(output_db + ".nhr"):
-        makeblastdb_cmd = [r"..\analysis\makeblastdb.exe", "-in", subject_file, "-dbtype", "nucl", "-out", output_db]
+        makeblastdb_cmd = [r"..\analysis\makeblastdb.exe", "-in", f'"{subject_file}"', "-dbtype", "nucl", "-out", output_db]
         print(" ".join(makeblastdb_cmd))
         subprocess.run(makeblastdb_cmd, check=True, env=env)
 
