@@ -2530,134 +2530,6 @@ Public Class Main_Form
         form_config_cp.CheckBox1.Visible = False
         form_config_cp.Show()
     End Sub
-    Private Sub 分离序列ToolStripMenuItem_Click(sender As Object, e As EventArgs)
-        If TextBox1.Text <> "" Then
-            Dim refs_count As Integer = 0
-            ref_dir = (currentDirectory + "temp\temp_refs\").Replace("\", "/")
-            out_dir = TextBox1.Text
-            DeleteDir(ref_dir)
-            Directory.CreateDirectory(ref_dir)
-            For i As Integer = 1 To refsView.Count
-                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                    CombineFiles(Path.Combine(ref_dir, "barcode.fasta"), Path.Combine(currentDirectory, "temp", "org_seq", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
-                End If
-            Next
-            Dim my_input As String = InputBox("Input accuracy level: 1-8", "Input", 4)
-            Dim word_size As Integer
-            If Not Integer.TryParse(my_input, word_size) Then
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
-                Exit Sub
-            End If
-            If word_size >= 1 And word_size <= 8 Then
-                Dim th1 As New Thread(AddressOf do_split_barcode)
-                th1.Start(word_size)
-            Else
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
-            End If
-        Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
-        End If
-    End Sub
-    Public Sub do_split_barcode(ByVal word_size As Integer)
-
-        For batch_i As Integer = 1 To seqsView.Count
-            PB_value = batch_i / seqsView.Count * 100
-            If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                Dim SI_split_barcode As New ProcessStartInfo With {
-                    .FileName = Path.Combine(currentDirectory, "analysis", "split_barcode.exe"),
-                    .WorkingDirectory = Path.Combine(currentDirectory, "temp"),
-                    .CreateNoWindow = True,
-                    .Arguments = "-i " + """" + DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString + """" + " -r " + """" + ".\temp_refs\barcode.fasta" + """" + " -o " + """" + TextBox1.Text + """" + " -p " + current_thread.ToString + " -w " + (word_size + 11).ToString
-                }
-                Dim process_split_barcode As Process = Process.Start(SI_split_barcode)
-                process_split_barcode.WaitForExit()
-                process_split_barcode.Close()
-            End If
-        Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
-        PB_value = 0
-    End Sub
-
-    Private Sub 合并结果ToolStripMenuItem1_Click(sender As Object, e As EventArgs)
-        If TextBox1.Text <> "" Then
-            Dim refs_count As Integer = 0
-            out_dir = TextBox1.Text
-            Dim th1 As New Thread(AddressOf do_combine_barcode)
-            th1.Start()
-        Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
-        End If
-    End Sub
-    Public Sub do_combine_barcode()
-        For batch_i As Integer = 1 To seqsView.Count
-            Directory.CreateDirectory(Path.Combine(out_dir, "clean_data"))
-            Directory.CreateDirectory(Path.Combine(out_dir, "raw_data"))
-            PB_value = batch_i / seqsView.Count * 100
-            If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-
-                Dim infolder As String = Path.Combine(out_dir, Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString))
-                Dim fileList() As String = Directory.GetFileSystemEntries(infolder)  ' 遍历所有的文件和目录  
-                For Each FileName As String In fileList
-                    If FileName.EndsWith("_clean.fasta") Then
-                        CombineFiles(Path.Combine(out_dir, "clean_data", Path.GetFileName(FileName)), FileName)
-                    Else
-                        CombineFiles(Path.Combine(out_dir, "raw_data", Path.GetFileName(FileName)), FileName)
-                    End If
-                Next
-
-            End If
-        Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
-        PB_value = 0
-    End Sub
-
-    Private Sub 重建序列ToolStripMenuItem_Click(sender As Object, e As EventArgs)
-        If TextBox1.Text <> "" Then
-            Dim refs_count As Integer = 0
-            ref_dir = (currentDirectory + "temp\temp_refs\").Replace("\", "/")
-            out_dir = TextBox1.Text
-            DataGridView2.EndEdit()
-            DeleteDir(ref_dir)
-            Directory.CreateDirectory(ref_dir)
-            For i As Integer = 1 To refsView.Count
-                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                    CombineFiles(Path.Combine(ref_dir, "barcode_refs.fasta"), Path.Combine(currentDirectory, "temp", "org_seq", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
-                End If
-            Next
-            Dim level As Integer
-            Dim my_input As String = InputBox("Input variability value: 1-4. Increasing the variability value results in a greater variation in the alternative sequences.", "Input", 4)
-            If Not Integer.TryParse(my_input, level) Then
-                Exit Sub
-            End If
-            If level >= 1 And level <= 4 Then
-                Dim th1 As New Thread(AddressOf do_build_barcode)
-                th1.Start(level)
-            Else
-                MsgBox("Please enter the correct number!", MsgBoxStyle.Information, "Information")
-            End If
-        Else
-            MsgBox("Please select an output folder!", MsgBoxStyle.Information, "Information")
-        End If
-    End Sub
-
-    Public Sub do_build_barcode(ByVal level As Integer)
-        For batch_i As Integer = 1 To seqsView.Count
-            PB_value = batch_i / seqsView.Count * 100
-            If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                Dim SI_build_barcode As New ProcessStartInfo With {
-                    .FileName = Path.Combine(currentDirectory, "analysis", "build_barcode.exe"),
-                    .WorkingDirectory = Path.Combine(currentDirectory, "temp"),
-                    .CreateNoWindow = True,
-                    .Arguments = "-i " + """" + DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString + """" + " -r " + """" + ".\temp_refs\barcode_refs.fasta" + """" + " -o " + """" + TextBox1.Text + """" + " -p " + current_thread.ToString + " -l " + level.ToString
-                }
-                Dim process_build_barcode As Process = Process.Start(SI_build_barcode)
-                process_build_barcode.WaitForExit()
-                process_build_barcode.Close()
-            End If
-        Next
-        MsgBox("Analysis completed!", MsgBoxStyle.Information, "Information")
-        PB_value = 0
-    End Sub
 
     Private Sub 哺乳动物线粒体基因组ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 哺乳动物线粒体基因组ToolStripMenuItem.Click
         cpg_down_mode = 7
@@ -2791,10 +2663,6 @@ Public Class Main_Form
                 Process.Start("explorer.exe", """" + paralogs_dir + """")
             End If
         End If
-    End Sub
-
-    Private Sub 分离重建ToolStripMenuItem_Click(sender As Object, e As EventArgs)
-        form_config_barcode.Show()
     End Sub
 
     Private Sub 旁系同源检测ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 旁系同源检测ToolStripMenuItem.Click
@@ -3504,14 +3372,17 @@ Public Class Main_Form
             If TargetOS = "macos" Then
                 parallelOptions.MaxDegreeOfParallelism = 1
             End If
+            If Not File.Exists(Path.Combine(TextBox1.Text, "blast_db")) Then
+                Directory.CreateDirectory(Path.Combine(TextBox1.Text, "blast_db"))
+            End If
             DeleteDir(Path.Combine(TextBox1.Text, "blast"))
             Directory.CreateDirectory(Path.Combine(TextBox1.Text, "blast"))
             Parallel.For(1, refsView.Count + 1, parallelOptions, Sub(i)
                                                                      Interlocked.Add(count, 1)
                                                                      PB_value = count / refsView.Count * 100
                                                                      If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" And File.Exists(TextBox1.Text + "\results\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
-                                                                         safe_copy(Path.Combine(TextBox1.Text, "results", refsView.Item(i - 1).Item(1).ToString + ".fasta"), Path.Combine(TextBox1.Text, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
-                                                                         do_trim_blast(ref_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", TextBox1.Text + "\results\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
+                                                                         build_blast_db(refsView.Item(i - 1).Item(1).ToString)
+                                                                         do_trim_blast(refsView.Item(i - 1).Item(1).ToString, Path.Combine(TextBox1.Text, "results"), Path.Combine(TextBox1.Text, "blast"))
                                                                      End If
                                                                  End Sub)
             PB_value = -1
@@ -3542,6 +3413,9 @@ Public Class Main_Form
                 safe_copy(currentDirectory + "temp\org_seq\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", ref_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", True)
             End If
         Next
+        If Not File.Exists(Path.Combine(TextBox1.Text, "blast_db")) Then
+            Directory.CreateDirectory(Path.Combine(TextBox1.Text, "blast_db"))
+        End If
         Dim source_dir As String = "results"
         Select Case form_config_trim.ComboBox1.SelectedIndex
             Case 0
@@ -3549,7 +3423,6 @@ Public Class Main_Form
             Case 1
                 source_dir = "consensus"
         End Select
-        Dim count As Integer = 0
         Dim parallelOptions As New ParallelOptions With {
             .MaxDegreeOfParallelism = current_thread
         }
@@ -3557,6 +3430,17 @@ Public Class Main_Form
             parallelOptions.MaxDegreeOfParallelism = 1
         End If
         Dim ticked_samples = Enumerable.Range(1, seqsView.Count).Where(Function(i) DataGridView2.Rows(i - 1).Cells(0).FormattedValue.ToString = "True").ToList
+        Dim success_count As Integer = 0
+        Dim total_count As Integer = (ticked_samples.Count + 1) * refsView.Count
+
+        Parallel.For(0, refsView.Count, Sub(i)
+                                            Interlocked.Add(success_count, 1)
+                                            PB_value = success_count / total_count * 100
+                                            If DataGridView1.Rows(i).Cells(0).FormattedValue.ToString = "True" Then
+                                                build_blast_db(refsView.Item(i).Item(1).ToString)
+                                            End If
+                                        End Sub)
+
         Parallel.ForEach(ticked_samples, parallelOptions, Sub(batch_i)
                                                               Try
                                                                   Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
@@ -3565,14 +3449,10 @@ Public Class Main_Form
                                                                   DeleteDir(Path.Combine(temp_out_dir, "blast"))
                                                                   Directory.CreateDirectory(Path.Combine(temp_out_dir, "blast"))
                                                                   For i As Integer = 1 To refsView.Count
-                                                                      Interlocked.Add(count, 1)
-                                                                      PB_value = count / ticked_samples.Count / refsView.Count * 100
+                                                                      Interlocked.Add(success_count, 1)
+                                                                      PB_value = success_count / total_count * 100
                                                                       If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                                                                          safe_copy(Path.Combine(temp_out_dir, source_dir, refsView.Item(i - 1).Item(1).ToString + ".fasta"), Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta"))
-
-                                                                          Dim result_path As String = Path.Combine(temp_out_dir, "blast", refsView.Item(i - 1).Item(1).ToString + ".fasta")
-                                                                          Dim ref_path As String = (currentDirectory + "temp\temp_refs\").Replace("\", "/") + refsView.Item(i - 1).Item(1).ToString + ".fasta"
-                                                                          do_trim_blast(ref_path, result_path)
+                                                                          do_trim_blast(refsView.Item(i - 1).Item(1).ToString, Path.Combine(temp_out_dir, source_dir), Path.Combine(temp_out_dir, "blast"))
                                                                       End If
                                                                   Next
                                                               Catch ex As Exception
@@ -4550,11 +4430,11 @@ Public Class Main_Form
                                          End Using
 
                                          Dim process_build_plasty As Process = Process.Start(New ProcessStartInfo With {
-                                         .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe",
-                                         .WorkingDirectory = plasty_dir,
-                                         .CreateNoWindow = False,
-                                         .Arguments = "-c NOVO_config.txt"
-                                     })
+                                             .FileName = currentDirectory + "analysis\NOVOPlasty4.3.4.exe",
+                                             .WorkingDirectory = plasty_dir,
+                                             .CreateNoWindow = False,
+                                             .Arguments = "-c NOVO_config.txt"
+                                         })
                                          process_build_plasty.WaitForExit()
                                          process_build_plasty.Close()
 
@@ -4651,5 +4531,65 @@ Public Class Main_Form
 
     Private Sub 计算参数ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 计算参数ToolStripMenuItem.Click
         form_config_calculate.Show()
+    End Sub
+
+    Public Sub build_blast_db(ByVal gene_name As String)
+        Dim db_dir As String = Path.Combine(TextBox1.Text, "blast_db")
+        Dim ref_path As String = Path.Combine(currentDirectory, "temp", "temp_refs", gene_name + ".fasta")
+
+        Dim SI_makeblastdb As New ProcessStartInfo With {
+            .FileName = currentDirectory + "analysis\makeblastdb.exe",
+            .WorkingDirectory = db_dir,
+            .CreateNoWindow = True
+        }
+        SI_makeblastdb.ArgumentList.Add("-in")
+        SI_makeblastdb.ArgumentList.Add("""" + ref_path + """")
+        SI_makeblastdb.ArgumentList.Add("-out")
+        SI_makeblastdb.ArgumentList.Add(gene_name)
+        SI_makeblastdb.ArgumentList.Add("-dbtype")
+        SI_makeblastdb.ArgumentList.Add("nucl")
+
+        If Not SI_makeblastdb.EnvironmentVariables.ContainsKey("BLAST_USAGE_REPORT") Then
+            SI_makeblastdb.EnvironmentVariables.Add("BLAST_USAGE_REPORT", "0")
+        End If
+
+        If Not SI_makeblastdb.EnvironmentVariables.ContainsKey("DO_NOT_TRACK") Then
+            SI_makeblastdb.EnvironmentVariables.Add("DO_NOT_TRACK", "1")
+        End If
+
+        Dim process_makeblastdb As New Process With {
+            .StartInfo = SI_makeblastdb
+        }
+
+        process_makeblastdb.Start()
+        process_makeblastdb.WaitForExit()
+        process_makeblastdb.Close()
+    End Sub
+
+    Public Sub do_trim_blast(ByVal gene_name As String, ByVal source_dir As String, ByVal output_dir As String)
+        Dim db_path As String = Path.Combine(TextBox1.Text, "blast_db", gene_name)
+        Dim in_path As String = Path.Combine(source_dir, gene_name + ".fasta")
+        Dim out_path As String = Path.Combine(output_dir, gene_name + ".fasta")
+        Dim ref_path As String = Path.Combine(currentDirectory, "temp", "temp_refs", gene_name + ".fasta")
+
+        Dim SI_build_trimed As New ProcessStartInfo With {
+            .FileName = currentDirectory + "analysis\build_trimed.exe",
+            .WorkingDirectory = currentDirectory + "analysis",
+            .CreateNoWindow = True,
+            .Arguments = "-i " + """" + in_path + """"
+        }
+        SI_build_trimed.Arguments += " -r " + """" + ref_path + """"
+        SI_build_trimed.Arguments += " -o " + """" + out_path + """"
+        SI_build_trimed.Arguments += " -b " + """" + db_path + """"
+        SI_build_trimed.Arguments += " -m " + form_config_trim.ComboBox2.SelectedIndex.ToString
+        SI_build_trimed.Arguments += " -p " + form_config_trim.NumericUpDown1.Value.ToString
+
+        Dim process_build_trimed As New Process With {
+            .StartInfo = SI_build_trimed
+        }
+
+        process_build_trimed.Start()
+        process_build_trimed.WaitForExit()
+        process_build_trimed.Close()
     End Sub
 End Class

@@ -31,11 +31,13 @@ Public Class Config_Trim
         If language = "EN" Then
             TextBox1.Text = "This method involves combining all fragments that match the reference sequence to align the target sequence.
 Longest Fragments: This approach uses only the longest matching fragments of the reference sequence to align the target sequence.
-Trim Terminal: This method aligns the target sequence based solely on trimming the termini according to the reference sequence."
+Trim Terminal: This method aligns the target sequence based solely on trimming the termini according to the reference sequence.
+Longest Isoform: This method generates the longest transcript fragment based on the reference sequence. Suitable for transcriptomic data."
         Else
             TextBox1.Text = "All Fragments: 使用所有与参考序列匹配上的片段进行组合切齐。
 Longest Fragments: 只使用与参考序列匹配最长的片段进行切齐。
-Trim Terminal: 只使用参考序列切齐两端。"
+Trim Terminal: 只使用参考序列切齐两端。
+Longest Isoform: 产生与参考序列匹配的最长转录本片段，适用于转录组数据。"
         End If
     End Sub
 

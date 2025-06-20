@@ -111,7 +111,7 @@ Partial Class Config_Trim
         ' 
         ComboBox2.DropDownStyle = ComboBoxStyle.DropDownList
         ComboBox2.FormattingEnabled = True
-        ComboBox2.Items.AddRange(New Object() {"All Fragments", "Longest Fragments", "Trim Terminal"})
+        ComboBox2.Items.AddRange(New Object() {"All Fragments", "Longest Fragments", "Trim Terminal", "Longest Isoform"})
         ComboBox2.Location = New Point(169, 70)
         ComboBox2.Name = "ComboBox2"
         ComboBox2.Size = New Size(121, 25)

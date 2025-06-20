@@ -64,12 +64,17 @@ def map_file(query_file, subject_file, word_size, folder_name, out_folder, con_t
     temp_1000 = os.path.join(out_folder, folder_name + "_1000.fasta")
     with open(temp_1000, "w") as output_fasta:
         SeqIO.write(selected_sequences, output_fasta, "fasta")
+
+    env = os.environ.copy()
+    env['BLAST_USAGE_REPORT'] = '0'
+    env['DO_NOT_TRACK'] = '1'
+
     makeblastdb_cmd = [r"..\analysis\makeblastdb.exe", "-in", subject_file if subject_file[0] == '"' else '"' + subject_file + '"', "-dbtype", "nucl", "-out", output_db]
     #print(" ".join(makeblastdb_cmd))
-    subprocess.run(makeblastdb_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(makeblastdb_cmd, check=True, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     blastn_cmd = [r"..\analysis\blastn.exe", "-query", temp_1000 if temp_1000[0] == '"' else '"' + temp_1000 + '"', "-db", output_db, "-out", output_file, "-outfmt", "6", "-num_alignments", "1", "-max_hsps", "1", "-evalue", "10", "-word_size", word_size, "-num_threads", "8"]
     # print(" ".join(blastn_cmd))
-    subprocess.run(" ".join(blastn_cmd), check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(" ".join(blastn_cmd), check=True, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.remove(temp_1000)
 
     ref_dict = {}
