@@ -4476,6 +4476,7 @@ Public Class Main_Form
                                                  .CreateNoWindow = False,
                                                  .Arguments = "-i " + """" + plasty_dir + """" + " -r " + """" + plasty_dir + "\" + best_ref + ".fasta" + """" + " -o " + """" + plasty_dir + "\" + "best.fasta" + """"
                                              })
+                                             process_check_option.Start()
                                              process_check_option.WaitForExit()
                                              process_check_option.Close()
                                              If File.Exists(plasty_dir + "\best.fasta") Then
