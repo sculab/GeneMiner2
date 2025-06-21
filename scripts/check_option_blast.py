@@ -33,7 +33,7 @@ def main():
     longest_query_file = ""
 
     for query_file in fasta_files:
-        query_file = os.path.join(r".\NOVOPlasty", query_file)
+        query_file = os.path.join(folder_path, query_file)
         
         blastn_cmd = [r"..\analysis\blastn.exe", "-query", query_file, "-db", output_db, "-out", output_file, "-outfmt", "6", "-evalue", "10"]
         subprocess.run(blastn_cmd, check=True, env=env)

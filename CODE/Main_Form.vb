@@ -4403,6 +4403,23 @@ Public Class Main_Form
                                          File.Move(plasty_dir + "\filtered\all_1.fq", plasty_dir + "\Project1.1.fq", True)
                                          File.Move(plasty_dir + "\filtered\all_2.fq", plasty_dir + "\Project1.2.fq", True)
 
+                                         Try
+                                             Directory.Delete(plasty_dir + "\filtered")
+                                         Catch ex As IOException
+                                         End Try
+
+                                         If File.Exists(plasty_dir + "\best.fasta") Then
+                                             File.Delete(plasty_dir + "\best.fasta")
+                                         End If
+
+                                         If File.Exists(plasty_dir + "\Circularized_assembly_1_Project1.fasta") Then
+                                             File.Delete(plasty_dir + "\Circularized_assembly_1_Project1.fasta")
+                                         End If
+
+                                         If File.Exists(plasty_dir + "\Option_1_Project1.fasta") Then
+                                             File.Delete(plasty_dir + "\Option_1_Project1.fasta")
+                                         End If
+
                                          Using sw1 As New StreamWriter(plasty_dir + "\batch_file.txt")
                                              sw1.WriteLine("Project1")
                                              sw1.WriteLine(best_ref + ".fasta")
