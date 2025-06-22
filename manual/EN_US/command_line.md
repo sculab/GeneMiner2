@@ -43,7 +43,7 @@ The binaries themselves have few dependencies and can generally work on a wide r
 Nevertheless, several important tools must be available at run time. With conda, these tools can be installed as follows:
 
 ```
-conda install -c bioconda blast clustalo mafft minimap2 muscle trimal
+conda install -c bioconda blast clustalo mafft magicblast minimap2 muscle trimal
 ```
 
 GeneMiner2 will work as long as these tools are in `PATH`. To specify a particular executable, place it under `cli/bin`. For example, creating such a symbolic link at `cli/bin/mafft` forces GeneMiner2 to use that certain executable.

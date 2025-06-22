@@ -43,7 +43,7 @@ make
 不过，软件在运行时仍然需要几个独立的生物信息学工具。用conda安装的方法如下：
 
 ```
-conda install -c bioconda blast clustalo mafft minimap2 muscle trimal
+conda install -c bioconda blast clustalo mafft magicblast minimap2 muscle trimal
 ```
 
 只要这些工具在`PATH`中能够找到，GeneMiner2就能正常运行。可以通过把工具放在`cli/bin`下的方法强制GeneMiner2使用特定的可执行文件。例如，创建符号链接`cli/bin/mafft`会强制GeneMiner2使用链接的目标作为mafft的可执行文件，示例如下（不需要运行）：

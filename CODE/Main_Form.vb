@@ -3433,13 +3433,13 @@ Public Class Main_Form
         Dim success_count As Integer = 0
         Dim total_count As Integer = (ticked_samples.Count + 1) * refsView.Count
 
-        Parallel.For(0, refsView.Count, Sub(i)
-                                            Interlocked.Add(success_count, 1)
-                                            PB_value = success_count / total_count * 100
-                                            If DataGridView1.Rows(i).Cells(0).FormattedValue.ToString = "True" Then
-                                                build_blast_db(refsView.Item(i).Item(1).ToString)
-                                            End If
-                                        End Sub)
+        Parallel.For(0, refsView.Count, parallelOptions, Sub(i)
+                                                             Interlocked.Add(success_count, 1)
+                                                             PB_value = success_count / total_count * 100
+                                                             If DataGridView1.Rows(i).Cells(0).FormattedValue.ToString = "True" Then
+                                                                 build_blast_db(refsView.Item(i).Item(1).ToString)
+                                                             End If
+                                                         End Sub)
 
         Parallel.ForEach(ticked_samples, parallelOptions, Sub(batch_i)
                                                               Try

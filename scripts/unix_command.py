@@ -37,6 +37,21 @@ def find_executable(prog, internal=False):
 
     return bin_path
 
+def get_ref_genes(ref_dir):
+    genes = set()
+
+    with os.scandir(ref_dir) as it:
+        for entry in it:
+            if not entry.is_file():
+                continue
+
+            name_tup = os.path.splitext(entry.name)
+
+            if name_tup[1] in ('.fa', '.fas', '.fasta'):
+                genes.add(name_tup)
+
+    return genes
+
 def get_sample_ext(data_path):
     data_name, data_ext = os.path.splitext(data_path)
 
@@ -329,17 +344,7 @@ def generate_consensus(args, samples):
     if args.consensus_threshold <= 0 or args.consensus_threshold > 1:
         raise RuntimeError(f"Invalid consensus threshold {args.consensus_threshold} (must be between 0.0 and 1.0)")
 
-    genes = set()
-
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
-
-            name, ext = os.path.splitext(entry.name)
-
-            if ext == '.fasta':
-                genes.add(name)
+    genes = get_ref_genes(args.r)
 
     def iterate_gene(sample):
         in_dir = os.path.join(out_loc, sample, 'results')
@@ -356,8 +361,8 @@ def generate_consensus(args, samples):
 
         os.makedirs(cns_dir, exist_ok=True)
 
-        for name in genes:
-            asm_path = os.path.join(in_dir, name + '.fasta')
+        for name, ext in genes:
+            asm_path = os.path.join(in_dir, name + ext)
             read_path = os.path.join(filt_dir, name + get_sample_ext(samples[sample][0]))
 
             if os.path.isfile(asm_path) and os.path.isfile(read_path):
@@ -392,43 +397,34 @@ def generate_consensus(args, samples):
 def blast_trim(args, samples):
     out_loc = args.o.strip()
 
-    blastn_bin = find_executable('blastn')
     makeblastdb_bin = find_executable('makeblastdb')
+
+    if args.trim_mode == 'isoform':
+        blast_bin = find_executable('magicblast')
+        blast_iter = build_trimed.execute_magicblast
+    else:
+        blast_bin = find_executable('blastn')
+        blast_iter = build_trimed.execute_blastn
 
     if args.trim_retention < 0 or args.trim_retention > 1:
         raise RuntimeError(f"Invalid trim retention threshold {args.trim_retention} (must be between 0.0 and 1.0)")
 
-    if args.trim_mode == 'all':
-        mode = 0
-    elif args.trim_mode == 'longest':
-        mode = 1
+    if args.trim_mode == 'longest' or args.trim_mode == 'isoform':
+        criterion = 'longest'
+    elif args.trim_mode == 'terminal':
+        criterion = 'terminal'
     else:
-        mode = 2
+        criterion = 'all'
 
-    gene_len = {}
+    genes = get_ref_genes(args.r)
 
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
+    os.makedirs(os.path.join(out_loc, 'blast_db'), exist_ok=True)
 
-            name, ext = os.path.splitext(entry.name)
-
-            if ext != '.fasta':
-                continue
-
-            with open(os.path.join(args.r, entry.name), 'r') as f:
-                sequence_lengths = [len(seq) for _, seq in SimpleFastaParser(f)]
-
-            if not sequence_lengths:
-                continue
-
-            gene_len[name] = statistics.median(sequence_lengths)
-
-    def build_blast_db(gene):
-        ref_path = os.path.join(args.r, gene + '.fasta')
-        db_path = os.path.join(out_loc, 'blast_db', gene)
-        subprocess.run([makeblastdb_bin, "-in", ref_path, "-dbtype", "nucl", "-out", db_path])
+    def build_blast_db(name_tup):
+        name, ext = name_tup
+        subprocess.run([makeblastdb_bin, "-in", f'"{os.path.realpath(os.path.join(args.r, name + ext))}"',
+                        "-dbtype", "nucl", "-out", name],
+                       cwd=os.path.join(out_loc, 'blast_db'))
 
     def iterate_gene(sample):
         if args.trim_source == 'consensus':
@@ -447,62 +443,22 @@ def blast_trim(args, samples):
 
         os.makedirs(blast_dir, exist_ok=True)
 
-        for name, length in gene_len.items():
+        for name, ext in genes:
             asm_path = os.path.join(in_dir, name + '.fasta')
+            ref_path = os.path.join(args.r, name + ext)
 
             if os.path.isfile(asm_path):
-                yield (name, length, asm_path, os.path.join(blast_dir, name + '.fasta'))
+                yield (name, asm_path, ref_path, os.path.join(blast_dir, name + '.fasta'))
 
     def process_gene(task):
-        name, length, asm_path, out_path = task
-
-        with open(asm_path, 'r') as f:
-            header = next(f)
-            sequence = f.read().replace('\n', '')
-
-        blast_proc = subprocess.Popen([blastn_bin, "-query", asm_path, "-db", os.path.join(out_loc, 'blast_db', name),
-                                       "-outfmt", "6", "-evalue", "10"],
-                                       bufsize=1, errors='replace', stdout=subprocess.PIPE, text=True)
-
-        fragments = []
-
-        for line in blast_proc.stdout:
-            parts = line.split("\t")
-
-            if len(parts) < 12:
-                continue
-
-            if int(parts[6]) < int(parts[7]):
-                fragments.append([int(parts[6]), int(parts[7])])
-
-        blast_proc.wait()
-
-        if not fragments:
-            return
-
-        fragments = sorted(fragments, key=lambda fragment: abs(fragment[0] - fragment[1]), reverse=True)
-
-        if mode != 1:
-            fragments = build_trimed.merge_fragments(fragments)
-
-        if os.path.exists(out_path):
-            os.remove(out_path)
-
-        if mode == 1:
-            fragments = fragments[:1]
-        elif mode == 2:
-            fragments = [[min(t[0] for t in fragments), max(t[1] for t in fragments)]]
-
-        combined_sequence = build_trimed.extract_and_combine_fragments(sequence, fragments)
-
-        if len(combined_sequence) / length > args.trim_retention:
-            with open(out_path, 'w') as f:
-                f.writelines([header, combined_sequence + '\n'])
+        name, asm_path, ref_path, out_path = task
+        blast_output = blast_iter(asm_path, os.path.join(out_loc, 'blast_db', name), executable_path=blast_bin)
+        build_trimed.process_file(asm_path, ref_path, blast_output, out_path, args.trim_retention * 100, criterion)
 
     if args.p > 1:
         executor = ThreadPoolExecutor(max_workers=args.p)
 
-        for _ in executor.map(build_blast_db, gene_len.keys()):
+        for _ in executor.map(build_blast_db, genes):
             pass
 
         for _ in executor.map(process_gene, (task
@@ -511,8 +467,8 @@ def blast_trim(args, samples):
             pass
 
     else:
-        for gene in gene_len.keys():
-            build_blast_db(gene)
+        for gene_tup in genes:
+            build_blast_db(gene_tup)
         for sample in samples.keys():
             for task in iterate_gene(sample):
                 process_gene(task)
@@ -537,18 +493,6 @@ def combine_genes(args, samples):
         if args.clean_sequences < 0 or args.clean_sequences > len(samples):
             raise RuntimeError(f"Invalid required number of sequences {args.clean_sequences} (must be between 0 and {len(samples)})")
 
-    genes = set()
-
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
-
-            name, ext = os.path.splitext(entry.name)
-
-            if ext == '.fasta':
-                genes.add(name)
-
     combine_dir = os.path.join(out_loc, 'combined_results')
 
     if os.path.isdir(combine_dir):
@@ -572,6 +516,8 @@ def combine_genes(args, samples):
         in_name = 'consensus'
     else:
         in_name = 'results'
+
+    genes = {t[0] for t in get_ref_genes(args.r)}
 
     def merge_gene(gene):
         out_path = os.path.join(combine_dir, gene + '.fasta')
@@ -796,7 +742,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
 
     parser.add_argument('-t', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
-    parser.add_argument('-m', '--trim-mode', choices=('all', 'longest', 'terminal'), default='terminal', help='Trim mode (default = terminal)', type=str)
+    parser.add_argument('-m', '--trim-mode', choices=('all', 'longest', 'terminal', 'isoform'), default='terminal', help='Trim mode (default = terminal)', type=str)
     parser.add_argument('-n', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
 
     parser.add_argument('-x', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
