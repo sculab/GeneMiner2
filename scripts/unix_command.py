@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 import build_trimed
+import muscle_wrapper
 
 COMMAND_HELP = '''
 filter    Reference-based filtering of raw reads
@@ -552,6 +553,7 @@ def combine_genes(args, samples):
         elif args.msa_program == 'muscle':
             subprocess.run([msa_bin, '-align', in_path, '-output', out_path,
                             '-nt', '-threads', '1'])
+            muscle_wrapper.reorder_sequences(in_path, out_path)
         else:
             subprocess.run(f'{shlex.quote(msa_bin)} --auto --quiet --nuc --thread 1 '
                            f'{shlex.quote(in_path)} > {shlex.quote(out_path)}', shell=True)

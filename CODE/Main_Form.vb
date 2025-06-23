@@ -3855,7 +3855,8 @@ Public Class Main_Form
                         difference_perc = 0
                     End If
 
-                    distanceMatrix(i, j) = distanceMatrix(j, i) = difference_perc
+                    distanceMatrix(i, j) = difference_perc
+                    distanceMatrix(j, i) = difference_perc
                 Next
             Next
             distanceMatrix(0, 0) = Math.Abs(maxDifference)
