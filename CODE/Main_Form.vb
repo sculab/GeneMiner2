@@ -1670,9 +1670,9 @@ Public Class Main_Form
                                                                  'If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
                                                                  Dim sw_res As New StreamWriter(combine_res_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", False, utf8WithoutBom)
                                                                  For batch_i As Integer = 1 To seqsView.Count
+                                                                     Interlocked.Add(count, 1)
+                                                                     PB_value = count / refsView.Count / seqsView.Count * 100
                                                                      If DataGridView2.Rows(batch_i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                                                                         Interlocked.Add(count, 1)
-                                                                         PB_value = count / refsView.Count / seqsView.Count * 100
                                                                          Dim folder_name As String = make_out_name(Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(2).Value.ToString), Path.GetFileNameWithoutExtension(DataGridView2.Rows(batch_i - 1).Cells(3).Value.ToString))
                                                                          folder_name = folder_name.Replace("-", "_").Replace(":", "_")
                                                                          Dim temp_out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
@@ -1707,10 +1707,12 @@ Public Class Main_Form
                                                                      End If
                                                                      Dim passed As Boolean = True
                                                                      If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
-                                                                         Dim distanceMatrix As Double(,) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
+                                                                         Dim diff_thr = CDbl(form_config_combine.TextBox2.Text)
+                                                                         Dim distanceMatrix As Double(,) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", diff_thr)
                                                                          max_distance(i - 1) = distanceMatrix(0, 0)
                                                                          If form_config_combine.CheckBox3.Checked Then
-                                                                             Dim mysubset As List(Of Integer) = FindMaxSubset(distanceMatrix, CDbl(form_config_combine.TextBox2.Text))
+                                                                             distanceMatrix(0, 0) = 0
+                                                                             Dim mysubset As List(Of Integer) = FindMaxSubset(distanceMatrix, diff_thr)
 
                                                                              If mysubset.Count >= form_config_combine.NumericUpDown1.Value Then
                                                                                  Dim temp_count As Integer = FilterAndSaveFile(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", mysubset)
@@ -3824,7 +3826,7 @@ Public Class Main_Form
         my_form.Show()
     End Sub
 
-    Function CalculateMaxDifference(fastaFile As String) As Double(,)
+    Function CalculateMaxDifference(fastaFile As String, threshold As Double) As Double(,)
         Dim result = ReadFasta(fastaFile)
         Dim sequences As List(Of String) = result.Item1
         Dim headers As List(Of String) = result.Item2
@@ -3835,19 +3837,25 @@ Public Class Main_Form
             For i As Integer = 0 To sequences.Count - 2
                 For j As Integer = i + 1 To sequences.Count - 1
                     Dim difference_count As Integer = CalculateDifference(sequences(i), sequences(j))
+                    Dim difference_perc As Double = 0
                     Dim seq_i As String = sequences(i).Replace("-", "").Replace("?", "")
-                    Dim seq_j As String = sequences(i).Replace("-", "").Replace("?", "")
+                    Dim seq_j As String = sequences(j).Replace("-", "").Replace("?", "")
+
                     If seq_i.Length > 0 AndAlso seq_j.Length > 0 Then
-                        Dim difference As Single = difference_count / Math.Min(seq_i.Length, seq_j.Length)
-                        If difference > maxDifference Then
-                            maxDifference = difference
+                        difference_perc = difference_count / Math.Min(seq_i.Length, seq_j.Length)
+
+                        If difference_perc > maxDifference Then
+                            maxDifference = difference_perc
                         End If
-                        distanceMatrix(i, j) = difference
-                        distanceMatrix(j, i) = difference
                     Else
-                        distanceMatrix(i, j) = 1
-                        distanceMatrix(j, i) = 1
+                        difference_perc = 1
                     End If
+
+                    If difference_perc > threshold Then
+                        difference_perc = 0
+                    End If
+
+                    distanceMatrix(i, j) = distanceMatrix(j, i) = difference_perc
                 Next
             Next
             distanceMatrix(0, 0) = Math.Abs(maxDifference)

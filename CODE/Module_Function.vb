@@ -98,39 +98,65 @@ Module Module_Function
             }
         End If
     End Sub
+
+    Private Function FindParent(p As List(Of Integer), x As Integer)
+        While p(x) <> x
+            Dim y = x
+            x = p(y)
+            p(y) = p(p(y))
+        End While
+        Return x
+    End Function
+
+    Private Sub MergeSets(p As List(Of Integer), x As Integer, y As Integer)
+        Dim px = FindParent(p, x), py = FindParent(p, y)
+        If px <> py Then
+            p(px) = py
+        End If
+    End Sub
+
+    Private Function FindConnectedComponents(adj(,) As Double)
+        Dim n As Integer = adj.GetLength(0)
+        Dim p = Enumerable.Range(0, n).ToList
+
+        For i As Integer = 0 To n - 2
+            For j As Integer = i + 1 To n - 1
+                If adj(i, j) <> 0 Then
+                    MergeSets(p, i, j)
+                End If
+            Next
+        Next
+
+        For i As Integer = 0 To n - 1
+            p(i) = FindParent(p, i)
+        Next
+
+        Dim m = New SortedDictionary(Of Integer, List(Of Integer))
+
+        For i As Integer = 0 To p.Count - 1
+            Dim r = p(i)
+            If Not m.ContainsKey(r) Then
+                m(r) = New List(Of Integer)
+            End If
+            m(r).Add(i)
+        Next
+
+        Return m
+    End Function
+
     Function FindMaxSubset(distanceMatrix As Double(,), v As Double) As List(Of Integer)
-        Dim n As Integer = distanceMatrix.GetLength(0)
         Dim maxSubset As New List(Of Integer)
         Dim maxCount As Integer = 0
 
-        ' 尝试每个数据点作为子集的起点
-        For i As Integer = 0 To n - 1
-            Dim subset As New List(Of Integer)
-            subset.Add(i)
-
-            ' 检查其他点是否满足条件并加入子集
-            For j As Integer = 0 To n - 1
-                If i <> j Then
-                    Dim valid As Boolean = True
-                    For Each k In subset
-                        If distanceMatrix(k, j) > v Then
-                            valid = False
-                            Exit For
-                        End If
-                    Next
-                    If valid Then subset.Add(j)
-                End If
-            Next
-
-            ' 更新最大子集
-            If subset.Count > maxCount Then
-                maxCount = subset.Count
-                maxSubset = subset
+        For Each pair As KeyValuePair(Of Integer, List(Of Integer)) In FindConnectedComponents(distanceMatrix)
+            If pair.Value.Count > maxCount Then
+                maxCount = pair.Value.Count
+                maxSubset = pair.Value
             End If
         Next
+
         Return maxSubset
     End Function
-
 
     Public Sub DeleteDir(ByVal aimPath As String)
         If (aimPath(aimPath.Length - 1) <> Path.DirectorySeparatorChar) Then
@@ -161,7 +187,7 @@ Module Module_Function
         End If
         Dec_Sym = CInt("0").ToString("F1").Replace("0", "")
         If Dec_Sym <> "." Then
-            MsgBox("Notice: We will use dat (.) as decimal quotation instead of comma (,). We recommand to change your system's number format to English! ")
+            MsgBox("Notice: We will use dot (.) as decimal notation instead of comma (,). We recommend to change your system's number format to English! ")
         End If
         Dim driveInfo As New DriveInfo(Path.GetPathRoot(root_path))
 

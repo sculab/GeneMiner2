@@ -524,7 +524,7 @@ def combine_genes(args, samples):
         written  = False
 
         with open(out_path, 'w+') as f:
-            for name in sorted(samples.keys()):
+            for name in samples.keys():
                 in_path = os.path.join(out_loc, name, in_name, gene + '.fasta')
 
                 if not os.path.isfile(in_path):
@@ -617,12 +617,12 @@ def combine_genes(args, samples):
             for i, r in enumerate(p):
                 m.setdefault(r, []).append(i)
 
-            return m.values()
+            return sorted(m.items(), key=lambda x: x[0])
 
         max_count  = 0
         max_subset = []
 
-        for cc in find_cc(dist_mat):
+        for _, cc in find_cc(dist_mat):
             if len(cc) > max_count:
                 max_count  = len(cc)
                 max_subset = cc

@@ -12,10 +12,7 @@ def muscle5_wrapper(input_file, output_file):
     Returns:
         int: Return code of the Muscle 5 process.
     """
-    muscle5_path = ".\muscle5.1.win64.exe"
-    if os.path.exists(r'..\analysis\muscle5.1.win64.exe'):
-        muscle5_path = r"..\analysis\muscle5.1.win64.exe"
-    muscle5_command = [muscle5_path, "-align", input_file, "-output", output_file, '-nt', '-threads', '1']
+    muscle5_command = [r"..\analysis\muscle-win64.v5.3.exe", "-align", input_file, "-output", output_file, '-nt', '-threads', '1']
     try:
         subprocess.run(muscle5_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         reorder_sequences(input_file, output_file)
