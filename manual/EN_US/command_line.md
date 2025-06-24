@@ -43,7 +43,7 @@ The binaries themselves have few dependencies and can generally work on a wide r
 Nevertheless, several important tools must be available at run time. With conda, these tools can be installed as follows:
 
 ```
-conda install -c bioconda blast clustalo mafft magicblast minimap2 muscle trimal
+conda install -c bioconda aster blast clustalo fasttree iqtree mafft magicblast minimap2 muscle raxml-ng trimal veryfasttree
 ```
 
 GeneMiner2 will work as long as these tools are in `PATH`. To specify a particular executable, place it under `cli/bin`. For example, creating such a symbolic link at `cli/bin/mafft` forces GeneMiner2 to use that certain executable.
@@ -69,9 +69,7 @@ Next, assuming the sample list is saved to `/home/user/GeneMiner2/DEMO/DEMO3/sam
 cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
-Note, the command line interface **DO NOT** build trees. You might need to build the tree manually using `combined_trimed.fasta` (concatenation) or every FASTA file in `combined_trimed` (coalescent).
-
-It is also possible to run only specific steps. For example, given a set of parameters:
+GeneMiner2 would build a coalescent tree at `/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`. A concatenation tree can be built using `-m concatenation`. Using command line arguments, it is also possible to ask GeneMiner2 to run specific steps. For example, given these parameters:
 
 | Parameter                  | Value             |
 | -------------------------- | ----------------- |
@@ -85,7 +83,7 @@ It is also possible to run only specific steps. For example, given a set of para
 The following line runs Trim With Reference and Combine Results with them:
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -t consensus -n 0.5 -m all --msa-program muscle -d 0.2 -q 5 trim combine
+cli/geneminer2 trim combine -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -ts consensus -tm all -tr 0.5 -cd 0.2 -cn 5 --msa-program muscle
 ```
 
 Run `cli/geneminer2 -h` to view all command line switches. All parameters and output are analogus to their counterparts in the graphical version, except that the command line interface only accepts decimal values between 0.0 and 1.0 for percentages. Additionally, several internal options (such as `--min-depth`) are also exposed, providing extra flexibility for advanced users.

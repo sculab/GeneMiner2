@@ -43,7 +43,7 @@ make
 不过，软件在运行时仍然需要几个独立的生物信息学工具。用conda安装的方法如下：
 
 ```
-conda install -c bioconda blast clustalo mafft magicblast minimap2 muscle trimal
+conda install -c bioconda aster blast clustalo fasttree iqtree mafft magicblast minimap2 muscle raxml-ng trimal veryfasttree
 ```
 
 只要这些工具在`PATH`中能够找到，GeneMiner2就能正常运行。可以通过把工具放在`cli/bin`下的方法强制GeneMiner2使用特定的可执行文件。例如，创建符号链接`cli/bin/mafft`会强制GeneMiner2使用链接的目标作为mafft的可执行文件，示例如下（不需要运行）：
@@ -69,9 +69,7 @@ Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunna
 cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
-特别注意，命令行版本**不支持**建树。你需要手动用`combined_trimed.fasta`构建串联树，或者用`combined_trimed`下的所有FASTA文件构建溯祖树。
-
-只运行某些步骤也是可行的。例如，假设给出这些参数：
+执行这行命令后，GeneMiner2会构建一棵溯祖树，路径为`/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`。使用`-m concatenation`参数可以构建串联树。同样，可以用命令行参数要求GeneMiner2只运行某些步骤。假设给出这些参数：
 
 | 参数                        | 值                |
 | -------------------------- | ----------------- |
@@ -82,10 +80,10 @@ cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angi
 | 最大差异大于                 | 0.2               |
 | 序列数量小于                 | 5                 |
 
-可以用下面的命令执行**基于参考切齐**和**合并结果**：
+可以用下面的命令只执行**基于参考切齐**和**合并结果**：
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -t consensus -n 0.5 -m all --msa-program muscle -d 0.2 -q 5 trim combine
+cli/geneminer2 trim combine -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -ts consensus -tm all -tr 0.5 -cd 0.2 -cn 5 --msa-program muscle
 ```
 
 运行`cli/geneminer2 -h`会显示所有命令行参数。所有参数和输出与图形界面的版本含义一致，除了命令行版本在需要填写百分数的位置只支持0-1的小数。此外，一部分内部参数（例如`--min-depth`）也可以修改，允许高级用户更灵活地控制软件的行为。
