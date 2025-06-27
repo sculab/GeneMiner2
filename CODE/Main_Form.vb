@@ -1666,8 +1666,6 @@ Public Class Main_Form
             parallelOptions.MaxDegreeOfParallelism = 1
         End If
         Parallel.For(1, refsView.Count + 1, parallelOptions, Sub(i)
-
-                                                                 'If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
                                                                  Dim sw_res As New StreamWriter(combine_res_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", False, utf8WithoutBom)
                                                                  For batch_i As Integer = 1 To seqsView.Count
                                                                      Interlocked.Add(count, 1)
@@ -1677,19 +1675,16 @@ Public Class Main_Form
                                                                          folder_name = folder_name.Replace("-", "_").Replace(":", "_")
                                                                          Dim temp_out_dir = (TextBox1.Text + "\" + batch_i.ToString + "_" + folder_name).Replace("\", "/")
                                                                          Dim result_path As String = Path.Combine(temp_out_dir, source_folder, refsView.Item(i - 1).Item(1).ToString + ".fasta")
-                                                                         Dim trimed_path As String = Path.Combine(temp_out_dir, source_folder, refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                          Dim sr_line As String = ""
                                                                          If File.Exists(result_path) Then
                                                                              Dim sr_res As New StreamReader(result_path)
                                                                              sr_line = sr_res.ReadLine
-                                                                             sr_line = sr_res.ReadLine
-                                                                             If sr_line IsNot Nothing Then
-                                                                                 If sr_line <> "" Then
-                                                                                     sw_res.WriteLine(">" + batch_i.ToString + "_" + folder_name)
-                                                                                     sw_res.WriteLine(sr_line)
-                                                                                     result_length_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) += sr_line.Length
-                                                                                     result_count_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) += 1
-                                                                                 End If
+                                                                             sr_line = sr_res.ReadLine?.Trim
+                                                                             If sr_line IsNot Nothing AndAlso sr_line <> "" Then
+                                                                                 sw_res.WriteLine(">" + batch_i.ToString + "_" + folder_name)
+                                                                                 sw_res.WriteLine(sr_line)
+                                                                                 result_length_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) += sr_line.Length
+                                                                                 result_count_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) += 1
                                                                              End If
                                                                              sr_res.Close()
                                                                          End If
@@ -1705,39 +1700,27 @@ Public Class Main_Form
                                                                      Else
                                                                          do_mafft_align(combine_res_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                      End If
-                                                                     Dim passed As Boolean = True
-                                                                     If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
-                                                                         Dim diff_thr = CDbl(form_config_combine.TextBox2.Text)
-                                                                         Dim distanceMatrix As Double(,) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", diff_thr)
-                                                                         max_distance(i - 1) = distanceMatrix(0, 0)
-                                                                         If form_config_combine.CheckBox3.Checked Then
-                                                                             distanceMatrix(0, 0) = 0
-                                                                             Dim mysubset As List(Of Integer) = FindMaxSubset(distanceMatrix, diff_thr)
 
-                                                                             If mysubset.Count >= form_config_combine.NumericUpDown1.Value Then
-                                                                                 Dim temp_count As Integer = FilterAndSaveFile(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta", mysubset)
-                                                                                 result_count_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) = temp_count
-                                                                                 If result_count_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) = 0 Then
-                                                                                     passed = False
-                                                                                 Else
-                                                                                     max_distance(i - 1) = 0
-                                                                                     For m As Integer = 1 To mysubset.Count
-                                                                                         For n As Integer = m + 1 To mysubset.Count
-                                                                                             If max_distance(i - 1) < distanceMatrix(mysubset(m - 1), mysubset(n - 1)) Then
-                                                                                                 max_distance(i - 1) = distanceMatrix(mysubset(m - 1), mysubset(n - 1))
-                                                                                             End If
-                                                                                         Next
-                                                                                     Next
-                                                                                 End If
-                                                                             Else
-                                                                                 result_count_dict(refsView.Item(i - 1).Item(1).ToString.ToLower) = mysubset.Count
-                                                                                 passed = False
-                                                                             End If
+                                                                     Dim passed = False
+                                                                     If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
+                                                                         Dim SI_fix As New ProcessStartInfo With {
+                                                                             .FileName = currentDirectory + "analysis\fix_alignment.exe",
+                                                                             .WorkingDirectory = currentDirectory + "analysis\",
+                                                                             .CreateNoWindow = True,
+                                                                             .Arguments = "-f " + """" + combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta" + """" + " -n " + CStr(form_config_combine.NumericUpDown1.Value) + " -p " + form_config_combine.TextBox2.Text
+                                                                         }
+                                                                         Dim process_fix As Process = Process.Start(SI_fix)
+                                                                         process_fix.WaitForExit()
+                                                                         process_fix.Close()
+
+                                                                         If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
+                                                                             max_distance(i - 1) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
+                                                                             passed = True
                                                                          End If
-                                                                     Else
-                                                                         passed = False
                                                                      End If
+
                                                                      passed_genes(i - 1) = passed
+
                                                                      If passed Then
                                                                          Dim SI_trimed As New ProcessStartInfo With {
                                                                              .FileName = currentDirectory + "analysis\trimal.exe",
@@ -1757,10 +1740,7 @@ Public Class Main_Form
                                                                      Else
                                                                          safe_delete(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                      End If
-
                                                                  End If
-                                                                 'End If
-
                                                              End Sub)
 
         Dim filter_count_dict As New Dictionary(Of String, Integer)
@@ -3826,45 +3806,40 @@ Public Class Main_Form
         my_form.Show()
     End Sub
 
-    Function CalculateMaxDifference(fastaFile As String, threshold As Double) As Double(,)
-        Dim result = ReadFasta(fastaFile)
-        Dim sequences As List(Of String) = result.Item1
-        Dim headers As List(Of String) = result.Item2
-        Dim maxDifference As Single = -1
-        Dim distanceMatrix As Double(,)
-        If sequences.Count > 1 Then
-            ReDim distanceMatrix(sequences.Count - 1, sequences.Count - 1)
-            For i As Integer = 0 To sequences.Count - 2
-                For j As Integer = i + 1 To sequences.Count - 1
-                    Dim difference_count As Integer = CalculateDifference(sequences(i), sequences(j))
-                    Dim difference_perc As Double = 0
-                    Dim seq_i As String = sequences(i).Replace("-", "").Replace("?", "")
-                    Dim seq_j As String = sequences(j).Replace("-", "").Replace("?", "")
+    Function CalculateMaxDifference(fastaFile As String) As Double
+        Dim maxDifference As Double = 0
+        Dim sequences As List(Of String) = ReadFasta(fastaFile).Item1
 
-                    If seq_i.Length > 0 AndAlso seq_j.Length > 0 Then
-                        difference_perc = difference_count / Math.Min(seq_i.Length, seq_j.Length)
+        For i As Integer = 0 To sequences.Count - 2
+            For j As Integer = i + 1 To sequences.Count - 1
+                Dim mismatch As Integer = 0
+                Dim seq1 As String = sequences(i).ToUpperInvariant
+                Dim seq2 As String = sequences(j).ToUpperInvariant
 
-                        If difference_perc > maxDifference Then
-                            maxDifference = difference_perc
-                        End If
-                    Else
-                        difference_perc = 1
+                For k As Integer = 0 To seq1.Length - 1
+                    If seq1(k) <> "-" AndAlso seq2(k) <> "-" AndAlso seq1(k) <> seq2(k) Then
+                        mismatch += 1
                     End If
-
-                    If difference_perc > threshold Then
-                        difference_perc = 0
-                    End If
-
-                    distanceMatrix(i, j) = difference_perc
-                    distanceMatrix(j, i) = difference_perc
                 Next
+
+                If mismatch = 0 Then
+                    Continue For
+                End If
+
+                seq1 = seq1.Replace("-", "")
+                seq2 = seq2.Replace("-", "")
+
+                If seq1.Length > 0 AndAlso seq2.Length > 0 Then
+                    Dim difference = mismatch / Math.Min(seq1.Length, seq2.Length)
+
+                    If difference > maxDifference Then
+                        maxDifference = difference
+                    End If
+                End If
             Next
-            distanceMatrix(0, 0) = Math.Abs(maxDifference)
-        Else
-            ReDim distanceMatrix(0, 0)
-            distanceMatrix(0, 0) = 0
-        End If
-        Return distanceMatrix
+        Next
+
+        Return maxDifference
     End Function
 
     Function ReadFasta(filePath As String) As (List(Of String), List(Of String))
@@ -3890,21 +3865,6 @@ Public Class Main_Form
         End If
 
         Return (sequences, headers)
-    End Function
-
-
-
-    Function CalculateDifference(seq1 As String, seq2 As String) As Integer
-        Dim difference As Integer = 0
-        For i As Integer = 0 To seq1.Length - 1
-            If seq1(i) <> "-" AndAlso seq2(i) <> "-" Then
-                If Not seq1(i) = seq2(i) Then
-                    difference += 1
-                End If
-            End If
-
-        Next
-        Return difference
     End Function
 
     Private Sub 最大差异度ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles 最大差异度ToolStripMenuItem.Click

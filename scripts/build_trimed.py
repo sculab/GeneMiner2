@@ -26,9 +26,10 @@ def execute_blastn(query_file, blast_db, executable_path=r"..\analysis\blastn.ex
     # We do not use E-values because we want to match any possible homologous region.
     # Raw alignment score is probably the simpliest measurement of similarity
     # (confounded by alignment length, but we want long matches anyway).
+    # At 99% hit rate, 85% identity and 200bp fragments, the maximal word size is 20.
     proc = subprocess.Popen([executable_path, "-query", query_file, "-db", f'"{blast_db}"',
-                             "-outfmt", "6", "-word_size", "13", "-min_raw_gapped_score", "20"],
-                            env=env, bufsize=1, stdout=subprocess.PIPE, errors='replace', text=True)
+                             "-outfmt", "6", "-word_size", "20", "-min_raw_gapped_score", "20"],
+                            env=env, stdout=subprocess.PIPE, errors='replace', text=True)
     yield from proc.stdout
     proc.wait()
 
@@ -38,10 +39,11 @@ def execute_magicblast(query_file, blast_db, executable_path=r"..\analysis\magic
     env['BLAST_USAGE_REPORT'] = '0'
     env['DO_NOT_TRACK'] = '1'
 
+    # At 99% hit rate, 85% identity and 50bp exons, the maximal word size is 13.
     proc = subprocess.Popen([executable_path, "-query", query_file, "-db", f'"{blast_db}"',
-                             "-outfmt", "tabular", "-word_size", "12", "-score", "20",
+                             "-outfmt", "tabular", "-word_size", "13", "-score", "20",
                              "-limit_lookup", "F", "-penalty", "-2"],
-                            env=env, bufsize=1, stdout=subprocess.PIPE, errors='replace', text=True)
+                            env=env, stdout=subprocess.PIPE, errors='replace', text=True)
     yield from proc.stdout
     proc.wait()
 

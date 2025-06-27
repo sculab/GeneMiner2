@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 import build_trimed
+import fix_alignment
 import muscle_wrapper
 
 COMMAND_HELP = '''
@@ -458,6 +459,9 @@ def blast_trim(args, samples):
         blast_output = blast_iter(asm_path, os.path.join(out_loc, 'blast_db', name), executable_path=blast_bin)
         build_trimed.process_file(asm_path, ref_path, blast_output, out_path, args.trim_retention * 100, criterion)
 
+    gene_count = len(genes) * len(samples)
+    trimmed_count = 0
+
     if args.p > 1:
         with ThreadPoolExecutor(max_workers=args.p) as executor:
             for _ in executor.map(build_blast_db, genes):
@@ -466,7 +470,10 @@ def blast_trim(args, samples):
             for _ in executor.map(process_gene, (task
                                                 for sample in samples.keys()
                                                 for task in iterate_gene(sample))):
-                pass
+                trimmed_count += 1
+
+                if trimmed_count >= 2:
+                    print(f'{trimmed_count}/{gene_count} genes trimmed\r', end='')
 
     else:
         for gene_tup in genes:
@@ -475,6 +482,13 @@ def blast_trim(args, samples):
         for sample in samples.keys():
             for task in iterate_gene(sample):
                 process_gene(task)
+
+                trimmed_count += 1
+
+                if trimmed_count >= 2:
+                    print(f'{trimmed_count}/{gene_count} genes trimmed\r', end='')
+
+    print('\n')
 
 def combine_genes(args, samples):
     out_loc = args.o.strip()
@@ -487,7 +501,9 @@ def combine_genes(args, samples):
         else:
             msa_bin = find_executable('mafft')
 
-        trimal_bin = find_executable('trimal')
+        if not args.no_trimal:
+            trimal_bin = find_executable('trimal')
+
         merge_seq_bin = find_executable('merge_seq', internal=True)
 
         if args.clean_difference < 0 or args.clean_difference > 1:
@@ -557,99 +573,25 @@ def combine_genes(args, samples):
                             '-nt', '-threads', '1'], stderr=subprocess.DEVNULL)
             muscle_wrapper.reorder_sequences(in_path, out_path)
         else:
-            subprocess.run(f'{shlex.quote(msa_bin)} --auto --quiet --nuc --thread 1 '
+            subprocess.run(f'{shlex.quote(msa_bin)} --auto --quiet --nuc --thread 0 '
                            f'{shlex.quote(in_path)} > {shlex.quote(out_path)}',
                            shell=True, stderr=subprocess.DEVNULL)
 
     def clean_gene(gene):
         gene_path = os.path.join(alignment_dir, gene + '.fasta')
 
-        if not os.path.isfile(gene_path):
-            return
-
-        with open(gene_path, 'r') as f:
-            seq_list = list(SimpleFastaParser(f))
-
-        seq_count = len(seq_list)
-
-        if seq_count <= 1:
-            os.remove(gene_path)
-            return
-
-        dist_mat = [[0] * seq_count for _ in range(seq_count)]
-
-        for i in range(seq_count - 1):
-            for j in range(i + 1, seq_count):
-                seq_i = seq_list[i][1].upper()
-                seq_j = seq_list[j][1].upper()
-
-                diff_count = sum(ci != cj for ci, cj in zip(seq_i, seq_j) if ci not in '-?' and cj not in '-?')
-
-                nuc_i = seq_i.replace("-", "").replace("?", "")
-                nuc_j = seq_j.replace("-", "").replace("?", "")
-
-                if nuc_i and nuc_j:
-                    diff_pct = diff_count / min(len(nuc_i), len(nuc_j))
-                else:
-                    diff_pct = 1
-
-                dist_mat[i][j] = dist_mat[j][i] = 1 if diff_pct <= args.clean_difference else 0
-
-        def find_parent(p, x):
-            while p[x] != x:
-                x, p[x] = p[x], p[p[x]]
-            return x
-
-        def merge_sets(p, x, y):
-            px = find_parent(p, x)
-            py = find_parent(p, y)
-            if px != py:
-                p[px] = py
-
-        def find_cc(adj):
-            p = list(range(len(adj)))
-
-            for i, vec in enumerate(adj[:-1]):
-                for j, con in enumerate(vec[i + 1:], i + 1):
-                    if con:
-                        merge_sets(p, i, j)
-
-            for i, _ in enumerate(p):
-                p[i] = find_parent(p, i)
-
-            m = {}
-
-            for i, r in enumerate(p):
-                m.setdefault(r, []).append(i)
-
-            return sorted(m.items(), key=lambda x: x[0])
-
-        max_count  = 0
-        max_subset = []
-
-        for _, cc in find_cc(dist_mat):
-            if len(cc) > max_count:
-                max_count  = len(cc)
-                max_subset = cc
-
-        max_subset = frozenset(max_subset)
-
-        if max_count >= args.clean_sequences:
-            with open(gene_path, 'w') as f:
-                f.writelines(f'>{name}\n{seq}\n' for i, (name, seq) in enumerate(seq_list) if i in max_subset)
-        else:
-            os.remove(gene_path)
+        if os.path.isfile(gene_path):
+            fix_alignment.clean_file(gene_path, args.clean_sequences, args.clean_difference)
 
     def trim_gene(gene):
         in_path = os.path.join(alignment_dir, gene + '.fasta')
         out_path = os.path.join(trim_dir, gene + '.fasta')
 
-        if not os.path.isfile(in_path):
-            return
-
-        subprocess.run([trimal_bin, '-in', in_path, '-out', out_path, '-automated1'])
+        if os.path.isfile(in_path):
+            subprocess.run([trimal_bin, '-in', in_path, '-out', out_path, '-automated1'])
 
     alignment_count = 0
+    gene_count = len(genes)
 
     if args.p > 1:
         with ThreadPoolExecutor(max_workers=args.p) as executor:
@@ -661,7 +603,7 @@ def combine_genes(args, samples):
                     alignment_count += 1
 
                     if alignment_count >= 2:
-                        print(f'{alignment_count} genes aligned\r', end='')
+                        print(f'{alignment_count}/{gene_count} genes aligned\r', end='')
 
                 for _ in executor.map(clean_gene, genes):
                     pass
@@ -680,7 +622,7 @@ def combine_genes(args, samples):
                 alignment_count += 1
 
                 if alignment_count >= 2:
-                    print(f'{alignment_count} genes aligned\r', end='')
+                    print(f'{alignment_count}/{gene_count} genes aligned\r', end='')
 
                 clean_gene(gene)
 
@@ -798,6 +740,7 @@ def build_coalescent_tree(args):
         alignment_dir = os.path.join(out_loc, 'combined_trimed')
 
     genes = {t[0] for t in get_ref_genes(args.r)} & find_genes(alignment_dir)
+    gene_count = len(genes)
 
     if not genes:
         raise RuntimeError(f"No gene alignments found under '{alignment_dir}'")
@@ -815,7 +758,7 @@ def build_coalescent_tree(args):
                     tree_count = len(tree_files)
 
                     if tree_count >= 2:
-                        print(f'{tree_count} trees built\r', end='')
+                        print(f'{tree_count}/{gene_count} trees built\r', end='')
 
     else:
         for tree_path in map(make_gene_tree, genes):
@@ -824,7 +767,7 @@ def build_coalescent_tree(args):
                 tree_count = len(tree_files)
 
                 if tree_count >= 2:
-                    print(f'{tree_count} trees built\r', end='')
+                    print(f'{tree_count}/{gene_count} trees built\r', end='')
 
     print('\n')
 
