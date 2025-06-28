@@ -1701,8 +1701,9 @@ Public Class Main_Form
                                                                          do_mafft_align(combine_res_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta", combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                      End If
 
-                                                                     Dim passed = False
-                                                                     If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
+                                                                     Dim passed As Boolean = File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
+
+                                                                     If passed AndAlso form_config_combine.CheckBox3.Checked Then
                                                                          Dim SI_fix As New ProcessStartInfo With {
                                                                              .FileName = currentDirectory + "analysis\fix_alignment.exe",
                                                                              .WorkingDirectory = currentDirectory + "analysis\",
@@ -1713,15 +1714,12 @@ Public Class Main_Form
                                                                          process_fix.WaitForExit()
                                                                          process_fix.Close()
 
-                                                                         If File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta") Then
-                                                                             max_distance(i - 1) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
-                                                                             passed = True
-                                                                         End If
+                                                                         passed = File.Exists(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                      End If
 
-                                                                     passed_genes(i - 1) = passed
-
                                                                      If passed Then
+                                                                         max_distance(i - 1) = CalculateMaxDifference(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
+
                                                                          Dim SI_trimed As New ProcessStartInfo With {
                                                                              .FileName = currentDirectory + "analysis\trimal.exe",
                                                                              .WorkingDirectory = currentDirectory + "analysis\",
@@ -1733,13 +1731,14 @@ Public Class Main_Form
                                                                          Dim process_trimed As Process = Process.Start(SI_trimed)
                                                                          process_trimed.WaitForExit()
                                                                          process_trimed.Close()
+
                                                                          If form_config_combine.CheckBox1.Checked Then
                                                                              replace_gap2missing(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                              replace_gap2missing(combine_trimed_dir + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                          End If
-                                                                     Else
-                                                                         safe_delete(combine_res_dir + "\aligned\" + refsView.Item(i - 1).Item(1).ToString + ".fasta")
                                                                      End If
+
+                                                                     passed_genes(i - 1) = passed
                                                                  End If
                                                              End Sub)
 

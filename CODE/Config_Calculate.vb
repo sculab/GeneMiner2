@@ -62,13 +62,16 @@
             Return
         End If
 
-        ' Find the lower 95% of gene variation
-        combine_thr = (1.65 * Math.Sqrt(gene_len * max_diff * (1 - max_diff)) + gene_len * max_diff) / gene_len
+        combine_thr = max_diff
 
-        If ComboBox_Ref.SelectedIndex = ComboBox_Seq.SelectedIndex Then
-            trim_mode = "Trim Terminal"
+        If ComboBox_Seq.SelectedIndex = 0 Then
+            If ComboBox_Ref.SelectedIndex = 0 Then
+                trim_mode = "Trim Terminal"
+            Else
+                trim_mode = "All Fragments"
+            End If
         Else
-            trim_mode = "All Fragments"
+            trim_mode = "Longest Isoform"
         End If
 
         If ComboBox_Seq.SelectedIndex = 1 Then
