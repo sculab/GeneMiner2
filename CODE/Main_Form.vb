@@ -260,7 +260,7 @@ Public Class Main_Form
             ' 读取文件内容并将内容存入字典
             Using sr As New StreamReader(filePath)
                 While Not sr.EndOfStream
-                    Dim line As String = sr.ReadLine().ToLower
+                    Dim line As String = sr.ReadLine()
                     Dim parts As String() = line.Split(","c)
 
                     If parts.Length >= 3 Then
