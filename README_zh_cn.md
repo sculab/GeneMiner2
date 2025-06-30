@@ -69,7 +69,7 @@ GeneMiner2的源代码在Github和Gitee上均可获取。
 
 详细说明请移步 [manual](manual/manual_geneminer.pdf)
 
-有关软件的详细说明[请见此处](manual/ZH_CN/readme_detailed.md)
+有关软件图形界面和功能的详细说明[请见此处](manual/ZH_CN/readme_detailed.md)
 
 有关输出目录详解[请见此处](manual/ZH_CN/output.md)
 
