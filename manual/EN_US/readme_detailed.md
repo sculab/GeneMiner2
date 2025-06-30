@@ -1,5 +1,5 @@
 
-## Menu
+## Graphical interface
 
 ### **Sidebar:**
 
@@ -10,9 +10,60 @@
 **Change**: Select the folder where results will be saved.
 **Note:** The folder for saving results may be repeatedly emptied during operation, so be sure not to choose a folder containing important files. It is recommended to create a new folder for output with each analysis. If the same output folder is selected to continue previous analyses, opt not to clear the folder in subsequent analyses.
 
-**Threads**: Default is 7, with a maximum of the computer's logical processors minus two. Threads can be decided based on the individual's computer cores.
+**Threads**: A maximum of the computer's logical processors minus two. Threads can be decided based on the individual's computer cores.
+
+
+# Software Annotion
+
+## References Column Descriptions:
+
+- **Select**: Whether to use this reference sequence.
+
+- **ID**: Identifier number of the reference gene.
+
+- **Name**: Name of the reference gene.
+
+- **Ref. Count**: Number of times the reference gene appears.
+
+- **Ref. Length**: Average length of the reference gene (in base pairs).
+
+- **Filter Depth**: Depth of sequencing reads filtered using the reference gene. Calculated as:
+  - Filter Depth = (Reads sequencing length * Number of filtered reads) / Average length of reference sequences.
+
+- **Assemble State**: Status of sequence assembly, which includes:
+  - **no reads**: No reads filtered; consider lowering the filter K-value or providing a closer reference sequence.
+  - **distant references**: Reference sequence too distant; provide a closer reference sequence.
+  - **insufficient reads**: Too few reads filtered; consider lowering the filter K-value or providing a closer reference sequence.
+  - **no seed**: Unable to find a suitable seed; consider lowering the assembly K-value or providing a closer reference sequence.
+  - **no contigs**: No assembly results.
+  - **low quality**: Low accuracy of results, reads insufficient to cover assembled results.
+  - **success**: Assembly successful.
+
+- **Ass. Length**: Length of the assembly result.
+
+- **Ass. Depth**: Depth of reads coverage of the assembly result, calculated as:
+  - Ass. Depth = (Reads sequencing length * Number of reads used for assembly) / Length of assembly result.
+
+- **Max.Diff.**: Maximum divergence obtained from pairwise comparison of genes from different species after [Merge & Trim]. Right-click and select Max. Diff. to filter out low-quality result sequences based on maximum divergence, with a default filter set at 0.1. Once checked, selected sequences can be re-merged and trimmed for phylogenetic tree construction using the filtered and trimmed results.
+
+
+
+## Sequences Column Descriptions:
+
+- **Select**: Whether to use this set of data files.
+
+- **Data1**: Left end (end 1) of the sequencing file.
+
+- **Data2**: Right end (end 2) of the sequencing file; if it is single-end sequencing, it automatically matches the content in Data1.
+
+**Note**: The batch functionality is designed to analyze sequencing sequences from different species.
+
 
 ---
+
+## Function Menu
+
+
 ### File:
 
 **[File > Load References]**: Choose reference sequence files in either fasta or genbank format; multiple reference sequence files can be selected at once.
