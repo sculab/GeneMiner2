@@ -8,12 +8,12 @@
 **Open**: Opens the output directory in Windows Explorer.
 
 **Change**: Select the folder where results will be saved.
+
 **Note:** The folder for saving results may be repeatedly emptied during operation, so be sure not to choose a folder containing important files. It is recommended to create a new folder for output with each analysis. If the same output folder is selected to continue previous analyses, opt not to clear the folder in subsequent analyses.
 
-**Threads**: A maximum of the computer's logical processors minus two. Threads can be decided based on the individual's computer cores.
+**Threads**: The number of threads is set to the total number of logical processors minus two by default. Users can adjust the thread count based on the number of available CPU cores on their machine.
 
 
-# Software Annotion
 
 ## References Column Descriptions:
 
@@ -27,22 +27,25 @@
 
 - **Ref. Length**: Average length of the reference gene (in base pairs).
 
-- **Filter Depth**: Depth of sequencing reads filtered using the reference gene. Calculated as:
-  - Filter Depth = (Reads sequencing length * Number of filtered reads) / Average length of reference sequences.
+- **Reads**: Number of reads matching the reference k-mers.
+
+- **Assemble State/Count**: Number of assembled sequences obtained.
+
+- **Ass. Length**: Total length of the assembled sequence.
+
+- **Max. Diff.**: Maximum pairwise divergence between sequences from different species after consensus merging.
 
 - **Assemble State**: Status of sequence assembly, which includes:
-  - **no reads**: No reads filtered; consider lowering the filter K-value or providing a closer reference sequence.
-  - **distant references**: Reference sequence too distant; provide a closer reference sequence.
-  - **insufficient reads**: Too few reads filtered; consider lowering the filter K-value or providing a closer reference sequence.
-  - **no seed**: Unable to find a suitable seed; consider lowering the assembly K-value or providing a closer reference sequence.
-  - **no contigs**: No assembly results.
+  - **no filtered files**: The filtered result file for the gene does not exist.
+  - **no reads**: The filtered result file exists, but no usable read fragments could be extracted for assembly.
+  - **insufficient genomic kmers**: The number of genomic k-mer regions detected after filtering is insufficient for assembl 
+  - **no seed**: No valid seed sequences were identified to initiate assembly. 
+  - **no contigs**: No contigs were generated due to insufficient read coverage or failed extension from seeds.
   - **low quality**: Low accuracy of results, reads insufficient to cover assembled results.
+  Note: If any of the above filering or assembly failures occur, it is recommended to adjust the reference, k-mer (kf,for filter),the filter step size , or error rate(for assemble).
   - **success**: Assembly successful.
 
 - **Ass. Length**: Length of the assembly result.
-
-- **Ass. Depth**: Depth of reads coverage of the assembly result, calculated as:
-  - Ass. Depth = (Reads sequencing length * Number of reads used for assembly) / Length of assembly result.
 
 - **Max.Diff.**: Maximum divergence obtained from pairwise comparison of genes from different species after [Merge & Trim]. Right-click and select Max. Diff. to filter out low-quality result sequences based on maximum divergence, with a default filter set at 0.1. Once checked, selected sequences can be re-merged and trimmed for phylogenetic tree construction using the filtered and trimmed results.
 
@@ -56,7 +59,7 @@
 
 - **Data2**: Right end (end 2) of the sequencing file; if it is single-end sequencing, it automatically matches the content in Data1.
 
-**Note**: The batch functionality is designed to analyze sequencing sequences from different species.
+**Note**: The batch function supports sequencing data from multiple samples.
 
 
 ---
@@ -68,7 +71,7 @@
 
 **[File > Load References]**: Choose reference sequence files in either fasta or genbank format; multiple reference sequence files can be selected at once.
 
-If a genbank format file is selected, you can choose whether to import it as a gene list. If so, GeneMiner will automatically decompose the genes according to gene names, and the following settings dialog will pop up:
+If a genbank format file is selected, you can choose whether to import it as a gene list. If so, GeneMiner2 will automatically decompose the genes according to gene names, and the following settings dialog will pop up:
 
 
 ![](../../images/split_en.jpg)
@@ -126,7 +129,7 @@ After downloading, the reference sequence will appear in the reference sequence 
 ### Analysis:
 
 
-**[Analysis > Filter > Filter from Scratch]**: Use references to batch filter sequencing data, obtaining reads associated with target genes. The fq files of filtered results are saved in the 'filtered' folder within the output directory. If the filtering depth is too high or the files are too large, further filtering is recommended. Upon completion, the estimated depth of the filtered results will be displayed on the main interface list, and users can check the size of each gene's filtered file in the 'filtered' folder of the output directory.
+**[Analysis > Filter > Filter from Scratch]**: Use references to filter sequencing data, obtaining reads associated with target genes. The fq files of filtered results are saved in the 'filtered' folder within the output directory. If the filtering depth is too high or the files are too large, further filtering is recommended. Upon completion, the estimated depth of the filtered results will be displayed on the main interface list, and users can check the size of each gene's filtered file in the 'filtered' folder of the output directory.
 
 **[Analysis > Filter > Further Filter]**: Perform further filtering on data that is too large or too deep in the filtered results. Original data that is too large or too deep is stored in the 'large_files' folder, and data after further filtering is saved in the 'filtered' folder.
 
@@ -143,43 +146,43 @@ Parameter settings will appear during the above steps, with specific meanings as
 
 ##### **Filter:**
 
-**Reads/File (M)**: Set the amount of read length used for each sequencing file during the filtering process, measured in M (2^20). It is generally recommended to select all read lengths to achieve the best and most comprehensive extraction results.
+    - Reads/File (M): Activating this option will limit the analysis to a portion of the sequencing data (M reads). When analyzing high-copy number genes, such as organellar genes, it is unnecessary to utilize the entire dataset. Engaging this option can significantly enhance the speed of the analysis. However, in cases of low sequencing depth or when dealing with low-copy number genes, it is advisable to deactivate this option.
 
-**Filter K-value**: The k-mer value used during the initial filtering process to decompose the reference sequence and reads, default is 31. If there are no results, consider lowering the filter K-value. The K-value must be greater than 17.
+    - Filter K-value: The Filter K Value (kf) depends on three factors: acquisition rate (p) of gene-specific reads, read length (r), and variation degree (v) between reference and target sequences. Typically, with p at 0.99, r at 150, and v at 0.1, kf is around 31, our default setting. If p is 0.95 and v increases to 0.2 (r stays at 150), kf drops to 17, the proposed minimum threshold.
 
-**Filter Step Size**: The step size of the sliding window when cutting k-mers.
+    - Filter Step Size: Sets the interval of base numbers in the filtering process. Increasing this value can speed up the filtering process but may also reduce the recovery rate of reads. In cases of low sequencing depth or significant differences between the reference and target sequences, it is recommended to reduce this value to 1; otherwise, keep the default setting.
 
 For example, with a filter K-value of 7 and a step size of 1, the segmentation of reads is as follows:
 
 ![K-mer Process](../../images/kmer.jpg)
 
-**High Speed **: Consider reverse complementary sequences when generating the reference sequence dictionary. Selecting this option will use more memory but can significantly improve filtering speed, recommended for computers with large memory.
+    - High Speed: Enabling this option stores the majority of the data in memory instead of computing it in real-time. This approach can nearly double the processing speed compared to when the option is disabled. However, it is important to note that the RAM usage will also increase substantially, almost doubling in capacity.
 
 ##### **Further Filter:**
 
-**Depth Limit**: For the filtered fq files, if the estimated filter depth (shown in the Filter Depth column) exceeds this value, increase the K-value and refilter during further filtering. Where, Filter Depth = reads sequencing length * number of filtered reads / average length of the reference sequence.
+    - Depth Limit: FWhen the software processes a large amount of filtering data, it initiates a secondary filtering process aimed at enhancing the efficiency and accuracy of sequence assembly. GeneMiner2 increases the filtering K value (kf) by 2 each time when the product of read length and read count divided by the average reference length exceeds this value, with an upper limit of 63.
 
-**File Size Limit**: For the filtered fq files, if the file size exceeds this value, increase the K-value and refilter during further filtering.
+    - File Size Limit: When the software processes a large amount of filtering data, it initiates a secondary filtering process aimed at enhancing the efficiency and accuracy of sequence assembly. GeneMiner2 increases the filtering K value (kf) by 2 each time when the size of the filtering file exceeds this value (measured in MB), with an upper limit of 63.
 
-For example, under default parameters, if the filter result file depth exceeds 512 or fq file size is greater than 8MB, further filtering is needed.
 
 ##### **Assemble:**
 
-**Auto Estimate K**: Dynamically estimate suitable k-mer values for each gene during assembly. Recommended to check.
+    - [Auto Estimate K]: Sets the starting and terminal value for the automatic estimation process of the assembly K-mer (ka).Recommended check.
 
-**Fixed Assembly K-mer Value**: A specified k-mer value is used for all genes during the assembly process. The minimum value is 19, and it is recommended to use an odd number if manually specified to avoid assembly errors in reverse complementary regions.
+    - [Fixed Assembly K-mer Value]: Utilize a fixed assembly K-mer (ka) value for sequence assembly.
 
-**Error Threshold**: The error threshold is a parameter used to evaluate the occurrence frequency of the current assembled sequence in the filtered reads. As the assembly progresses, the sequence becomes longer and may encounter more variant sites, reducing the number of matching sequences. If the occurrence frequency of the current assembled sequence falls below the specified error threshold, the tool will stop the assembly. Setting a higher error threshold can improve the accuracy of the assembly but may limit the assembled sequence length. The default value is recommended, but for datasets with fewer reads, consider lowering this threshold.
+    - [Error Threshold]: Within the generated Kmers from reads, only Kmers with a count exceeding this specified value will be used for sequence assembly.
+        Note: A higher error threshold improves accuracy. Use the default value if few sequences are recovered.
 
-**Boundary**: Default is Auto, which can remove low-quality sequences from short sequences. Setting to unlimit will yield the maximum extended result. Setting to 0 will remove all low-quality sequences.
+    - [Boundary]: In GeneMiner2, the soft boundary is the maximum extension outside sequence edges during target sequence recovery. 'Auto' limits this to half the read length. Setting it to '0' disables it, while 'Unlimited' imposes no boundary length restriction.
 
-**Search Depth**: Default is 4096.
-
-
-
+    - [Search Depth]: This option specifies the maximum number of distinct candidate sequences retained during assembly, which typically requires no modification. For target sequences exceeding 5k in length, a higher value may be set.
 
 
-**[Analysis > Trim With Referece]**: For cases with higher sequencing depth where reference and sequencing sequences come from the same source, `Trim Terminal` method can be used to trim and connect both ends of matched reference sequences, obtaining high-quality assembled sequences. When reference and sequencing sequences come from different sources, GeneMiner2 recommends using the `All Fragments` method, which employs all reference sequence fragments for alignment and trimming, retains all matched parts and connects them to generate result sequences — this method is particularly suitable for scenarios requiring increased sequence length and quantity under low coverage. For genomes containing paralogs or transcriptomes with alternative splicing, `longest fragments` methodcan retain the longest matched results corresponding to all reference sequences.
+**[Analysis > Trim With Referece]**: 
+    - [Trim Terminal]:Trims and joins both ends of matched reference regions to generate high-quality assemblies.Recommended when the reference and sequencing data are from the same source with high sequencing depth.
+    - [All Fragments]:Uses all matched reference fragments for alignment and trimming.Suitable for low coverage datasets needing more and longer sequences.Recommended when the reference and sequencing data are from different sources.
+    - [Longest Fragments]:Retains only the longest matched region for each reference fragment.Suitable for genomes with paralogs or transcriptomes with alternative splicing.
 
 
 **[Analysis > Iteration > First Iteration]**: Use the sequences in `contigs_all` from the output directory as the reference sequence, and re-execute all filtering and assembly processes. The results are saved in the `iteration` folder in the output directory. Running this can enhance the length and accuracy of the sequences.
@@ -188,35 +191,33 @@ For example, under default parameters, if the filter result file depth exceeds 5
 
 **[Analysis > Iteration > Multiply Iteration]**: Perform multiple iterations to enhance the length and accuracy of the sequences.
 
-**[Analysis > Get Best Reference]**：Split reads into kmers and align them with the kmer hash table of the reference sequence. When multiple reference sequences exist for a target gene, the reference with the highest number of matching kmers is selected as the best reference sequence.
+**[Analysis > Get Best Reference]**：The reference with the highest number of matching kmers is selected as the best reference sequence.
 
 **[Analysis > Generate Consensus]**: Map the result sequences to the filtered fq files. Set the threshold according to the prompts; increasing the threshold will increase the number of ambiguous bases. If you want to differentiate mixed sequences, it is recommended to choose the default (0.75), and if you want results without degenerate bases, it is recommended to choose 0.25.
 
-**[Analysis > MultiCopy Detection]**: Map the gene sequences of a single species in `results`, screen for heterozygous sites, and detect multi-copy genes.
+**[Analysis > MultiCopy Detection]**: Detect multi-copy genes, which are stored in the "multicopy" file.
 
-**[Analysis > Plant Chloroplast Genome]**: GeneMiner uses NOVOPlasty for organelle genome assembly. The software provides downloadable chloroplast genome sequences of closely related species as reference sequences and selects a closely related one as the seed sequence, which can resolve issues with inverted repeats in chloroplast regions. After loading the data file, the chloroplast genome assembly can begin. Typically, the default parameters are sufficient. For more detailed default settings, manually edit the `NOVO_config.txt` file in the `analysis` directory of the application package. Be careful not to delete content between $ symbols. Click the confirm button to start, and all results will be saved in the `Organelle` folder in the output directory.
+**[Analysis > Plant Chloroplast Genome]**: GeneMiner2 uses NOVOPlasty for organelle genome assembly. The software provides downloadable chloroplast genome sequences of closely related species as reference sequences and selects a closely related one as the seed sequence, which can resolve issues with inverted repeats in chloroplast regions. After loading the data file, the chloroplast genome assembly can begin. Typically, the default parameters are sufficient. For more detailed default settings, manually edit the `NOVO_config.txt` file in the `analysis` directory of the application package. Be careful not to delete content between $ symbols. Click the confirm button to start, and all results will be saved in the `Organelle` folder in the output directory.
 
 
 ![NOVOPlasty Settings](../../images/novo_en.jpg)
 
 
-**[Analysis > Plant Mitochondrial Genome]**: GeneMiner uses NOVOPlasty for organelle genome assembly. **Previously assembled chloroplast genomes must be selected**, then load the data file to begin the mitochondrial genome assembly. Typically, the default parameters are sufficient. The software provides downloadable mitochondrial genome sequences of closely related species as reference sequences, which can resolve issues with inverted repeats in mitochondrial regions. For more detailed default settings, manually edit the `NOVO_config.txt` file in the `analysis` directory of the application package. Be careful not to delete content between $ symbols. Click the confirm button to start, and all results will be saved in the `Organelle` folder in the output directory.
+**[Analysis > Plant Mitochondrial Genome]**: GeneMiner2 uses NOVOPlasty for organelle genome assembly. **Previously assembled chloroplast genomes must be selected**, then load the data file to begin the mitochondrial genome assembly. The software provides downloadable mitochondrial genome sequences of closely related species as reference sequences. 
 
-**[Analysis > Animal Mitochondrial Genome]**: GeneMiner uses NOVOPlasty for organelle genome assembly. The software provides downloadable mitochondrial genome sequences of closely related species as reference sequences and selects a closely related one as the seed sequence; then load the data file to begin the chloroplast genome assembly.
+**[Analysis > Animal Mitochondrial Genome]**: GeneMiner2 uses NOVOPlasty for organelle genome assembly. 
 
 NOVOPlasty settings can be adjusted based on computer configuration to increase the allowable maximum memory for enhanced speed. For detailed explanations of the parameters, see [NOVOPlasty Github](https://github.com/ndierckx/NOVOPlasty).
 
-**Note: Do not close the command line window midway.**
-
-**[Analysis > Find Single Copy Genes]**: Transcript data needs to be imported as the reference sequence, and single-copy genes are extracted from the imported transcripts, which will subsequently be used as reference sequences for extracting single-copy genes from shallow sequencing.
+**[Analysis > Find Single Copy Genes]**: Transcript data needs to be imported as the reference sequence, and single-copy genes are extracted from the imported transcripts, which will subsequently be used as references.
 
 ---
 
 
 ### Batch
+**[Batch > Filter]**: Use references to filter sequencing data in batch, obtaining reads associated with target genes. 
 
-
-**[Batch > Filter & Assemble]**: Perform batch analysis on selected sequencing files from different species, automatically completing all steps of filtering, (further filtering), and assembly using the current settings. All results are saved in the output directory named after the sequencing file names.
+**[Batch > Filter & Assemble]**: Perform batch analysis on selected sequencing files from different species, automatically completing all steps of filtering, (further filtering), and assembly using the current settings. All results are saved in the output directory named after the sequencing file names.**Details see in **Analysis** part.**
 
 **[Batch > Re-Assemble]**: Perform batch analysis on selected sequencing files from different species, reassembling using the current settings.
 
@@ -251,29 +252,77 @@ For specific values for threshold settings, see **[Analysis Menu]**.
 
 **[Batch >Plant Chloroplast Genomes]**: Perform batch chloroplast genome assembly on selected sequencing files from different plant species.
 
-**[Batch > Plant Mitochondrial Genomes]**: Perform batch mitochondrial genome assembly on selected sequencing files from different plant species.
+**[Batch > Plant Mitochondrial Genomes]**: Perform batch mitochondrial genome assembly on selected sequencing files from different plant species.To assemble the plant mitochondrial genome, itis necessary to already
+possess the chloroplast genome first.
 
 **[Batch > Animal Mitochondrial Genomes]**: Perform batch mitochondrial genome assembly on selected sequencing files from different animal species.
 
-Note: For numerical choices and download standards regarding organelle genome assembly, see the above **[Analysis]**.
+Details in **[Analysis]**.
 
-**[Batch > Summary Stastistics]**: Compile the results of filtering, assembly, consensus reconstruction, and paralogous parity analysis.
-
+**[Batch > Summary Stastistics]**: Compile the results of filtering, assembly, consensus reconstruction, and paralogous parity analysis.Explanation for summary.csv can be found in [output.md].
 
 
 ---
 
+### Tools
+**[Calculate Parameters]**: Use references to filter sequencing data in batch, obtaining reads associated with target genes. 
+
+**[Split Filtered FQ]**:Split the filtered file into paired-end reads; results are saved in the filtered folder.
+
+**[Combine reference sequences]**:Merge by species or files directly.
+
+**[Add Reference to Result]**:Align assembled sequences with the reference. Results are saved in the aligned or trimmed folder. You can choose to trim terminal or the entire sequence.
+
+**[Split Reference Fasta]**:Select the reference sequences you wish to slice. GeneMiner2 will slice the reference into overlapping fragments to improve alignment flexibility and sensitivity.Enter the length of the input slice and the overlap length, separated by ':'.
+For example:300,150 means that each reference fragment will be 300 base pairs long, and adjacent fragments will overlap by 150 base pairs. Sliced sequences will be directly imported as reference. To save them, use “File → Export Reference” to export to a specified folder.
+
+**When is slicing useful?**
+The sample and reference differ significantly (e.g., different species or varieties)
+The reference is a transcript or contains introns
+Sequencing depth is low and matched regions are sparse or fragmented
+
+**[Build Tree with Reference]**:Construct a phylogenetic tree based on the imported reference sequences.
+
+**[Tree Time Calibration]**:Perform divergence time calibration on a specified tree file.
+
+**[Format Tree]**:Standardize species names in the imported tree.
+
+**[中文]**:Change language to Chinese.
+
+
+
+
+
+
+
+
 
 
 ## References
+ZHANG Z, XIE P, GUO Y, et al. Easy353: A Tool to Get Angiosperms353 Genes for Phylogenomic Research [J]. Mol Biol Evol, 2022, 39(12).
 
-Dierckxsens N., Mardulyn P. and Smits G. (2016) NOVOPlasty: De novo assembly of organelle genomes from whole genome data. Nucleic Acids Research, doi: 10.1093/nar/gkw955
+XIE P, GUO Y, TENG Y, et al. GeneMiner: A tool for extracting phylogenetic markers from next-generation sequencing data [J]. Mol Ecol Resour, 2024, 24(3): e13924.
 
-Dierckxsens N., Mardulyn P. and Smits G. (2019) Unraveling heteroplasmy patterns with NOVOPlasty. NAR Genomics and Bioinformatics, https://doi.org/10.1093/nargab/lqz011
+LIU C, TANG Z, LI L, et al. Enhancing antimicrobial resistance detection with MetaGeneMiner: Targeted gene extraction from metagenomes [J]. Chin Med J (Engl), 2024, 137(17): 2092-8.
 
-Zhen Zhang, Pulin Xie, Yongling Guo, Wenbin Zhou, Enyan Liu, Yan Yu. Easy353: A tool to get Angiosperms353 genes for phylogenomic research. Molecular Biology and Evolution. msac261 (2022). https://doi.org/10.1093/molbev/msac261.
-
-Baker W.J., Bailey P., Barber V., Barker A., Bellot S., Bishop D., Botigue L.R., Brewer G., Carruthers T., Clarkson J.J., Cook J., Cowan R.S., Dodsworth S., Epitawalage N., Francoso E., Gallego B., Johnson M., Kim J.T., Leempoel K., Maurin O., McGinnie C., Pokorny L., Roy S., Stone M., Toledo E., Wickett N.J., Zuntini A.R., Eiserhardt W.L., Kersey P.J., Leitch I.J. & Forest F. A Comprehensive Phylogenomic Platform for Exploring the Angiosperm Tree of Life. Systematic Biology. 71: 301–319. https://doi.org/10.1093/sysbio/syab035.
+DIERCKXSENS N, MARDULYN P, SMITS G. NOVOPlasty: de novo assembly of organelle genomes from whole genome data [J]. Nucleic Acids Res, 2017, 45(4): e18.
 
 Wenbin Z,John S,Jenny Q X. A New Pipeline for Removing Paralogs in Target Enrichment Data.[J]. Systematic biology,2021,71(2).
 
+KATOH K, MISAWA K, KUMA K I, et al. MAFFT: a novel method for rapid multiple sequence alignment based on fast Fourier transform [J]. 2002, 30(14): 3059-66.
+
+EDGAR R C J N C. Muscle5: High-accuracy alignment ensembles enable unbiased assessments of sequence homology and phylogeny [J]. 2022, 13(1): 6968.
+
+CAPELLA-GUTIERREZ S, SILLA-MARTINEZ J M, GABALDON T. trimAl: a tool for automated alignment trimming in large-scale phylogenetic analyses [J]. Bioinformatics, 2009, 25(15): 1972-3.
+
+PRICE M N, DEHAL P S, ARKIN A P. FastTree 2--approximately maximum-likelihood trees for large alignments [J]. PLoS One, 2010, 5(3): e9490.
+
+NGUYEN L T, SCHMIDT H A, VON HAESELER A, et al. IQ-TREE: a fast and effective stochastic algorithm for estimating maximum-likelihood phylogenies [J]. Mol Biol Evol, 2015, 32(1): 268-74.
+
+ZHANG C, RABIEE M, SAYYARI E, et al. ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees [J]. BMC Bioinformatics, 2018, 19(Suppl 6): 153.
+
+YANG Z, RANNALA B J M B, EVOLUTION. Bayesian estimation of species divergence times under a molecular clock using multiple fossil calibrations with soft bounds [J]. 2006, 23(1): 212-26.
+
+RANNALA B, YANG Z J S B. Inferring speciation times under an episodic molecular clock [J]. 2007, 56(3): 453-66.
+
+EMMS D M, KELLY S. OrthoFinder: phylogenetic orthology inference for comparative genomics [J]. Genome Biol, 2019, 20(1): 238.

@@ -12,41 +12,44 @@
 
 **log.txt**: Log file.
 
-#### **results: The sequence with the highest weight in the assembly results, i.e., the final result.**
+**consensus**: Maps the result sequences to the filtered fq files. Sequences with a number of ambiguous bases above the set value will be retained.
 
-**kmer_dict_k31.dict**: kmer dictionary file, formatted as: kmer fragment (in hexadecimal), kmer count (in hexadecimal).
+**supercontigs**: Consensus reconstruction result files, generating degenerate sequences using IUPAC codes, with degenerate bases marking SNP sites.
 
-**result_dict.txt**: Results file, formatted as: gene name, sequence assembly status, number of reads assembled.
-
-**ref_reads_count_dict.txt**: Total number of kmers split from each reference gene sequence.
-
-**result_dict.txt**: Results file, formatted as: gene name, sequence assembly status, number of reads assembled.
-
-#### Organelle: Assembly results of the organelle genomes.
-
-* **Gennome_cp.fasta**: Plant chloroplast genome assembly result.
-
-* **Gennome_cp.gb**: Annotated plant chloroplast genome assembly result.
-
-* **Gennome_mito_plant.fasta**: Plant mitochondrial genome assembly result.
-
-* **temp**: Files from the organelle genome assembly process that were not completed due to terminal closure.
-
-* **Gennome_mito.fasta**: Animal mitochondrial genome assembly result.
-
-
-
-#### Generate Consensus  :
-
-* **consensus**: Maps the result sequences to the filtered fq files. Sequences with a number of ambiguous bases above the set value will be retained.
-
-* **supercontigs**: Consensus reconstruction result files, generating degenerate sequences using IUPAC codes, with degenerate bases marking SNP sites.
-
-#### Multi Copy Detection :
-
-* **paralogs**: Result files from paralogous gene screening. The _ref.fasta file stores paralogous genes, the csv file records the number of times different base positions are mapped, and the .pec.csv file records the frequency of base mutations.
+**paralogs**: Result files from paralogous gene screening. The _ref.fasta file stores paralogous genes, the csv file records the number of times different base positions are mapped, and the .pec.csv file records the frequency of base mutations.
 
 **summary.csv**: Compilation of statistical results.
+
+
+**results: The sequence with the highest weight in the assembly results, i.e., the final result.**
+
+  - kmer_dict_k31.dict: kmer dictionary file, formatted as: kmer fragment (in hexadecimal), kmer count (in hexadecimal).
+
+  - result_dict.txt: Results file, formatted as: gene name, sequence assembly status, number of reads assembled.
+
+  - ref_reads_count_dict.txt: Total number of kmers split from each reference gene sequence.
+
+  - result_dict.txt: Results file, formatted as: gene name, sequence assembly status, number of reads assembled.
+
+---
+
+**Organelle**: Assembly results of the organelle genomes.
+
+  - Gennome_cp.fasta: Plant chloroplast genome assembly result.
+
+  - Gennome_cp.gb: Annotated plant chloroplast genome assembly result.
+
+  - Gennome_mito_plant.fasta: Plant mitochondrial genome assembly result.
+
+  - temp: Files from the organelle genome assembly process that were not completed due to terminal closure.
+
+  - Gennome_mito.fasta: Animal mitochondrial genome assembly result.
+
+
+
+
+
+
 
 #### Batch- Analysis :
 
@@ -62,9 +65,9 @@
 
 **aligned**: Results of multiple sequence alignment.
 
-#### Paralogous Detection (PPD) :
+####  :
 
-**PPD>result>supercontig>s8 _rm_paralogs> Final_kept_genes**: This is the final result file, for specific meanings of other files see [PPD GitHub](https://github.com/Bean061/putative_paralog#part2-trims-alignment-and-detectes-the-putative-paralogs).
+**PPD>result>supercontig>s8 _rm_paralogs> Final_kept_genes**: This is the final result file of [Paralogous Detection (PPD)], for specific meanings of other files see [PPD GitHub](https://github.com/Bean061/putative_paralog#part2-trims-alignment-and-detectes-the-putative-paralogs).
 
 
  ---
