@@ -11,6 +11,8 @@ import subprocess
 import sys
 
 import build_trimed
+import fix_alignment
+import muscle_wrapper
 
 COMMAND_HELP = '''
 filter    Reference-based filtering of raw reads
@@ -19,6 +21,7 @@ assemble  Gene assembly using wDBG
 consensus Consensus generation on heterozygous sites
 trim      Flank sequence removal
 combine   Gene alignment, concatenation and cleanup
+tree      Phylogenetic tree reconstruction
 '''
 
 SCRIPT_ROOT = os.path.join(sys._MEIPASS, os.pardir) if hasattr(sys, '_MEIPASS') else os.path.dirname(__file__)
@@ -36,6 +39,21 @@ def find_executable(prog, internal=False):
         raise RuntimeError(f"Unable to find {prog} executable")
 
     return bin_path
+
+def get_ref_genes(ref_dir):
+    genes = set()
+
+    with os.scandir(ref_dir) as it:
+        for entry in it:
+            if not entry.is_file():
+                continue
+
+            name_tup = os.path.splitext(entry.name)
+
+            if name_tup[1] in ('.fa', '.fas', '.fasta'):
+                genes.add(name_tup)
+
+    return genes
 
 def get_sample_ext(data_path):
     data_name, data_ext = os.path.splitext(data_path)
@@ -307,6 +325,8 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
                 del running_tasks[sample]
                 del task_metadata[sample]
 
+        executor.shutdown()
+
     else:
         for name in samples.keys():
             try:
@@ -329,17 +349,7 @@ def generate_consensus(args, samples):
     if args.consensus_threshold <= 0 or args.consensus_threshold > 1:
         raise RuntimeError(f"Invalid consensus threshold {args.consensus_threshold} (must be between 0.0 and 1.0)")
 
-    genes = set()
-
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
-
-            name, ext = os.path.splitext(entry.name)
-
-            if ext == '.fasta':
-                genes.add(name)
+    genes = get_ref_genes(args.r)
 
     def iterate_gene(sample):
         in_dir = os.path.join(out_loc, sample, 'results')
@@ -356,8 +366,8 @@ def generate_consensus(args, samples):
 
         os.makedirs(cns_dir, exist_ok=True)
 
-        for name in genes:
-            asm_path = os.path.join(in_dir, name + '.fasta')
+        for name, ext in genes:
+            asm_path = os.path.join(in_dir, name + ext)
             read_path = os.path.join(filt_dir, name + get_sample_ext(samples[sample][0]))
 
             if os.path.isfile(asm_path) and os.path.isfile(read_path):
@@ -377,12 +387,11 @@ def generate_consensus(args, samples):
             os.remove(sam_path)
 
     if args.p > 1:
-        executor = ThreadPoolExecutor(max_workers=args.p)
-
-        for _ in executor.map(process_gene, (task
-                                             for sample in samples.keys()
-                                             for task in iterate_gene(sample))):
-            pass
+        with ThreadPoolExecutor(max_workers=args.p) as executor:
+            for _ in executor.map(process_gene, (task
+                                                for sample in samples.keys()
+                                                for task in iterate_gene(sample))):
+                pass
 
     else:
         for sample in samples.keys():
@@ -392,43 +401,34 @@ def generate_consensus(args, samples):
 def blast_trim(args, samples):
     out_loc = args.o.strip()
 
-    blastn_bin = find_executable('blastn')
     makeblastdb_bin = find_executable('makeblastdb')
+
+    if args.trim_mode == 'isoform':
+        blast_bin = find_executable('magicblast')
+        blast_iter = build_trimed.execute_magicblast
+    else:
+        blast_bin = find_executable('blastn')
+        blast_iter = build_trimed.execute_blastn
 
     if args.trim_retention < 0 or args.trim_retention > 1:
         raise RuntimeError(f"Invalid trim retention threshold {args.trim_retention} (must be between 0.0 and 1.0)")
 
-    if args.trim_mode == 'all':
-        mode = 0
-    elif args.trim_mode == 'longest':
-        mode = 1
+    if args.trim_mode == 'longest' or args.trim_mode == 'isoform':
+        criterion = 'longest'
+    elif args.trim_mode == 'terminal':
+        criterion = 'terminal'
     else:
-        mode = 2
+        criterion = 'all'
 
-    gene_len = {}
+    genes = get_ref_genes(args.r)
 
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
+    os.makedirs(os.path.join(out_loc, 'blast_db'), exist_ok=True)
 
-            name, ext = os.path.splitext(entry.name)
-
-            if ext != '.fasta':
-                continue
-
-            with open(os.path.join(args.r, entry.name), 'r') as f:
-                sequence_lengths = [len(seq) for _, seq in SimpleFastaParser(f)]
-
-            if not sequence_lengths:
-                continue
-
-            gene_len[name] = statistics.median(sequence_lengths)
-
-    def build_blast_db(gene):
-        ref_path = os.path.join(args.r, gene + '.fasta')
-        db_path = os.path.join(out_loc, 'blast_db', gene)
-        subprocess.run([makeblastdb_bin, "-in", ref_path, "-dbtype", "nucl", "-out", db_path])
+    def build_blast_db(name_tup):
+        name, ext = name_tup
+        subprocess.run([makeblastdb_bin, "-in", f'"{os.path.realpath(os.path.join(args.r, name + ext))}"',
+                        "-dbtype", "nucl", "-out", name],
+                       cwd=os.path.join(out_loc, 'blast_db'))
 
     def iterate_gene(sample):
         if args.trim_source == 'consensus':
@@ -447,75 +447,48 @@ def blast_trim(args, samples):
 
         os.makedirs(blast_dir, exist_ok=True)
 
-        for name, length in gene_len.items():
+        for name, ext in genes:
             asm_path = os.path.join(in_dir, name + '.fasta')
+            ref_path = os.path.join(args.r, name + ext)
 
             if os.path.isfile(asm_path):
-                yield (name, length, asm_path, os.path.join(blast_dir, name + '.fasta'))
+                yield (name, asm_path, ref_path, os.path.join(blast_dir, name + '.fasta'))
 
     def process_gene(task):
-        name, length, asm_path, out_path = task
+        name, asm_path, ref_path, out_path = task
+        blast_output = blast_iter(asm_path, os.path.join(out_loc, 'blast_db', name), executable_path=blast_bin)
+        build_trimed.process_file(asm_path, ref_path, blast_output, out_path, args.trim_retention * 100, criterion)
 
-        with open(asm_path, 'r') as f:
-            header = next(f)
-            sequence = f.read().replace('\n', '')
-
-        blast_proc = subprocess.Popen([blastn_bin, "-query", asm_path, "-db", os.path.join(out_loc, 'blast_db', name),
-                                       "-outfmt", "6", "-evalue", "10"],
-                                       bufsize=1, errors='replace', stdout=subprocess.PIPE, text=True)
-
-        fragments = []
-
-        for line in blast_proc.stdout:
-            parts = line.split("\t")
-
-            if len(parts) < 12:
-                continue
-
-            if int(parts[6]) < int(parts[7]):
-                fragments.append([int(parts[6]), int(parts[7])])
-
-        blast_proc.wait()
-
-        if not fragments:
-            return
-
-        fragments = sorted(fragments, key=lambda fragment: abs(fragment[0] - fragment[1]), reverse=True)
-
-        if mode != 1:
-            fragments = build_trimed.merge_fragments(fragments)
-
-        if os.path.exists(out_path):
-            os.remove(out_path)
-
-        if mode == 1:
-            fragments = fragments[:1]
-        elif mode == 2:
-            fragments = [[min(t[0] for t in fragments), max(t[1] for t in fragments)]]
-
-        combined_sequence = build_trimed.extract_and_combine_fragments(sequence, fragments)
-
-        if len(combined_sequence) / length > args.trim_retention:
-            with open(out_path, 'w') as f:
-                f.writelines([header, combined_sequence + '\n'])
+    gene_count = len(genes) * len(samples)
+    trimmed_count = 0
 
     if args.p > 1:
-        executor = ThreadPoolExecutor(max_workers=args.p)
+        with ThreadPoolExecutor(max_workers=args.p) as executor:
+            for _ in executor.map(build_blast_db, genes):
+                pass
 
-        for _ in executor.map(build_blast_db, gene_len.keys()):
-            pass
+            for _ in executor.map(process_gene, (task
+                                                for sample in samples.keys()
+                                                for task in iterate_gene(sample))):
+                trimmed_count += 1
 
-        for _ in executor.map(process_gene, (task
-                                             for sample in samples.keys()
-                                             for task in iterate_gene(sample))):
-            pass
+                if trimmed_count >= 2:
+                    print(f'{trimmed_count}/{gene_count} genes trimmed\r', end='')
 
     else:
-        for gene in gene_len.keys():
-            build_blast_db(gene)
+        for gene_tup in genes:
+            build_blast_db(gene_tup)
+
         for sample in samples.keys():
             for task in iterate_gene(sample):
                 process_gene(task)
+
+                trimmed_count += 1
+
+                if trimmed_count >= 2:
+                    print(f'{trimmed_count}/{gene_count} genes trimmed\r', end='')
+
+    print('\n')
 
 def combine_genes(args, samples):
     out_loc = args.o.strip()
@@ -528,7 +501,9 @@ def combine_genes(args, samples):
         else:
             msa_bin = find_executable('mafft')
 
-        trimal_bin = find_executable('trimal')
+        if not args.no_trimal:
+            trimal_bin = find_executable('trimal')
+
         merge_seq_bin = find_executable('merge_seq', internal=True)
 
         if args.clean_difference < 0 or args.clean_difference > 1:
@@ -536,18 +511,6 @@ def combine_genes(args, samples):
 
         if args.clean_sequences < 0 or args.clean_sequences > len(samples):
             raise RuntimeError(f"Invalid required number of sequences {args.clean_sequences} (must be between 0 and {len(samples)})")
-
-    genes = set()
-
-    with os.scandir(args.r) as it:
-        for entry in it:
-            if not entry.is_file():
-                continue
-
-            name, ext = os.path.splitext(entry.name)
-
-            if ext == '.fasta':
-                genes.add(name)
 
     combine_dir = os.path.join(out_loc, 'combined_results')
 
@@ -573,12 +536,14 @@ def combine_genes(args, samples):
     else:
         in_name = 'results'
 
+    genes = {t[0] for t in get_ref_genes(args.r)}
+
     def merge_gene(gene):
         out_path = os.path.join(combine_dir, gene + '.fasta')
         written  = False
 
         with open(out_path, 'w+') as f:
-            for name in sorted(samples.keys()):
+            for name in samples.keys():
                 in_path = os.path.join(out_loc, name, in_name, gene + '.fasta')
 
                 if not os.path.isfile(in_path):
@@ -602,117 +567,50 @@ def combine_genes(args, samples):
 
         if args.msa_program == 'clustalo':
             subprocess.run([msa_bin, '-i', in_path, '-o', out_path, '--auto', '--force',
-                            '--seqtype=DNA', '--threads=1'])
+                            '--seqtype=DNA', '--threads=1'], stderr=subprocess.DEVNULL)
         elif args.msa_program == 'muscle':
-            subprocess.run([msa_bin, '-align', in_path, '-output', out_path,
-                            '-nt', '-threads', '1'])
+            subprocess.run([msa_bin, '-align', in_path, '-output', out_path, '-quiet',
+                            '-nt', '-threads', '1'], stderr=subprocess.DEVNULL)
+            muscle_wrapper.reorder_sequences(in_path, out_path)
         else:
-            subprocess.run(f'{shlex.quote(msa_bin)} --auto --quiet --nuc --thread 1 '
-                           f'{shlex.quote(in_path)} > {shlex.quote(out_path)}', shell=True)
+            subprocess.run(f'{shlex.quote(msa_bin)} --auto --quiet --nuc --thread 0 '
+                           f'{shlex.quote(in_path)} > {shlex.quote(out_path)}',
+                           shell=True, stderr=subprocess.DEVNULL)
 
     def clean_gene(gene):
         gene_path = os.path.join(alignment_dir, gene + '.fasta')
 
-        if not os.path.isfile(gene_path):
-            return
-
-        with open(gene_path, 'r') as f:
-            seq_list = list(SimpleFastaParser(f))
-
-        seq_count = len(seq_list)
-
-        if seq_count <= 1:
-            os.remove(gene_path)
-            return
-
-        dist_mat = [[0] * seq_count for _ in range(seq_count)]
-
-        for i in range(seq_count - 1):
-            for j in range(i + 1, seq_count):
-                seq_i = seq_list[i][1].upper()
-                seq_j = seq_list[j][1].upper()
-
-                diff_count = sum(ci != cj for ci, cj in zip(seq_i, seq_j) if ci not in '-?' and cj not in '-?')
-
-                nuc_i = seq_i.replace("-", "").replace("?", "")
-                nuc_j = seq_j.replace("-", "").replace("?", "")
-
-                if nuc_i and nuc_j:
-                    diff_pct = diff_count / min(len(nuc_i), len(nuc_j))
-                else:
-                    diff_pct = 1
-
-                dist_mat[i][j] = dist_mat[j][i] = 1 if diff_pct <= args.clean_difference else 0
-
-        def find_parent(p, x):
-            while p[x] != x:
-                x, p[x] = p[x], p[p[x]]
-            return x
-
-        def merge_sets(p, x, y):
-            px = find_parent(p, x)
-            py = find_parent(p, y)
-            if px != py:
-                p[px] = py
-
-        def find_cc(adj):
-            p = list(range(len(adj)))
-
-            for i, vec in enumerate(adj[:-1]):
-                for j, con in enumerate(vec[i + 1:], i + 1):
-                    if con:
-                        merge_sets(p, i, j)
-
-            for i, _ in enumerate(p):
-                p[i] = find_parent(p, i)
-
-            m = {}
-
-            for i, r in enumerate(p):
-                m.setdefault(r, []).append(i)
-
-            return m.values()
-
-        max_count  = 0
-        max_subset = []
-
-        for cc in find_cc(dist_mat):
-            if len(cc) > max_count:
-                max_count  = len(cc)
-                max_subset = cc
-
-        max_subset = frozenset(max_subset)
-
-        if max_count >= args.clean_sequences:
-            with open(gene_path, 'w') as f:
-                f.writelines(f'>{name}\n{seq}\n' for i, (name, seq) in enumerate(seq_list) if i in max_subset)
-        else:
-            os.remove(gene_path)
+        if os.path.isfile(gene_path):
+            fix_alignment.clean_file(gene_path, args.clean_sequences, args.clean_difference)
 
     def trim_gene(gene):
         in_path = os.path.join(alignment_dir, gene + '.fasta')
         out_path = os.path.join(trim_dir, gene + '.fasta')
 
-        if not os.path.isfile(in_path):
-            return
+        if os.path.isfile(in_path):
+            subprocess.run([trimal_bin, '-in', in_path, '-out', out_path, '-automated1'])
 
-        subprocess.run([trimal_bin, '-in', in_path, '-out', out_path, '-automated1'])
+    alignment_count = 0
+    gene_count = len(genes)
 
     if args.p > 1:
-        executor = ThreadPoolExecutor(max_workers=args.p)
-
-        for _ in executor.map(merge_gene, genes):
-            pass
-
-        if not args.no_alignment:
-            for _ in executor.map(align_gene, genes):
+        with ThreadPoolExecutor(max_workers=args.p) as executor:
+            for _ in executor.map(merge_gene, genes):
                 pass
 
-            for _ in executor.map(clean_gene, genes):
-                pass
+            if not args.no_alignment:
+                for _ in executor.map(align_gene, genes):
+                    alignment_count += 1
 
-            for _ in executor.map(trim_gene, genes):
-                pass
+                    if alignment_count >= 2:
+                        print(f'{alignment_count}/{gene_count} genes aligned\r', end='')
+
+                for _ in executor.map(clean_gene, genes):
+                    pass
+
+                if not args.no_trimal:
+                    for _ in executor.map(trim_gene, genes):
+                        pass
 
     else:
         for gene in genes:
@@ -720,15 +618,205 @@ def combine_genes(args, samples):
 
             if not args.no_alignment:
                 align_gene(gene)
+
+                alignment_count += 1
+
+                if alignment_count >= 2:
+                    print(f'{alignment_count}/{gene_count} genes aligned\r', end='')
+
                 clean_gene(gene)
-                trim_gene(gene)
+
+                if not args.no_trimal:
+                    trim_gene(gene)
+
+    print('\n')
 
     if not args.no_alignment:
         subprocess.run([merge_seq_bin, '-input', alignment_dir, '-exts', '.fasta', '-missing', '-',
                         '-output', os.path.join(out_loc, 'combined_results.fasta')])
 
-        subprocess.run([merge_seq_bin, '-input', trim_dir, '-exts', '.fasta', '-missing', '-',
-                        '-output', os.path.join(out_loc, 'combined_trimed.fasta')])
+        if not args.no_trimal:
+            subprocess.run([merge_seq_bin, '-input', trim_dir, '-exts', '.fasta', '-missing', '-',
+                            '-output', os.path.join(out_loc, 'combined_trimed.fasta')])
+
+def build_single_tree(prog_name, prog_bin, in_path, bootstrap=0, quiet=False, threads=1):
+    if prog_name == 'raxmlng':
+        params = [prog_bin, '--msa', in_path, '--msa-format', 'FASTA',
+                  '--model', 'GTR+G', '--redo']
+
+        if bootstrap:
+            params.extend(['--all', '--bs-trees', str(bootstrap)])
+        else:
+            params.append('--search')
+
+        if threads > 1:
+            params.extend(['--threads', f'auto{{{threads}}}', '--workers', 'auto'])
+        else:
+            params.extend(['--threads', '1'])
+
+        subprocess.run(params, stdout=subprocess.DEVNULL if quiet else None)
+
+        return in_path + ".raxml.bestTree"
+
+    elif prog_name == 'iqtree':
+        params = [prog_bin, '-s', in_path, '-redo']
+
+        if bootstrap:
+            params.extend(['-B', str(bootstrap)])
+
+        if quiet:
+            params.append('-quiet')
+
+        if threads > 1:
+            params.extend(['-T', 'AUTO', '-ntmax', str(threads)])
+        else:
+            params.extend(['-T', '1'])
+
+        subprocess.run(params, stdout=subprocess.DEVNULL if quiet else None)
+
+        return in_path + ".treefile"
+
+    elif prog_name == 'veryfasttree':
+        params = [prog_bin, '-out', in_path + ".veryfasttree.tre", '-gtr']
+
+        if bootstrap:
+            params.extend(['-boot', str(bootstrap)])
+        else:
+            params.append('-nosupport')
+
+        if quiet:
+            params.extend(['-quiet'])
+
+        if threads > 1:
+            params.extend(['-threads', str(threads)])
+
+        params.extend(['-nt', in_path])
+
+        subprocess.run(params, stderr=subprocess.DEVNULL if quiet else None)
+
+        return in_path + ".veryfasttree.tre"
+
+    else:
+        params = [prog_bin, '-out', in_path + ".fasttree.tre", '-gtr']
+
+        if bootstrap:
+            params.extend(['-boot', str(bootstrap)])
+        else:
+            params.append('-nosupport')
+
+        if quiet:
+            params.append('-quiet')
+
+        params.extend(['-nt', in_path])
+
+        subprocess.run(params, stderr=subprocess.DEVNULL if quiet else None)
+
+        return in_path + ".fasttree.tre"
+
+def build_coalescent_tree(args):
+    out_loc = args.o.strip()
+
+    if args.phylo_program == 'raxmlng':
+        phylo_bin = find_executable('raxml-ng')
+    elif args.phylo_program == 'iqtree':
+        phylo_bin = find_executable('iqtree')
+    elif args.phylo_program == 'veryfasttree':
+        phylo_bin = find_executable('VeryFastTree')
+    else:
+        phylo_bin = find_executable('FastTree')
+
+    astral_bin = find_executable('astral')
+
+    def find_genes(path):
+        try:
+            with os.scandir(path) as it:
+                return {os.path.splitext(entry.name)[0] for entry in it if entry.is_file() and entry.name.endswith('.fasta')}
+        except OSError:
+            return set()
+
+    if args.no_trimal:
+        alignment_dir = os.path.join(out_loc, 'combined_results', 'aligned')
+    else:
+        alignment_dir = os.path.join(out_loc, 'combined_trimed')
+
+    genes = {t[0] for t in get_ref_genes(args.r)} & find_genes(alignment_dir)
+    gene_count = len(genes)
+
+    if not genes:
+        raise RuntimeError(f"No gene alignments found under '{alignment_dir}'")
+
+    def make_gene_tree(gene):
+        return build_single_tree(args.phylo_program, phylo_bin, os.path.join(alignment_dir, f'{gene}.fasta'), quiet=True)
+
+    tree_files = set()
+
+    if args.p > 1:
+        with ThreadPoolExecutor(max_workers=args.p) as executor:
+            for tree_path in executor.map(make_gene_tree, genes):
+                if os.path.isfile(tree_path):
+                    tree_files.add(tree_path)
+                    tree_count = len(tree_files)
+
+                    if tree_count >= 2:
+                        print(f'{tree_count}/{gene_count} trees built\r', end='')
+
+    else:
+        for tree_path in map(make_gene_tree, genes):
+            if os.path.isfile(tree_path):
+                tree_files.add(tree_path)
+                tree_count = len(tree_files)
+
+                if tree_count >= 2:
+                    print(f'{tree_count}/{gene_count} trees built\r', end='')
+
+    print('\n')
+
+    coal_trees_path = os.path.join(out_loc, 'combined_genes.trees')
+    coal_out_path = os.path.join(out_loc, 'Coalescent.tree')
+    written = False
+
+    with open(coal_trees_path, 'w') as f:
+        for path in tree_files:
+            if os.path.getsize(path) <= 2: # Empty tree
+                continue
+
+            with open(path, 'r') as r:
+                f.write(next(r))
+
+            written = True
+
+    if not written:
+        raise RuntimeError(f"Unable to reconstruct coalescent trees because no gene tree is available")
+
+    subprocess.run([astral_bin, '-i', coal_trees_path, '-o', coal_out_path, '-t', str(args.p)])
+
+def build_concatenation_tree(args):
+    out_loc = args.o.strip()
+
+    if args.phylo_program == 'raxmlng':
+        phylo_bin = find_executable('raxml-ng')
+    elif args.phylo_program == 'iqtree':
+        phylo_bin = find_executable('iqtree')
+    elif args.phylo_program == 'veryfasttree':
+        phylo_bin = find_executable('VeryFastTree')
+    else:
+        phylo_bin = find_executable('FastTree')
+
+    if args.no_trimal:
+        in_path = os.path.join(out_loc, 'combined_results.fasta')
+    else:
+        in_path = os.path.join(out_loc, 'combined_trimed.fasta')
+
+    if not os.path.isfile(in_path):
+        raise RuntimeError(f"Unable to find the concatenated alignment at '{in_path}'")
+
+    out_path = build_single_tree(args.phylo_program, phylo_bin, in_path,
+                                 bootstrap=args.bootstrap, threads=args.p)
+
+    if not os.path.isfile(out_path):
+        raise RuntimeError(f"Phylogenetic tree reconstruction failed")
+
+    shutil.copyfile(out_path, os.path.join(out_loc, 'Concatenation.tree'))
 
 def execute_tasks(args, samples):
     if not os.path.isdir(args.r):
@@ -743,6 +831,7 @@ def execute_tasks(args, samples):
     do_consensus = 'consensus' in commands
     do_trim = 'trim' in commands
     do_combine = 'combine' in commands
+    do_tree = 'tree' in commands
 
     try:
         if do_filter or do_refilter or do_assemble:
@@ -768,6 +857,12 @@ def execute_tasks(args, samples):
 
             combine_genes(args, samples)
 
+        if do_tree:
+            if args.tree_method == 'coalescent':
+                build_coalescent_tree(args)
+            else:
+                build_concatenation_tree(args)
+
     except RuntimeError as e:
         print(f'Error: {e}')
         return
@@ -776,7 +871,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description='GeneMiner2 is a tool for extracting phylogenetic marker genes.')
     parser.add_argument('command',
-                        choices=('filter', 'refilter', 'assemble', 'consensus', 'trim', 'combine', []),
+                        choices=('filter', 'refilter', 'assemble', 'consensus', 'trim', 'combine', 'tree', []),
                         help='One or several of the following actions, separated by space:' + COMMAND_HELP,
                         metavar='command',
                         nargs='*')
@@ -792,13 +887,19 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--error-threshold', default=2, help='Error threshold', metavar='INT', type=int)
     parser.add_argument('-sb', '--soft-boundary', choices=('0', 'auto', 'unlimited'), default='auto', help='Soft boundary (default = auto)', type=str)
     parser.add_argument('-i', '--iteration', default=4096, help='Search depth', metavar='INT', type=int)
+
     parser.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
-    parser.add_argument('-m', '--trim-mode', choices=('all', 'longest', 'terminal'), default='terminal', help='Trim mode (default = terminal)', type=str)
-    parser.add_argument('-n', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
-    parser.add_argument('-t', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
-    parser.add_argument('-x', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
-    parser.add_argument('-d', '--clean-difference', default=1, help='Maximum acceptable pairwise difference in an alignment (default = 1.0)', metavar='FLOAT', type=float)
-    parser.add_argument('-q', '--clean-sequences', default=0, help='Number of sequences required in an alignment (default = 0)', metavar='INT', type=int)
+
+    parser.add_argument('-ts', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
+    parser.add_argument('-tm', '--trim-mode', choices=('all', 'longest', 'terminal', 'isoform'), default='terminal', help='Trim mode (default = terminal)', type=str)
+    parser.add_argument('-tr', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
+
+    parser.add_argument('-cs', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
+    parser.add_argument('-cd', '--clean-difference', default=1, help='Maximum acceptable pairwise difference in an alignment (default = 1.0)', metavar='FLOAT', type=float)
+    parser.add_argument('-cn', '--clean-sequences', default=0, help='Number of sequences required in an alignment (default = 0)', metavar='INT', type=int)
+
+    parser.add_argument('-m', '--tree-method', choices=('coalescent', 'concatenation'), default='coalescent', help='Multi-gene tree reconstruction method (default = coalescent)')
+    parser.add_argument('-b', '--bootstrap', default=1000, help='Number of bootstrap replicates', metavar='INT', type=int)
 
     parser.add_argument('--max-reads', default=0, help='Maximum reads per file', metavar='INT', type=int)
     parser.add_argument('--min-depth', default=50, help='Minimum acceptable depth during re-filtering', metavar='INT', type=int)
@@ -806,11 +907,13 @@ if __name__ == '__main__':
     parser.add_argument('--max-size', default=6, help='Maximum file size during re-filtering', metavar='INT', type=int)
     parser.add_argument('--min-ka', default=21, help='Minimum auto-estimated assembly k-mer size', metavar='INT', type=int)
     parser.add_argument('--max-ka', default=51, help='Maximum auto-estimated assembly k-mer size', metavar='INT', type=int)
-    parser.add_argument('--msa-program', choices=('clustalo', 'mafft', 'muscle'), default='mafft', help='Program for multiple sequence alignment)', type=str)
+    parser.add_argument('--msa-program', choices=('clustalo', 'mafft', 'muscle'), default='mafft', help='Program for multiple sequence alignment', type=str)
     parser.add_argument('--no-alignment', action='store_true', default=False, help='Do not perform multiple sequence alignment')
+    parser.add_argument('--no-trimal', action='store_true', default=False, help='Do not run trimAl on alignments')
+    parser.add_argument('--phylo-program', choices=('raxmlng', 'iqtree', 'fasttree', 'veryfasttree'), default='fasttree', help='Program for phylogenetic tree reconstruction', type=str)
 
     args = parser.parse_args()
-    args.command = args.command or ('filter', 'refilter', 'assemble', 'trim', 'combine')
+    args.command = args.command or ('filter', 'refilter', 'assemble', 'trim', 'combine', 'tree')
 
     samples = prepare_workdir(args)
 

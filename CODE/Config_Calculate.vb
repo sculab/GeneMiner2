@@ -14,10 +14,10 @@
         form_config_basic.NumericUpDown2.Value = step_size
         form_config_basic.NumericUpDown8.Value = error_limit
         form_config_basic.NumericUpDown10.Value = search_depth
-        form_config_basic.ComboBox1.SelectedIndex = If(soft_boundary = "Auto", 0, If(soft_boundary = "Unlimited", 2, -1))
+        form_config_basic.ComboBox1.SelectedIndex = form_config_basic.ComboBox1.Items.IndexOf(soft_boundary)
         form_config_combine.TextBox2.Text = Math.Round(combine_thr, 3).ToString
         form_config_trim.NumericUpDown1.Value = trim_thr
-        form_config_trim.ComboBox2.SelectedIndex = If(trim_mode = "Trim Terminal", 2, If(trim_mode = "All Fragments", 0, -1))
+        form_config_trim.ComboBox2.SelectedIndex = form_config_trim.ComboBox2.Items.IndexOf(trim_mode)
         Hide()
     End Sub
 
@@ -62,13 +62,16 @@
             Return
         End If
 
-        ' Find the lower 95% of gene variation
-        combine_thr = (1.65 * Math.Sqrt(gene_len * max_diff * (1 - max_diff)) + gene_len * max_diff) / gene_len
+        combine_thr = max_diff
 
-        If ComboBox_Ref.SelectedIndex = ComboBox_Seq.SelectedIndex Then
-            trim_mode = "Trim Terminal"
+        If ComboBox_Seq.SelectedIndex = 0 Then
+            If ComboBox_Ref.SelectedIndex = 0 Then
+                trim_mode = "Trim Terminal"
+            Else
+                trim_mode = "All Fragments"
+            End If
         Else
-            trim_mode = "All Fragments"
+            trim_mode = "Longest Isoform"
         End If
 
         If ComboBox_Seq.SelectedIndex = 1 Then

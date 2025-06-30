@@ -98,39 +98,6 @@ Module Module_Function
             }
         End If
     End Sub
-    Function FindMaxSubset(distanceMatrix As Double(,), v As Double) As List(Of Integer)
-        Dim n As Integer = distanceMatrix.GetLength(0)
-        Dim maxSubset As New List(Of Integer)
-        Dim maxCount As Integer = 0
-
-        ' 尝试每个数据点作为子集的起点
-        For i As Integer = 0 To n - 1
-            Dim subset As New List(Of Integer)
-            subset.Add(i)
-
-            ' 检查其他点是否满足条件并加入子集
-            For j As Integer = 0 To n - 1
-                If i <> j Then
-                    Dim valid As Boolean = True
-                    For Each k In subset
-                        If distanceMatrix(k, j) > v Then
-                            valid = False
-                            Exit For
-                        End If
-                    Next
-                    If valid Then subset.Add(j)
-                End If
-            Next
-
-            ' 更新最大子集
-            If subset.Count > maxCount Then
-                maxCount = subset.Count
-                maxSubset = subset
-            End If
-        Next
-        Return maxSubset
-    End Function
-
 
     Public Sub DeleteDir(ByVal aimPath As String)
         If (aimPath(aimPath.Length - 1) <> Path.DirectorySeparatorChar) Then
@@ -161,7 +128,7 @@ Module Module_Function
         End If
         Dec_Sym = CInt("0").ToString("F1").Replace("0", "")
         If Dec_Sym <> "." Then
-            MsgBox("Notice: We will use dat (.) as decimal quotation instead of comma (,). We recommand to change your system's number format to English! ")
+            MsgBox("Notice: We will use dot (.) as decimal notation instead of comma (,). We recommend to change your system's number format to English! ")
         End If
         Dim driveInfo As New DriveInfo(Path.GetPathRoot(root_path))
 
@@ -398,18 +365,6 @@ Module Module_Function
         Return maxRecord
     End Function
 
-    'Public Sub build_ann(ByVal input1 As String, ByVal input2 As String, ByVal gb_file As String, ByVal output_file As String, ByVal WorkingDirectory As String)
-    '    Dim SI_build_ann As New ProcessStartInfo()
-    '    SI_build_ann.FileName = currentDirectory + "analysis\build_ann.exe" 
-    '    SI_build_ann.WorkingDirectory = WorkingDirectory 
-    '    SI_build_ann.CreateNoWindow = False
-    '    SI_build_ann.Arguments = "-i1 " + """" + input1 + """" + " -i2 " + """" + input2 + """" + " -gb " + """" + gb_file + """" + " -o " + """" + output_file + """"
-    '    Dim process_build_ann As Process = New Process()
-    '    process_build_ann.StartInfo = SI_build_ann
-    '    process_build_ann.Start()
-    '    process_build_ann.WaitForExit()
-    '    process_build_ann.Close()
-    'End Sub
     Function GenerateRandomString(ByVal length As Integer) As String
         Dim allowedChars As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
         Dim randomBytes(length - 1) As Byte
@@ -447,36 +402,6 @@ Module Module_Function
         safe_copy(Path.Combine(currentDirectory, "temp", random_folder, "result", "my_target.gb"), Path.Combine(output_dir, "output.gb"))
         safe_copy(Path.Combine(currentDirectory, "temp", random_folder, "result", "warning.log"), Path.Combine(output_dir, "warning.log"))
         safe_copy(Path.Combine(currentDirectory, "temp", random_folder, "target", "my_target.fasta"), Path.Combine(output_dir, "output.fasta"))
-        Directory.Delete(Path.Combine(currentDirectory, "temp", random_folder), True)
-    End Sub
-
-    Public Sub do_trim_blast(ByVal ref_file As String, ByVal taregt_file As String)
-        Dim random_folder As String = GenerateRandomString(8)
-        Directory.CreateDirectory(Path.Combine(currentDirectory, "temp", random_folder))
-        safe_copy(ref_file, Path.Combine(currentDirectory, "temp", random_folder, "my_ref.fasta"))
-        safe_copy(taregt_file, Path.Combine(currentDirectory, "temp", random_folder, "my_target.fasta"))
-        Dim output_file As String = Path.Combine(currentDirectory, "temp", random_folder, "my_trimed.fasta")
-
-        Dim SI_build_trimed As New ProcessStartInfo With {
-            .FileName = currentDirectory + "analysis\build_trimed.exe",
-            .WorkingDirectory = currentDirectory + "analysis",
-            .CreateNoWindow = True,
-            .Arguments = "-r ..\temp\" + random_folder + "\my_ref.fasta -i ..\temp\" + random_folder + "\my_target.fasta -o  ..\temp\"
-        }
-        SI_build_trimed.Arguments += random_folder + "\my_trimed.fasta -b ..\temp\" + random_folder + " -m " + form_config_trim.ComboBox2.SelectedIndex.ToString
-
-        SI_build_trimed.Arguments += " -pec " + form_config_trim.NumericUpDown1.Value.ToString
-        Dim process_build_trimed As Process = New Process With {
-            .StartInfo = SI_build_trimed
-        }
-        process_build_trimed.Start()
-        process_build_trimed.WaitForExit()
-        process_build_trimed.Close()
-        If File.Exists(Path.Combine(currentDirectory, "temp", random_folder, "my_trimed.fasta")) Then
-            safe_copy(Path.Combine(currentDirectory, "temp", random_folder, "my_trimed.fasta"), taregt_file)
-        ElseIf File.Exists(taregt_file) Then
-            File.Delete(taregt_file)
-        End If
         Directory.Delete(Path.Combine(currentDirectory, "temp", random_folder), True)
     End Sub
 

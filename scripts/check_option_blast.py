@@ -18,20 +18,25 @@ def main():
     subject_file = args.ref
     output_db = "blast_db"  # 指定数据库名称
     output_file = "blast_output.txt"
+
+    env = os.environ.copy()
+    env['BLAST_USAGE_REPORT'] = '0'
+    env['DO_NOT_TRACK'] = '1'
+
     # 如果数据库文件不存在，就创建
     if not os.path.exists(output_db + ".nhr"):
-        makeblastdb_cmd = [r"..\analysis\makeblastdb.exe", "-in", subject_file, "-dbtype", "nucl", "-out", output_db]
+        makeblastdb_cmd = [r"..\analysis\makeblastdb.exe", "-in", f'"{subject_file}"', "-dbtype", "nucl", "-out", output_db]
         print(" ".join(makeblastdb_cmd))
-        subprocess.run(makeblastdb_cmd, check=True)
+        subprocess.run(makeblastdb_cmd, check=True, env=env)
 
     longest_total_length = 0
     longest_query_file = ""
 
     for query_file in fasta_files:
-        query_file = os.path.join(r".\NOVOPlasty", query_file)
+        query_file = os.path.join(folder_path, query_file)
         
         blastn_cmd = [r"..\analysis\blastn.exe", "-query", query_file, "-db", output_db, "-out", output_file, "-outfmt", "6", "-evalue", "10"]
-        subprocess.run(blastn_cmd, check=True)
+        subprocess.run(blastn_cmd, check=True, env=env)
         # print(query_file)
         
         # 解析并获取10个最长片段的起始位置和总长度

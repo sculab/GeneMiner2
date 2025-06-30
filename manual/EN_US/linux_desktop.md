@@ -1,10 +1,16 @@
 # Running on Desktop Linux Systems
 
+## Methods
+
+We recommend desktop Linux users to run the Windows binaries using a compatibility layer, preferentially Steam Play. On non-desktop Linux systems, or in the case where compatibility tools are not available, [build and run native Linux binaries](command_line.md).
+
 ## Motivation
 
-GeneMiner2 is designed to be very friendly to novice users. While [native Linux binaries](command_line.md) are possible, we recommend desktop Linux users to run the Windows binaries with a graphical user interface. Currently, the best compability tool is [Proton](https://github.com/ValveSoftware/Proton), which can be easily installed through [Steam](https://store.steampowered.com/) or [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher). It is also possible to run the Windows binaries using other frontends like [PlayOnLinux](https://www.playonlinux.com/) or only [Wine](https://www.winehq.org/) itself, but more tinkering is required.
+GeneMiner2 is designed to be very friendly to novice users. While we provide a way to build native binaries, the command-line interface lacks several convenience features that facilitate phylogenetic analyses. Therefore, we only recommend native builds for large-scale analysis.
 
-## Steam
+It is known that [Proton](https://github.com/ValveSoftware/Proton) can run GeneMiner2 with good performance. It can be easily installed through [Steam](https://store.steampowered.com/) or [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher). It is also possible to run the Windows binaries using other frontends like [PlayOnLinux](https://www.playonlinux.com/) or just [Wine](https://www.winehq.org/) itself, but more tinkering is required.
+
+## Using Steam
 
 1. Install [Steam](https://store.steampowered.com/) and register a Steam account.
 
@@ -30,7 +36,7 @@ GeneMiner2 is designed to be very friendly to novice users. While [native Linux 
 
 Additionally, you receive the benefit of enraging your Steam friends with a "is now playing GeneMiner2" message each time you run GeneMiner2 with Steam.
 
-## umu-launcher
+## Using umu-launcher
 
 Assuming umu-launcher is properly installed and GeneMiner2 extracted to `~/geneminer2`, running the following line should be able to bring GeneMiner2 up.
 

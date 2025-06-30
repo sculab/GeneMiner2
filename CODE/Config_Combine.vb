@@ -86,25 +86,25 @@ Public Class Config_Combine
 
     Private Sub CheckBox3_MouseHover(sender As Object, e As EventArgs) Handles CheckBox3.MouseHover
         If language = "EN" Then
-            TextBox1.Text = "Selecting this option enables automatic cleanup. The program calculates the difference rate between each pair of sequences (the number of base differences divided by the length of the shorter sequence in the pair). It then extracts the largest subset of sequence pairs from the collection, ensuring that their pairwise difference rates do not exceed the 'Maximum Difference' threshold. If the number of sequences in this largest subset is greater than or equal to the 'Number of sequences' specified, this subset is used as the result. Otherwise, the alignment will be removed."
+            TextBox1.Text = "Selecting this option enables automatic cleanup. The program calculates the difference of sequence overlaps and clusters sequences with a pairwise difference lower than the 'Maximum Difference' threshold. If a cluster is larger than or equal to the specified 'Number of sequences', the sequences are added to the alignment."
         Else
-            TextBox1.Text = "勾选表示执行自动清理。程序将计算两两序列间的差异率（碱基差异的数量除以两条序列中较短序列的长度），然后从序列集合中获取两两比对的差异率不超过所设定的‘最大差异’的最大子集，如果最大子集的序列数量大于等于所设定的‘序列数量’，则用该子集作为结果，否则删除该基因。"
+            TextBox1.Text = "勾选表示执行自动清理。程序将计算序列重叠区域的差异率，然后对差异率不超过所设定的‘最大差异’的序列进行聚类。如果一组重叠序列的数量超过所设定的‘序列数量’，则将这组序列加入多序列比对中，否则删除。"
         End If
     End Sub
 
-    Private Sub Label1_MouseHover(sender As Object, e As EventArgs) Handles Label1.MouseHover
+    Private Sub Label1_MouseHover(sender As Object, e As EventArgs) Handles Label1.MouseHover, TextBox2.GotFocus, TextBox2.MouseHover
         If language = "EN" Then
-            TextBox1.Text = "Retrieve the largest subset from the sequence collection where the pairwise comparison difference rate does not exceed the set value."
+            TextBox1.Text = "The maximum mismatch between two overlapping sequences is not allowed to exceed this value."
         Else
-            TextBox1.Text = "从序列集合中获取两两比对的差异率不超过所设定的值的最大子集"
+            TextBox1.Text = "设定值表示在两条重叠序列之间最多允许的不匹配碱基比例。"
         End If
     End Sub
 
-    Private Sub Label2_MouseHover(sender As Object, e As EventArgs) Handles Label2.MouseHover
+    Private Sub Label2_MouseHover(sender As Object, e As EventArgs) Handles Label2.MouseHover, NumericUpDown1.GotFocus, NumericUpDown1.MouseHover
         If language = "EN" Then
-            TextBox1.Text = "If the number of sequences in the largest subset is greater than or equal to the set value, then the subset is used as the result; otherwise, the alignment is deleted."
+            TextBox1.Text = "Each cluster of overlapping sequences is required to have at least this number of sequences. Otherwise, the cluster will be removed."
         Else
-            TextBox1.Text = "如果最大子集的序列数量大于等于所设定的值，则用该序列子集中作为结果，否则删除该基因。"
+            TextBox1.Text = "设定值表示保留一组具有重叠区域的序列所需要的序列数。如果序列数低于设定值，则会被删除。"
         End If
     End Sub
 
@@ -116,23 +116,4 @@ Public Class Config_Combine
         End If
     End Sub
 
-    Private Sub TextBox2_MouseHover(sender As Object, e As EventArgs) Handles TextBox2.MouseHover
-        If language = "EN" Then
-            TextBox1.Text = "Retrieve the largest subset from the sequence collection where the pairwise comparison difference rate does not exceed the set value."
-        Else
-            TextBox1.Text = "从序列集合中获取两两比对的差异率不超过所设定的值的最大子集"
-        End If
-    End Sub
-
-    Private Sub NumericUpDown1_MouseHover(sender As Object, e As EventArgs) Handles NumericUpDown1.MouseHover
-        If language = "EN" Then
-            TextBox1.Text = "If the number of sequences in the largest subset is greater than or equal to the set value, then the subset is used as the result; otherwise, the alignment is deleted."
-        Else
-            TextBox1.Text = "如果最大子集的序列数量大于等于所设定的值，则用该序列子集中作为结果，否则删除序列。"
-        End If
-    End Sub
-
-    Private Sub CheckBox2_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox2.CheckedChanged
-
-    End Sub
 End Class

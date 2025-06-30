@@ -1,10 +1,16 @@
-# 桌面Linux系统的运行方法
+# 在桌面Linux系统上运行GeneMiner2
+
+## 方法
+
+我们推荐桌面Linux用户通过兼容层（建议使用Steam Play）运行Windows版GeneMiner2。在服务器Linux系统上，或者在无法使用兼容性工具的场合，请[手动编译运行原生Linux版本](command_line.md)。
 
 ## 动机
 
-GeneMiner2 致力于为初学者提供友好的使用体验。尽管可以编译[原生Linux版本](command_line.md)，我们推荐桌面Linux用户运行带有图形界面的Windows版。目前来说，[Proton](https://github.com/ValveSoftware/Proton)是兼容性最好的工具，可以用[Steam](https://store.steampowered.com/)或者[umu-launcher](https://github.com/Open-Wine-Components/umu-launcher)来安装。用其他Wine前端也是可行的，例如[PlayOnLinux](https://www.playonlinux.com/)，或者完全手动配置[Wine](https://www.winehq.org/)本体，但这样需要更多的配置工作。
+GeneMiner2 致力于为初学者提供友好的使用体验。GeneMiner2的原生命令行版本缺少一些简化系统发育分析的功能，所以我们只推荐将命令行版本用于大规模分析。
 
-## Steam
+[Proton](https://github.com/ValveSoftware/Proton)能够完全兼容GeneMiner2，并且性能较好。用[Steam](https://store.steampowered.com/)或者[umu-launcher](https://github.com/Open-Wine-Components/umu-launcher)可以简便地安装Proton。GeneMiner2也可以用[PlayOnLinux](https://www.playonlinux.com/)等其他Wine前端运行，或直接使用[Wine](https://www.winehq.org/)本体运行，但是需要更多的额外配置工作。
+
+## 使用Steam
 
 1. 安装[Steam](https://store.steampowered.com/)并注册账号。
 
@@ -30,7 +36,7 @@ GeneMiner2 致力于为初学者提供友好的使用体验。尽管可以编译
 
 另外，通过Steam打开GeneMiner2的时候，可以给Steam好友发一条“正在玩 GeneMiner2”消息，从而促进友情的结束。
 
-## umu-launcher
+## 使用umu-launcher
 
 假设GeneMiner2已经解压到`~/geneminer2`，可以运行这行命令启动GeneMiner2。
 

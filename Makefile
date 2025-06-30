@@ -4,7 +4,7 @@ PY_BIN := $(patsubst %,cli/bin/%,$(PY_SRC))
 .PHONY: build clean
 
 build: cli/bin/MainFilterNew $(PY_BIN)
-	for target in $(PY_SRC); do cp -L -r -t cli/bin --reflink=always --update=none scripts/dist/$$target/_internal; done
+	for target in $(PY_SRC); do cp -L -r -t cli/bin --reflink=auto --update=none scripts/dist/$$target/_internal; done
 	cd cli && ln -f -r -s bin/unix_command geneminer2
 
 clean:
