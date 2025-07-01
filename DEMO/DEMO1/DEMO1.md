@@ -20,9 +20,6 @@ If no reference file is available locally, you can download standard references 
         •	Angiosperm 353 Genes
 
 
-
-
-
 ### Calculating Parameters
 
 Click [Tools > Calculate Parameters] .

@@ -230,10 +230,10 @@ NOVOPlasty settings can be adjusted based on computer configuration to increase 
 ![](../../images/mafft_en.jpg)
 
 
-**[Batch > Build Phylogenetic Tree]**: Construct a phylogenetic tree based on merged results. The general workflow includes: [Load references and sequencing Files], [Filter & Assemble], [Trim With Reference], [Combine results], **[Build Phylogenetic Tree]**. Concatenated/coalescent-based trees can be chosen for construction, and rooted trees can be supported with the selection of an outgroup.
+**[Batch > Build Phylogenetic Tree]**: Construct a phylogenetic tree based on merged results. Concatenated/coalescent-based trees can be chosen for construction, and rooted trees can be supported with the selection of an outgroup.
 
 
-![](../../images/mafft_en.jpg)
+![](../../images/tree_en.jpg)
 
 
 **[Batch > Generate Consensus]**: Map the filtered fq files of selected species in batch to the result sequences. Set the threshold according to prompts; increasing the threshold will result in a higher number of ambiguous bases.
@@ -248,7 +248,9 @@ For specific values for threshold settings, see **[Analysis Menu]**.
 
 **[Batch > Paralogous Detection (PPD)]**: **Note, PPD can only be performed after Consensus Reconstruction**, i.e., after paralogous parity detection on the results extracted from [Filter & Assemble]. An outgroup sequencing file ID number is required.
 
+
 ![Chinese ID](../../images/chinese_ID.jpg)
+
 
 **[Batch >Plant Chloroplast Genomes]**: Perform batch chloroplast genome assembly on selected sequencing files from different plant species.
 

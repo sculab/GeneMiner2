@@ -18,10 +18,17 @@
 
 **paralogs**: Result files from paralogous gene screening. The _ref.fasta file stores paralogous genes, the csv file records the number of times different base positions are mapped, and the .pec.csv file records the frequency of base mutations.
 
-**summary.csv**: Compilation of statistical results.
+**summary.csv**: Summary statistics of the results, including:
+  - Reference Median Length: The median length of the reference sequences, used for filtering during the Reference-based Trimming step.
+
+  - Reads Counts: The number of reads retained after filtering and matching.
+
+  - Result Availability: Indicates whether an assembly result exists (1 = yes).
+
+  - Multicopy Presence: Indicates whether multi-copy sequences are detected (1 = yes).
 
 
-**results: The sequence with the highest weight in the assembly results, i.e., the final result.**
+**results: The sequence with the highest weight in the assembly results,  the final result.**
 
   - kmer_dict_k31.dict: kmer dictionary file, formatted as: kmer fragment (in hexadecimal), kmer count (in hexadecimal).
 
@@ -44,11 +51,6 @@
   - temp: Files from the organelle genome assembly process that were not completed due to terminal closure.
 
   - Gennome_mito.fasta: Animal mitochondrial genome assembly result.
-
-
-
-
-
 
 
 #### Batch- Analysis :
