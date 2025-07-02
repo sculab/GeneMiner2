@@ -61,9 +61,10 @@ Click [Analyse>Plant Chloroplast Genome] to download the reference genome of clo
 
 Click [OK] proceed with the default parameters for assembly.
 
-！！Note:内存会影响是否组装成功，如果没有成功组装，尝试扩大内存
-NOTE: For importing multiple pairs of sequencing files, select [Batch > Plant Chloroplast Genome] to extract.
+**Note: Insufficient memory may cause assembly failure. If this occurs, consider increasing the memory.**
 
+NOTE: For importing multiple pairs of sequencing files, select [Batch > Plant Chloroplast Genome] to extract.
+**"Reads/File (M)" is set to 10.**
 
 ![](gif/genome_ass.gif)
 
