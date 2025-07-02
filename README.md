@@ -54,7 +54,7 @@ You can also use the Python scripts in the `scripts` folder. These scripts offer
 [Tutorial 2 - Obtain Organelle Genes (Genome)](/DEMO/DEMO2/DEMO2.md)
 
   
-[Tutorial 3 - 353 genes and Single-Copy Gene Workflow(Batch samples Example)](DEMO/DEMO3/DEMO3.md)
+[Tutorial 3 - Single-Copy Gene Phylogenetic Pipeline(Batch samples Example)](DEMO/DEMO3/DEMO3.md)
 
 
 

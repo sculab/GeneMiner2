@@ -1,9 +1,9 @@
-# Tutorial 3 - 353 genes and Single-Copy Gene Workflow(Batch Example)
+# Tutorial 3 - Single-Copy Gene Workflow(Batch Example)
 
 ### Data Preparation
 
 
-- **[Sequencing Data](DATA/PLANT/)**: Second-generation sequencing data files, in .gz or .fq format.
+- **[Sequencing Data](DEMO/DEMO3/DATA/PLANT)**: Second-generation sequencing data files, in .gz or .fq format.
 
 - **[Transcript Data](DATA/Phytozome/)**: Assembled transcript data from a closely related species, obtained post-transcriptome assembly, in .fa format.
 
@@ -23,26 +23,10 @@ These SCGs(in folder:**OrthoFinder>Single_Copy_Orthologue_Sequences**) will serv
 
 ![](gif/SCG_ref.gif)
 
----
-
-**Loading the data files(353 genes)**
-
-
-- **[Sequencing Data]**: Click [**File>Load Sequencing Files**] select sequencing data file in .gz or .fq format.
-
-
-- **[Reference Sequence]**: Click [File>Load Reference] select  fasta format reference sequences. 
-
-
-If no reference file is available locally, you can download standard references by selecting **[Files > Download References >]** from the top menu. Available datasets include:
-        •	Angiosperm 353 Genes
-
----
-
 
 
 ### Calculating Parameters
-
+**This demo uses the default parameters.This part is for demonstration purposes only.**
 Click [Tools > Calculate Parameters] .
 
 ![](gif/parameter.gif)
@@ -84,7 +68,7 @@ Click [**Batch > Trim With Reference**] to remove low-quality regions and sequen
 
 [**Retention Length Threshold**] can be adjusted based on the data source to prevent over-filtering.
 
-Trimmed results can be previewed in the BLAST/ directory.
+Trimmed results can be previewed in the BLAST/ directory.本次demo不进行此步骤，仅做示例 。
 
 
 ![](gif/SCG_datacleaning1.gif)

@@ -5,7 +5,7 @@
 
 
 - **[Sequencing Data](DATA/seq/)**: Click [**File>Load Sequencing Files**] select sequencing data in .gz or .fq format.
-  (For batch processing with **multiple samples**, see **Demo 3(../DEMO3/DEMO3.md)** for details.)
+  (For batch processing with **multiple samples**, see **Demo 3** for details.)
 
 
 - **[Reference Sequence](DATA/A_lyrata/)**: Click [File>Load Reference] select  fasta format reference sequences in fasta or genbank format. 
@@ -16,11 +16,9 @@ If no reference file is available locally, you can download standard references 
         •	Plant Chloroplast Genome
         •	Plant Mitochondrial Genome
         •	Animal Mitochondrial Genome
-        (Note:Select Download as single gene if you want to extract genes.)
+        (Note:Select Download as single gene if you want to e(Note:Select Download as single gene if you want to extract genes.)
         •	Angiosperm 353 Genes
-
-
-### Calculating Parameters
+### Ca
 
 Click [Tools > Calculate Parameters] .
 

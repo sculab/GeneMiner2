@@ -20,8 +20,17 @@ If no reference file is available locally, you can download standard references 
         •	Animal Mitochondrial Genome
         (Note:Select Download as single gene if you want to extract genes.)
         
+### Calculating Parameters
+
+Click [Tools > Calculate Parameters] .
+
+![](gif/parameter.gif)
+
+Click **Calculate** to estimate , and then click **Apply** to finalize the settings.**This demo uses the default parameters.**
 
 ### Obtaining Genes
+
+
 Click [Analysis > Filter & Assemble] to obtain Genes.
 
 **NOTE:** Do not manually close the command line window; it will close automatically once the process is complete.
@@ -52,11 +61,11 @@ Click [Analyse>Plant Chloroplast Genome] to download the reference genome of clo
 
 Click [OK] proceed with the default parameters for assembly.
 
-
+！！Note:内存会影响是否组装成功，如果没有成功组装，尝试扩大内存
 NOTE: For importing multiple pairs of sequencing files, select [Batch > Plant Chloroplast Genome] to extract.
 
 
-![](gif/GENOME2.gif)
+![](gif/genome_ass.gif)
 
 
 Click [Open] to view the  results located in the 'Organelle' folder named "Gennome_cp.fasta".
@@ -81,17 +90,6 @@ Click [Open] to view the  results located in the 'Organelle' folder named "Genno
 
 ---
 
-The **output** folder **Organelle** includes:
-
-•	Gennome_cp.fasta: Assembled chloroplast genome sequence (plants).
-
-•	Gennome_cp.gb: Annotated chloroplast genome in GenBank format.
-
-•	Gennome_mito_plant.fasta: Assembled mitochondrial genome (plants).
-
-•	Gennome_mito.fasta: Assembled mitochondrial genome (animals).
-
-•	temp/: Temporary files from incomplete runs (e.g., interrupted sessions).
 
 
 
