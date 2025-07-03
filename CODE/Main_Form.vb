@@ -3524,7 +3524,8 @@ Public Class Main_Form
                 "..\temp\" + random_folder,
                 "null",
                 form_config_tree.NumericUpDown1.Value.ToString,
-                current_thread.ToString()
+                current_thread.ToString(),
+                form_config_tree.SelectedTreeProgram()
                 }
             If form_config_tree.CheckBox1.Checked Then
                 my_args(4) = """" + Path.Combine(TextBox1.Text, "og.txt") + """"
@@ -3588,7 +3589,8 @@ Public Class Main_Form
                                                                              "no",
                                                                              "null",
                                                                              "0",
-                                                                             "1"
+                                                                             "1",
+                                                                             form_config_tree.SelectedTreeProgram()
                                                                              }
                                                                              do_build_tree(my_args)
                                                                          End If
@@ -3657,6 +3659,7 @@ Public Class Main_Form
         SI_build_tree.Arguments += " -outgroup " + args(4)
         SI_build_tree.Arguments += " -num_bootstraps " + args(5)
         SI_build_tree.Arguments += " -num_processes " + args(6)
+        SI_build_tree.Arguments += " -program " + args(7)
         Dim process_filter As Process = Process.Start(SI_build_tree)
         process_filter.WaitForExit()
         process_filter.Close()

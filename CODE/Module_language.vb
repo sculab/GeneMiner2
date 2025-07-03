@@ -96,8 +96,8 @@
 
         form_config_tree.Text = "Tree"
         form_config_tree.GroupBox1.Text = "Tree Type"
-        form_config_tree.RadioButton2.Text = "Coalescent-based (FastTree+Astral)"
-        form_config_tree.RadioButton1.Text = "Concatenation (FastTree)"
+        form_config_tree.RadioButton2.Text = "Coalescent-based (Astral)"
+        form_config_tree.RadioButton1.Text = "Concatenation"
         form_config_tree.Label1.Text = "Bootstrap:"
         form_config_tree.GroupBox2.Text = "Matrix Type"
         form_config_tree.RadioButton4.Text = "Trimmed Data Matrix"
@@ -107,7 +107,7 @@
         form_config_tree.CheckBox1.Text = "Build Rooted Tree"
         form_config_tree.CheckBox2.Text = "Do Calibration"
         form_config_tree.Label2.Text = "Enter the names of the outgroup, one per line:"
-
+        form_config_tree.Label3.Text = "Software:"
 
         form_config_dated.FileToolStripMenuItem.Text = "Analysis"
         form_config_dated.载入树ToolStripMenuItem.Text = "Load Tree"
@@ -308,8 +308,8 @@
 
         form_config_tree.Text = "建树设置"
         form_config_tree.GroupBox1.Text = "建树类型"
-        form_config_tree.RadioButton2.Text = "构建溯祖树(FastTree+Astral)"
-        form_config_tree.RadioButton1.Text = "构建串联树 (FastTree)"
+        form_config_tree.RadioButton2.Text = "构建溯祖树 (Astral)"
+        form_config_tree.RadioButton1.Text = "构建串联树"
         form_config_tree.Label1.Text = "Bootstrap:"
         form_config_tree.GroupBox2.Text = "矩阵类型"
         form_config_tree.RadioButton4.Text = "使用切齐后的数据矩阵"
@@ -319,6 +319,7 @@
         form_config_tree.CheckBox1.Text = "构建有根树"
         form_config_tree.CheckBox2.Text = "完成后修订时间"
         form_config_tree.Label2.Text = "手动输入外类群，每行一个样本名:"
+        form_config_tree.Label3.Text = "软件:"
 
         form_config_combine.CheckBox1.Text = "使用missing(?)代替gap(-) "
         form_config_combine.CheckBox2.Text = "使用基于参考序列切齐的结果"

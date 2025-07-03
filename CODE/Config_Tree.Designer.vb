@@ -24,6 +24,8 @@ Partial Class Config_Tree
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Config_Tree))
         GroupBox1 = New GroupBox()
+        Label3 = New Label()
+        ComboBox1 = New ComboBox()
         RadioButton2 = New RadioButton()
         RadioButton1 = New RadioButton()
         Label1 = New Label()
@@ -47,55 +49,76 @@ Partial Class Config_Tree
         ' 
         ' GroupBox1
         ' 
+        GroupBox1.Controls.Add(Label3)
+        GroupBox1.Controls.Add(ComboBox1)
         GroupBox1.Controls.Add(RadioButton2)
         GroupBox1.Controls.Add(RadioButton1)
         GroupBox1.Controls.Add(Label1)
         GroupBox1.Controls.Add(NumericUpDown1)
         GroupBox1.Location = New Point(12, 9)
         GroupBox1.Name = "GroupBox1"
-        GroupBox1.Size = New Size(363, 87)
+        GroupBox1.Size = New Size(363, 106)
         GroupBox1.TabIndex = 0
         GroupBox1.TabStop = False
         GroupBox1.Text = "建树类型"
         ' 
+        ' Label3
+        ' 
+        Label3.Location = New Point(175, 72)
+        Label3.Name = "Label3"
+        Label3.Size = New Size(69, 17)
+        Label3.TabIndex = 5
+        Label3.Text = "Software:"
+        Label3.TextAlign = ContentAlignment.MiddleRight
+        ' 
+        ' ComboBox1
+        ' 
+        ComboBox1.DropDownStyle = ComboBoxStyle.DropDownList
+        ComboBox1.FormattingEnabled = True
+        ComboBox1.Items.AddRange(New Object() {"FastTree", "IQ-TREE"})
+        ComboBox1.Location = New Point(250, 69)
+        ComboBox1.Name = "ComboBox1"
+        ComboBox1.Size = New Size(103, 25)
+        ComboBox1.TabIndex = 4
+        ' 
         ' RadioButton2
         ' 
         RadioButton2.AutoSize = True
-        RadioButton2.Location = New Point(6, 54)
+        RadioButton2.Location = New Point(6, 70)
         RadioButton2.Name = "RadioButton2"
-        RadioButton2.Size = New Size(185, 21)
+        RadioButton2.Size = New Size(131, 21)
         RadioButton2.TabIndex = 1
-        RadioButton2.Text = "构建溯祖树(FastTree+Astral)"
+        RadioButton2.Text = "构建溯祖树 (Astral)"
         RadioButton2.UseVisualStyleBackColor = True
         ' 
         ' RadioButton1
         ' 
         RadioButton1.AutoSize = True
         RadioButton1.Checked = True
-        RadioButton1.Location = New Point(6, 27)
+        RadioButton1.Location = New Point(6, 34)
         RadioButton1.Name = "RadioButton1"
-        RadioButton1.Size = New Size(147, 21)
+        RadioButton1.Size = New Size(86, 21)
         RadioButton1.TabIndex = 0
         RadioButton1.TabStop = True
-        RadioButton1.Text = "构建串联树 (FastTree)"
+        RadioButton1.Text = "构建串联树"
         RadioButton1.UseVisualStyleBackColor = True
         ' 
         ' Label1
         ' 
-        Label1.AutoSize = True
-        Label1.Location = New Point(213, 29)
+        Label1.Location = New Point(175, 36)
         Label1.Name = "Label1"
         Label1.Size = New Size(69, 17)
         Label1.TabIndex = 2
         Label1.Text = "Bootstrap:"
+        Label1.TextAlign = ContentAlignment.MiddleRight
         ' 
         ' NumericUpDown1
         ' 
-        NumericUpDown1.Location = New Point(288, 27)
+        NumericUpDown1.Location = New Point(250, 34)
         NumericUpDown1.Maximum = New Decimal(New Integer() {10000, 0, 0, 0})
         NumericUpDown1.Minimum = New Decimal(New Integer() {10, 0, 0, 0})
         NumericUpDown1.Name = "NumericUpDown1"
-        NumericUpDown1.Size = New Size(69, 23)
+        NumericUpDown1.Size = New Size(103, 23)
         NumericUpDown1.TabIndex = 3
         NumericUpDown1.Value = New Decimal(New Integer() {1000, 0, 0, 0})
         ' 
@@ -103,9 +126,9 @@ Partial Class Config_Tree
         ' 
         GroupBox2.Controls.Add(RadioButton4)
         GroupBox2.Controls.Add(RadioButton3)
-        GroupBox2.Location = New Point(12, 102)
+        GroupBox2.Location = New Point(12, 121)
         GroupBox2.Name = "GroupBox2"
-        GroupBox2.Size = New Size(363, 87)
+        GroupBox2.Size = New Size(363, 68)
         GroupBox2.TabIndex = 1
         GroupBox2.TabStop = False
         GroupBox2.Text = "矩阵类型"
@@ -261,4 +284,6 @@ Partial Class Config_Tree
     Friend WithEvents TextBox2 As TextBox
     Friend WithEvents Label2 As Label
     Friend WithEvents CheckBox2 As CheckBox
+    Friend WithEvents Label3 As Label
+    Friend WithEvents ComboBox1 As ComboBox
 End Class

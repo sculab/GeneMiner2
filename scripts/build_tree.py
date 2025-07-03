@@ -37,12 +37,26 @@ def process_bootstrap_sample(input_file, bootstrap_output_dir, sequence_length, 
     fasttree_warpper(output_file,  os.path.join(bootstrap_output_dir, f"bootstrap_{i + 1}.tree"), model)
     os.remove(output_file)
 
-def main(input_file, output_file, bootstrap_output_dir, model, outgroup, num_bootstraps, num_processes):
+def main(input_file, output_file, bootstrap_output_dir, model, outgroup, num_bootstraps, num_processes, program):
     records = list(SeqIO.parse(input_file, "fasta"))
     # os.makedirs(bootstrap_output_dir, exist_ok=True)
     sequence_length = len(records[0].seq)
     print("Building Tree...")
-    subprocess.run([r"..\analysis\FastTree.exe", "-out", output_file, "-" + model, "-boot", str(num_bootstraps), "-nt", input_file], check=True)
+    if os.path.exists(output_file):
+        os.remove(output_file)
+    if program == 'iqtree':
+        cmd = [r"..\analysis\iqtree3.exe", "-s", input_file, '-redo']
+
+        if num_bootstraps:
+            cmd.extend(['-B', str(max(num_bootstraps, 1000))])
+
+        if num_processes > 1:
+            cmd.extend(['-T', 'AUTO', '-ntmax', str(num_processes)])
+
+        subprocess.run(cmd, check=True)
+        shutil.move(input_file + ".treefile", output_file)
+    else:
+        subprocess.run([r"..\analysis\FastTree.exe", "-out", output_file, "-" + model, "-boot", str(num_bootstraps), "-nt", input_file], check=True)
     if os.path.exists(outgroup):
         cmd = r'..\analysis\newick.exe -rootbyoutgroup "'+output_file+ '" -labels "'+outgroup+'" -output "' + output_file +'"'
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -89,5 +103,6 @@ if __name__ == "__main__":
     parser.add_argument("-outgroup", metavar='<str>', type=str, help="outgroup", default=r'..\temp\og.txt')
     parser.add_argument("-num_bootstraps", metavar='<int>', type=int, help="Number of Bootstrap samples to generate", default=1000)
     parser.add_argument("-num_processes", metavar='<int>', type=int, help="Number of processes to use", default=1)
+    parser.add_argument("-program", choices=('fasttree', 'iqtree'), default='fasttree')
     args = parser.parse_args()
-    main(args.input, args.output, args.bootstrap_output_dir, args.model, args.outgroup, args.num_bootstraps, args.num_processes)
+    main(args.input, args.output, args.bootstrap_output_dir, args.model, args.outgroup, args.num_bootstraps, args.num_processes, args.program)

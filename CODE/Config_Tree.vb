@@ -52,10 +52,21 @@ Public Class Config_Tree
     End Sub
 
     Private Sub Config_Tree_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-
+        ComboBox1.SelectedIndex = 0
     End Sub
 
     Private Sub RadioButton2_CheckedChanged(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged
 
     End Sub
+
+    Public Function SelectedTreeProgram() As String
+        Select Case ComboBox1.SelectedIndex
+            Case 0
+                Return "fasttree"
+            Case 1
+                Return "iqtree"
+            Case Else
+                Return "fasttree"
+        End Select
+    End Function
 End Class
