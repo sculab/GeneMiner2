@@ -104,7 +104,7 @@ Select the matrix type and tree-building method, enable bootstrap. Choose whethe
 The **output** file include Coalescent.tree and Concatenation.tree.
 
 
-![](gif/SCG_datacleaning3.gif)
+![](gif/tree.gif)
 
 
 
