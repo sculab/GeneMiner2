@@ -3,7 +3,7 @@
 ### Data Preparation
 
 
-- **[Sequencing Data](DEMO/DEMO3/DATA/PLANT)**: Second-generation sequencing data files, in .gz or .fq format.
+- **[Sequencing Data](DATA/PLANT)**: Second-generation sequencing data files, in .gz or .fq format.
 
 - **[Transcript Data](DATA/Phytozome/)**: Assembled transcript data from a closely related species, obtained post-transcriptome assembly, in .fa format.
 
