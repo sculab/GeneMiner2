@@ -29,7 +29,7 @@ Public Class Config_Trim
 
     Private Sub ComboBox2_MouseHover(sender As Object, e As EventArgs) Handles ComboBox2.MouseHover
         If language = "EN" Then
-            TextBox1.Text = "This method involves combining all fragments that match the reference sequence to align the target sequence.
+            TextBox1.Text = "All Fragments: This method involves combining all fragments that match the reference sequence to align the target sequence.
 Longest Fragments: This approach uses only the longest matching fragments of the reference sequence to align the target sequence.
 Trim Terminal: This method aligns the target sequence based solely on trimming the termini according to the reference sequence.
 Longest Isoform: This method generates the longest transcript fragment based on the reference sequence. Suitable for transcriptomic data.
