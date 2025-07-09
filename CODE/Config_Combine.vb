@@ -32,14 +32,14 @@ Public Class Config_Combine
     End Sub
 
     Private Sub Config_Combine_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        If TargetOS = "macos" Then
-            ComboBox1.SelectedIndex = 1
-            ComboBox1.Enabled = False
-        Else
+        If TargetOS = "win64" Then
             ComboBox1.SelectedIndex = 0
+        Else
+            ComboBox1.SelectedIndex = 1
+            If TargetOS = "macos" Then
+                ComboBox1.Enabled = False
+            End If
         End If
-
-
     End Sub
 
     Private Sub CheckBox4_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox4.CheckedChanged

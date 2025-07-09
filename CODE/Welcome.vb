@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Environment
+Imports System.IO
 Imports System.Threading
 
 Public Class Welcome
@@ -23,8 +24,18 @@ Public Class Welcome
 
         settings = ReadSettings(root_path + "analysis\" + "setting.ini")
 
+        Dim guessedOS As String = "win64"
+        Dim ostype As String = GetEnvironmentVariable("OSTYPE")
+        If ostype IsNot Nothing Then
+            If ostype.StartsWith("bsd") OrElse ostype.StartsWith("linux") Then
+                guessedOS = "linux"
+            ElseIf ostype.StartsWith("darwin") Then
+                guessedOS = "macos"
+            End If
+        End If
+
         ' 读取 language 和 mode 设置
-        TargetOS = settings.GetValueOrDefault("os", "win64")
+        TargetOS = settings.GetValueOrDefault("os", guessedOS)
         language = settings.GetValueOrDefault("language", "EN")
         exe_mode = settings.GetValueOrDefault("mode", "basic")
         database_url = "https://bbpt.scu.edu.cn/database/;http://life-bioinfo.tpddns.cn:8445/database/"
