@@ -16,6 +16,8 @@ GeneMiner2 is a comprehensive toolkit designed for phylogenomic genomics. Its ma
 Users can complete all tasks from obtaining NGS data to establishing phylogenetic trees within GeneMiner2.
 
 
+For the **complete user manual**, please refer to [manual](manual/manual_geneminer.pdf)
+
 
 # Citations
 

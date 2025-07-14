@@ -61,7 +61,14 @@ Click [Analyse>Plant Chloroplast Genome] to download the reference genome of clo
 
 Click [OK] proceed with the default parameters for assembly.
 
-**Note: Insufficient memory may cause assembly failure. If this occurs, consider increasing the memory.**
+**Note:  If this occurs, consider increasing the memory.**
+
+
+Set the **memory** to **4**(advised).
+
+**Memory availability can determine whether the assembly succeeds**, insufficient memory may cause assembly failure. 
+If your computer is low on RAM, **be sure to adjust the memory to an appropriate level.**
+
 
 NOTE: For importing multiple pairs of sequencing files, select [Batch > Plant Chloroplast Genome] to extract.
 **"Reads/File (M)" is set to 10.**
@@ -74,22 +81,7 @@ Click [Open] to view the  results located in the 'Organelle' folder named "Genno
 
 
 
-### Obtaining Plant Mitochondrial Genome
 
-
-Follow the same process as the Plant Chloroplast Genome assembly. However, initially **import the results of the previous Plant Chloroplast Genome** assembly.
-
-Click [Analyse>Plant Mitochondrial Genome] to download the reference genome of closely related species.
-
-Click [OK] proceed with the default parameters for assembly.
-
-
-![](gif/GENOME_MITO.gif)
-
-
-Click [Open] to view the  results located in the 'Organelle' folder named "Gennome_mito_plant.fasta"
-
----
 
 
 
