@@ -66,7 +66,7 @@ Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunna
 假设样本列表保存在`/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv`，被子植物353参考基因保存在`/home/user/Angiosperm353`（每个基因一个FASTA文件），用默认设置运行GeneMiner2的命令如下：
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
 执行这行命令后，GeneMiner2会构建一棵溯祖树，路径为`/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`。使用`-m concatenation`参数可以构建串联树。同样，可以用命令行参数要求GeneMiner2只运行某些步骤。假设给出这些参数：

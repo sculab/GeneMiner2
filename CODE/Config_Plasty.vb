@@ -3,7 +3,7 @@ Imports Microsoft.VisualBasic.Devices
 
 Public Class Config_Plasty
     Private Sub Config_Plasty_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        NumericUpDown2.Value = Math.Min(New ComputerInfo().AvailablePhysicalMemory / (1024 * 1024 * 1024), 4)
+        NumericUpDown2.Value = Math.Min(Math.Max(New ComputerInfo().AvailablePhysicalMemory \ (1024 * 1024 * 1024), 2), 8)
     End Sub
 
     Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged

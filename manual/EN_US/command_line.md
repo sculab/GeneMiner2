@@ -66,7 +66,7 @@ Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunna
 Next, assuming the sample list is saved to `/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv` and Angiosperm353 genes saved as FASTA files (one per gene) under `/home/user/Angiosperm353`, run GeneMiner2 with default settings:
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
 GeneMiner2 would build a coalescent tree at `/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`. A concatenation tree can be built using `-m concatenation`. Using command line arguments, it is also possible to ask GeneMiner2 to run specific steps. For example, given these parameters:
