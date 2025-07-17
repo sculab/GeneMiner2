@@ -308,7 +308,7 @@ def main():
         if args.save_mutations: save_mutations_table(sequences, coverages, outfolder, prefix.replace("_tmp",""), min_depth)
         save_fastas(sequences, fill, coverages, outfolder, prefix, min_depth, insertions, nchar, thresholds)
     except Exception as e:
-        Write_Print("..\log.txt", "error:" , e)
+        Write_Print("../log.txt", "error:" , e)
 
 def Write_Print(log_path, *log_str, sep = " "):
     """
