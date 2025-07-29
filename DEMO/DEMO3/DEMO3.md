@@ -23,7 +23,7 @@ These SCGs(in folder:**OrthoFinder>Single_Copy_Orthologue_Sequences**) will serv
 
 ![](gif/SCG_ref.gif)
 
-
+**Make sure to modify the output directory, and avoid using Chinese characters in the path.**
 
 ### Calculating Parameters
 **This demo uses the default parameters.This part is for demonstration purposes only.**

@@ -18,7 +18,8 @@ If no reference file is available locally, you can download standard references 
         •	Animal Mitochondrial Genome
         (Note:Select Download as single gene if you want to e(Note:Select Download as single gene if you want to extract genes.)
         •	Angiosperm 353 Genes
-### Ca
+
+### Calculate parameters
 
 Click [Tools > Calculate Parameters] .
 
