@@ -98,7 +98,7 @@ def clean_file(gene_path, min_number, max_difference):
             identity_len = sum(nuc_cmp)
             overlap_len  = len(nuc_cmp)
 
-            # We need at least 7 overlapping bases because 4^-7 < 1e-5.
+            # We need at least 7 overlapping bases because 4^(-7) < 1e-5.
             # While we cannot afford to do multiple comparison correction here,
             # it ensures very few spurious edges.
             identity_pct = identity_len / overlap_len if overlap_len > 6 else 0
@@ -121,16 +121,19 @@ def clean_file(gene_path, min_number, max_difference):
         os.remove(gene_path)
         return
 
-    gap_seq = '-' * len(seq_list[0][1])
-    out_lst = [''] * seq_count
+    out_list = [''] * seq_count
 
     for bcc in bcc_list:
-        for i, _ in enumerate(out_lst):
+        bcc_seq  = [seq_list[i][1] for i in range(seq_count) if i in bcc]
+        gap_mask = [any(c != '-' for c in col) for col in zip(*bcc_seq)]
+        gap_seq  = '-' * sum(gap_mask)
+
+        for i in range(seq_count):
             if out_mask[i]:
-                out_lst[i] += seq_list[i][1] if i in bcc else gap_seq
+                out_list[i] += ''.join(c for i, c in enumerate(seq_list[i][1]) if gap_mask[i]) if i in bcc else gap_seq
 
     with open(gene_path, 'w') as f:
-        f.writelines(f'>{name}\n{out_lst[i]}\n' for i, (name, seq) in enumerate(seq_list) if out_mask[i])
+        f.writelines(f'>{name}\n{out_list[i]}\n' for i, (name, seq) in enumerate(seq_list) if out_mask[i])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Clean up an alignment")
