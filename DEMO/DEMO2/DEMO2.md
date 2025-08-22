@@ -66,8 +66,7 @@ Click [OK] proceed with the default parameters for assembly.
 
 Set the **memory** to **4**(advised).
 
-**Memory availability can determine whether the assembly succeeds**, insufficient memory may cause assembly failure. 
-If your computer is low on RAM, **be sure to adjust the memory to an appropriate level.**
+**Memory availability can determine whether the assembly succeeds**, insufficient or excessive memory may cause assembly failure. If your computer is low on RAM, **be sure to adjust the memory to an appropriate level.**
 
 
 NOTE: For importing multiple pairs of sequencing files, select [Batch > Plant Chloroplast Genome] to extract.
