@@ -1235,6 +1235,7 @@ class KmerMap {
         final usePatterns = expectedSkipLength >= 0.5 && skipLength > step;
         final tailOffset  = seqEnd - kmerLength;
 
+        var actualStep   = step;
         var checkPattern = usePatterns;
         var offset       = 0;
         var pattern      = 0;
@@ -1246,21 +1247,17 @@ class KmerMap {
             pattern |= FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), i));
         }
 
-        for (i in 0...kmerLength) {
+        for (i in 0...(kmerLength - step)) {
             var nuc:  Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), i));
             var nucc: Int64 = 3 - nuc;
             sk  |= nuc  << (2 * (31 - i));
             skr |= nucc << (2 * (i + 32 - kmerLength));
         }
 
-        markHitsShort(map, match, new ShortKmer(sk));
-
-        if (getReverse) {
-            markHitsShort(map, match, new ShortKmer(skr));
-        }
-
-        var actualStep = step;
-        offset = step;
+        pattern >>>= actualStep;
+        sk      >>>= 2 * actualStep;
+        skr      <<= 2 * actualStep;
+        sk        &= kmerMask;
 
         while (offset <= tailOffset) {
             pattern  <<= actualStep;

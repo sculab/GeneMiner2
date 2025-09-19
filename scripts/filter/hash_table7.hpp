@@ -4,7 +4,7 @@
 //
 // Licensed under the MIT License <http://opensource.org/licenses/MIT>.
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2019-2024 Huang Yuanbing & bailuzhou AT 163.com
+// Copyright (c) 2020-2025 Huang Yuanbing & bailuzhou AT 163.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,15 +101,19 @@ of resizing granularity. Ignoring variance, the expected occurrences of list siz
     #undef  EMH_BUCKET
     #undef  EMH_EMPTY
     #undef  EMH_MASK
+    #undef  EMH_CLS
 #endif
 
 // likely/unlikely
-#if (__GNUC__ >= 4 || __clang__)
-#    define EMH_LIKELY(condition)   __builtin_expect(condition, 1)
-#    define EMH_UNLIKELY(condition) __builtin_expect(condition, 0)
+#if defined(__GNUC__) && (__GNUC__ >= 3) && (__GNUC_MINOR__ >= 1) || defined(__clang__)
+    #define EMH_LIKELY(condition)   __builtin_expect(!!(condition), 1)
+    #define EMH_UNLIKELY(condition) __builtin_expect(!!(condition), 0)
+#elif defined(_MSC_VER) && (_MSC_VER >= 1920)
+    #define EMH_LIKELY(condition)   ((condition) ? ((void)__assume(condition), 1) : 0)
+    #define EMH_UNLIKELY(condition) ((condition) ? 1 : ((void)__assume(!condition), 0))
 #else
-#    define EMH_LIKELY(condition)   condition
-#    define EMH_UNLIKELY(condition) condition
+    #define EMH_LIKELY(condition)   (condition)
+    #define EMH_UNLIKELY(condition) (condition)
 #endif
 
 #ifndef EMH_BUCKET_INDEX
@@ -122,16 +126,14 @@ of resizing granularity. Ignoring variance, the expected occurrences of list siz
     #define EMH_BUCKET(p,n)  p[n].first
     #define EMH_PKV(p,n)     p[n].second
     #define EMH_NEW(key, val, bucket)\
-            new(_pairs + bucket) PairT(bucket, value_type(key, val));\
-            _num_filled ++;  EMH_SET(bucket)
+            new(_pairs + bucket) PairT(bucket, value_type(key, val)); _num_filled ++; EMH_SET(bucket)
 #elif EMH_BUCKET_INDEX == 2
     #define EMH_KEY(p,n)     p[n].first.first
     #define EMH_VAL(p,n)     p[n].first.second
     #define EMH_BUCKET(p,n)  p[n].second
     #define EMH_PKV(p,n)     p[n].first
     #define EMH_NEW(key, val, bucket)\
-            new(_pairs + bucket) PairT(value_type(key, val), bucket);\
-            _num_filled ++;  EMH_SET(bucket)
+            new(_pairs + bucket) PairT(value_type(key, val), bucket); _num_filled ++; EMH_SET(bucket)
 #else
     #define EMH_KEY(p,n)     p[n].first
     #define EMH_VAL(p,n)     p[n].second
@@ -141,16 +143,13 @@ of resizing granularity. Ignoring variance, the expected occurrences of list siz
             new(_pairs + bucket) PairT(key, val, bucket); _num_filled ++; EMH_SET(bucket)
 #endif
 
-#define EMH_MASK(n)       uint8_t(1 << (n % MASK_BIT))
-#define EMH_SET(n)        _bitmask[n / MASK_BIT] &= ~(EMH_MASK(n))
-#define EMH_CLS(n)        _bitmask[n / MASK_BIT] |= EMH_MASK(n)
-#define EMH_EMPTY(n)      (_bitmask[n / MASK_BIT] & (EMH_MASK(n))) != 0
+#define EMH_MASK(n)       (1 << (n % MASK_BIT))
+#define EMH_SET(n)        _bitmask[n / MASK_BIT] &= (bit_type)(~(1 << (n % MASK_BIT)))
+#define EMH_CLS(n)        _bitmask[n / MASK_BIT] |= (bit_type)EMH_MASK(n)
+#define EMH_EMPTY(n)      _bitmask[n / MASK_BIT] &  (bit_type)EMH_MASK(n)
 
 #if _WIN32
     #include <intrin.h>
-#if _WIN64
-    #pragma intrinsic(_umul128)
-#endif
 #endif
 
 namespace emhash7 {
@@ -163,7 +162,7 @@ namespace emhash7 {
     static constexpr size_type INACTIVE = 0 - 0x1ull;
 #else
     typedef uint32_t size_type;
-    static constexpr size_type INACTIVE = -1u;
+    static constexpr size_type INACTIVE = 0xFFFFFFFF;
 #endif
 
 #ifndef EMH_MALIGN
@@ -176,7 +175,7 @@ static_assert((int)INACTIVE < 0, "INACTIVE must negative (to int)");
 #endif
 
 //count the leading zero bit
-static inline int CTZ(size_t n)
+static inline size_type CTZ(size_t n)
 {
 #if defined(__x86_64__) || defined(_WIN32) || (__BYTE_ORDER__ && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 
@@ -210,7 +209,7 @@ static inline int CTZ(size_t n)
     #endif
 #endif
 
-    return (int)index;
+    return (size_type)index;
 }
 
 template <typename First, typename Second>
@@ -604,7 +603,7 @@ public:
     template<class InputIt>
     HashMap(InputIt first, InputIt last, size_type bucket_count=4)
     {
-        init(std::distance(first, last) + bucket_count);
+        init((size_type)std::distance(first, last) + bucket_count);
         for (; first != last; ++first)
             emplace(*first);
     }
@@ -662,7 +661,7 @@ public:
 
     ~HashMap() noexcept
     {
-        if (is_triviall_destructable() && _num_filled) {
+        if (!is_trivially_destructible() && _num_filled) {
             for (auto it = cbegin(); _num_filled; ++it) {
                 _num_filled --;
                 it->~value_pair();
@@ -685,7 +684,7 @@ public:
         _bitmask     = decltype(_bitmask)(_pairs + EPACK_SIZE + _num_buckets);
         auto* opairs = rhs._pairs;
 
-        if (is_copy_trivially())
+        if (is_trivially_copyable())
             memcpy((char*)_pairs, opairs, AllocSize(_num_buckets));
         else {
             memcpy((char*)(_pairs + _num_buckets), opairs + _num_buckets, EPACK_SIZE * sizeof(PairT) + (_num_buckets + 7) / 8 + BIT_PACK);
@@ -763,8 +762,8 @@ public:
     inline size_type bucket_count() const { return _num_buckets; }
     inline float load_factor() const { return ((float)_num_filled) / ((float)_mask + 1.0f); }
 
-    inline HashT& hash_function() const { return _hasher; }
-    inline EqT& key_eq() const { return _eq; }
+    inline const HashT& hash_function() const { return _hasher; }
+    inline const EqT& key_eq() const { return _eq; }
 
     inline void max_load_factor(float mlf)
     {
@@ -773,12 +772,12 @@ public:
     }
 
     inline constexpr float max_load_factor() const { return (1 << 27) / (float)_mlf; }
-    inline constexpr size_type max_size() const { return 1ull << (sizeof(size_type) * 8 - 1); }
-    inline constexpr size_type max_bucket_count() const { return max_size(); }
+    constexpr uint64_t max_size() const { return 1ull << (sizeof(_num_buckets) * 8 - 1); }
+    constexpr uint64_t max_bucket_count() const { return max_size(); }
 
     size_type bucket_main() const
     {
-        auto main_size = 0;
+        size_type main_size = 0;
         for (size_type bucket = 0; bucket < _num_buckets; ++bucket) {
             if (EMH_BUCKET(_pairs, bucket) == bucket)
                 main_size ++;
@@ -1297,16 +1296,16 @@ public:
         return old_size - size();
     }
 
-    static constexpr bool is_triviall_destructable()
+    static constexpr bool is_trivially_destructible()
     {
 #if __cplusplus >= 201402L || _MSC_VER > 1600
-        return !(std::is_trivially_destructible<KeyT>::value && std::is_trivially_destructible<ValueT>::value);
+        return (std::is_trivially_destructible<KeyT>::value && std::is_trivially_destructible<ValueT>::value);
 #else
-        return !(std::is_pod<KeyT>::value && std::is_pod<ValueT>::value);
+        return (std::is_pod<KeyT>::value && std::is_pod<ValueT>::value);
 #endif
     }
 
-    static constexpr bool is_copy_trivially()
+    static constexpr bool is_trivially_copyable()
     {
 #if __cplusplus >= 201402L || _MSC_VER > 1600
         return (std::is_trivially_copyable<KeyT>::value && std::is_trivially_copyable<ValueT>::value);
@@ -1317,7 +1316,7 @@ public:
 
     void clearkv()
     {
-        if (is_triviall_destructable()) {
+        if (!is_trivially_destructible()) {
             auto it = cbegin(); it.init();
             for (; _num_filled; ++it)
                 clear_bucket(it.bucket());
@@ -1327,9 +1326,10 @@ public:
     /// Remove all elements, keeping full capacity.
     void clear()
     {
-        if (!is_triviall_destructable() && _num_filled) {
-            memset(_bitmask, 0xFFFFFFFF, (_num_buckets + 7) / 8);
-            if (_num_buckets < 8) _bitmask[0] =  uint8_t((1 << _num_buckets) - 1);
+        if (is_trivially_destructible() && _num_filled) {
+            memset(_bitmask, (int)0xFFFFFFFF, (_num_buckets + 7) / 8);
+            if (_num_buckets < 8 * sizeof(_bitmask[0]))
+                _bitmask[0] =  (bit_type)((1 << _num_buckets) - 1);
         }
         else if (_num_filled)
             clearkv();
@@ -1375,8 +1375,8 @@ public:
         //if (sizeof(KeyT) < sizeof(size_type) && buckets > (1ul << (sizeof(uint16_t) * 8)))
         //    buckets = 2ul << (sizeof(KeyT) * 8);
 
-        assert(buckets < max_size() && buckets > _num_filled);
-        //TODO: throwOverflowError
+        if (buckets > max_size() || buckets < _num_filled)
+            std::abort();//TODO: throwOverflowError
 
         auto num_buckets = (size_type)buckets;
         auto old_num_filled = _num_filled;
@@ -1394,10 +1394,10 @@ public:
         _bitmask     = decltype(_bitmask)(_pairs + EPACK_SIZE + num_buckets);
 
         const auto mask_byte = (num_buckets + 7) / 8;
-        memset(_bitmask, 0xFFFFFFFF, mask_byte);
+        memset(_bitmask, (int)0xFFFFFFFF, mask_byte);
         memset(((char*)_bitmask) + mask_byte, 0, BIT_PACK);
-        if (num_buckets < 8)
-            _bitmask[0] = (uint8_t)((1 << num_buckets) - 1);
+        if (num_buckets < 8 * sizeof(_bitmask[0]))
+            _bitmask[0] = (bit_type)((1 << num_buckets) - 1);
 
         //for (size_type src_bucket = 0; _num_filled < old_num_filled; src_bucket++) {
         for (size_type src_bucket = old_mask; _num_filled < old_num_filled; src_bucket --) {
@@ -1407,7 +1407,7 @@ public:
             auto& key = EMH_KEY(old_pairs, src_bucket);
             const auto bucket = find_unique_bucket(key);
             EMH_NEW(std::move(key), std::move(EMH_VAL(old_pairs, src_bucket)), bucket);
-            if (is_triviall_destructable())
+            if (!is_trivially_destructible())
                 old_pairs[src_bucket].~PairT();
         }
 
@@ -1442,7 +1442,7 @@ private:
     {
         EMH_CLS(bucket);
         _num_filled--;
-        if (is_triviall_destructable())
+        if (!is_trivially_destructible())
             _pairs[bucket].~PairT();
     }
 
@@ -1462,7 +1462,7 @@ private:
                 return bucket;
 
             const auto nbucket = EMH_BUCKET(_pairs, next_bucket);
-            if (is_copy_trivially())
+            if (is_trivially_copyable())
                 EMH_PKV(_pairs, bucket) = EMH_PKV(_pairs, next_bucket);
             else
                 EMH_PKV(_pairs, bucket).swap(EMH_PKV(_pairs, next_bucket));
@@ -1541,7 +1541,7 @@ private:
         if (bucket == main_bucket) {
             if (bucket != next_bucket) {
                 const auto nbucket = EMH_BUCKET(_pairs, next_bucket);
-                if (is_copy_trivially())
+                if (is_trivially_copyable())
                     EMH_PKV(_pairs, bucket) = EMH_PKV(_pairs, next_bucket);
                 else
                     EMH_PKV(_pairs, bucket).swap(EMH_PKV(_pairs, next_bucket));
@@ -1559,7 +1559,7 @@ private:
     template<typename K = KeyT>
     size_type find_filled_hash(const K& key, const size_t key_hash) const
     {
-        const auto bucket = key_hash & _mask;
+        const auto bucket = size_type(key_hash & _mask);
         if (EMH_EMPTY(bucket))
             return _num_buckets;
 
@@ -1581,7 +1581,7 @@ private:
     template<typename K = KeyT>
     size_type find_filled_bucket(const K& key) const
     {
-        const auto bucket = hash_key(key) & _mask;
+        const auto bucket = size_type(hash_key(key) & _mask);
         if (EMH_EMPTY(bucket))
             return _num_buckets;
 
@@ -1612,7 +1612,7 @@ private:
         const auto new_bucket  = find_empty_bucket(next_bucket, kbucket);
         const auto prev_bucket = find_prev_bucket(kmain, kbucket);
         new(_pairs + new_bucket) PairT(std::move(_pairs[kbucket]));
-        if (is_triviall_destructable())
+        if (!is_trivially_destructible())
             _pairs[kbucket].~PairT();
 
         if (next_bucket == kbucket)
@@ -1694,21 +1694,13 @@ private:
             return bucket_from + CTZ(bmask);
 #else
         const auto boset  = bucket_from % 8;
-        auto* const align = (uint8_t*)_bitmask + bucket_from / 8; (void)bucket_from;
+        auto* const align = (uint8_t*)_bitmask + bucket_from / 8; (void)main_bucket;
         const size_t bmask  = (*(size_t*)(align) >> boset);// & 0xF0F0F0F0FF0FF0FFull;//
         if (EMH_LIKELY(bmask != 0))
             return bucket_from + CTZ(bmask);
 #endif
 
         const auto qmask = _mask / SIZE_BIT;
-        if (0) {
-            const size_type step = (main_bucket - SIZE_BIT / 4) & qmask;
-            const auto bmask3 = *((size_t*)_bitmask + step);
-            if (bmask3 != 0)
-                return step * SIZE_BIT + CTZ(bmask3);
-        }
-
-        //auto next_bucket = (bucket_from + 0 * SIZE_BIT) & qmask;
         auto& last = EMH_BUCKET(_pairs, _num_buckets);
         for (; ; ) {
             last &= qmask;
@@ -1881,7 +1873,8 @@ private:
     }
 
 private:
-    uint8_t* _bitmask;
+    using bit_type = uint8_t; //uint8_t uint16_t, uint32_t.
+    bit_type* _bitmask;
     PairT*    _pairs;
     HashT     _hasher;
     EqT       _eq;
