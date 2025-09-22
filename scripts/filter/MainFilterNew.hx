@@ -467,22 +467,22 @@ abstract CuckooSet(Vector<Int64>) {
                 var slot1:  Int64 = (bucket >>> 32) & CuckooSet.ITEM_MASK;
 
                 if (slot0 != 0) {
-                    $e(CuckooSet.fingerprintInverse(slot0.low) << 1);
+                    $e(inline CuckooSet.fingerprintInverse(slot0.low) << 1);
 
                     slot0 = (bucket >>> 16) & CuckooSet.ITEM_MASK;
 
                     if (slot0 != 0) {
-                        $e(CuckooSet.fingerprintInverse(slot0.low) << 1);
+                        $e(inline CuckooSet.fingerprintInverse(slot0.low) << 1);
                     }
                 }
 
                 if (slot1 != 0) {
-                    $e((CuckooSet.fingerprintInverse(slot1.low) << 1) | 1);
+                    $e((inline CuckooSet.fingerprintInverse(slot1.low) << 1) | 1);
 
                     slot1 = (bucket >>> 48) & CuckooSet.ITEM_MASK;
 
                     if (slot1 != 0) {
-                        $e((CuckooSet.fingerprintInverse(slot1.low) << 1) | 1);
+                        $e((inline CuckooSet.fingerprintInverse(slot1.low) << 1) | 1);
                     }
                 }
             }
@@ -1104,17 +1104,21 @@ class KmerMap {
         expectedSkipLength = sum;
     }
 
+    private static function setMatches(list: Array<CuckooSet>, pos: Int, match: UnorderedSetPointer<Int>) {
+#if cpp
+        var cs: Vector<Int64> = untyped __cpp__("{0}.StaticCast<::Array<::cpp::Int64>>()", cpp.NativeArray.unsafeGet(list, pos));
+#else
+        var cs = list[pos].toVector();
+#end
+
+        CuckooSet.foreach(cs, match.insert);
+    }
+
     private inline function markHitsShort(map: UnorderedMapPointer<Int64, Int>, match: UnorderedSetPointer<Int>, kmer: ShortKmer) {
         var pos = map.get(kmer.toInt64(), -1);
 
         if (pos != -1) {
-#if cpp
-            var cs = cpp.NativeArray.unsafeGet(cuckooSetList, pos);
-#else
-            var cs = cuckooSetList[pos];
-#end
-
-            CuckooSet.foreach(cs.toVector(), match.insert);
+            setMatches(cuckooSetList, pos, match);
             return true;
         }
 
@@ -1129,13 +1133,7 @@ class KmerMap {
         var pos = map.get(kmer.toString(), -1);
 
         if (pos != -1) {
-#if cpp
-            var cs = cpp.NativeArray.unsafeGet(cuckooSetList, pos);
-#else
-            var cs = cuckooSetList[pos];
-#end
-
-            CuckooSet.foreach(cs.toVector(), match.insert);
+            setMatches(cuckooSetList, pos, match);
             return true;
         }
 
@@ -1247,17 +1245,14 @@ class KmerMap {
             pattern |= FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), i));
         }
 
+        pattern >>>= actualStep;
+
         for (i in 0...(kmerLength - step)) {
             var nuc:  Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), i));
             var nucc: Int64 = 3 - nuc;
-            sk  |= nuc  << (2 * (31 - i));
-            skr |= nucc << (2 * (i + 32 - kmerLength));
+            sk  |= nuc  << (2 * (31 - step - i));
+            skr |= nucc << (2 * (32 - kmerLength + step + i));
         }
-
-        pattern >>>= actualStep;
-        sk      >>>= 2 * actualStep;
-        skr      <<= 2 * actualStep;
-        sk        &= kmerMask;
 
         while (offset <= tailOffset) {
             pattern  <<= actualStep;
@@ -2042,14 +2037,16 @@ class MainFilterNew {
                     }
                 }
 
-                match.foreach(matchCallback, hasRecord2, record1, record2);
+                if (!match.empty()) {
+                    if (mode == 1) {
+                        outputBuffer.writeRecord(0, record1, false);
 
-                if (mode == 1 && !match.empty()) {
-                    outputBuffer.writeRecord(0, record1, false);
-
-                    if (hasRecord2) {
-                        outputBuffer.writeRecord(1, record2, true);
+                        if (hasRecord2) {
+                            outputBuffer.writeRecord(1, record2, true);
+                        }
                     }
+
+                    match.foreach(matchCallback, hasRecord2, record1, record2);
                 }
 
                 if (readCount & 1048575 == 0) {
