@@ -10,7 +10,7 @@ GeneMiner2是一款为系统发育基因组学设计的全功能工具包，软�
 用户能够在GeneMiner2中完成从NGS数据获取到系统发育树建立的所有工作。
 
 ## 引用
-Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome skimming data. *Manuscript submitted*, 2025.
+Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome skimming data. *Molecular Ecology Resources*（Under Review）.
 
 GeneMiner2基于我们之前开发的GeneMiner和Easy353软件，并整合了Blast、Minimap2、Fasttree、Muscle5、Mafft、Astral、PPD、PGA、NOVOPlasty、OrthoFinder等优秀工具，请在使用对应功能时引用软件提示的文献。
 

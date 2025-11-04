@@ -24,7 +24,7 @@ For the **complete user manual**, please refer to [manual](manual/manual_genemin
 GeneMiner2 is based on our previously developed GeneMiner and Easy353 software and integrates excellent tools such as Blast, Minimap2, Fasttree, Muscle5, Mafft, Astral, PPD, PGA, NOVOPlasty, and OrthoFinder. Please cite the literature prompted by the software when using the corresponding functionalities.
 
 Our GeneMiner2 manuscript is currently under review:
-Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome-skimming data. *Manuscript submitted*, 2025.
+Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome-skimming data. *Molecular Ecology Resources*（Under Review）.
 
 Until that paper is formally published, please cite our earlier work instead:
 
