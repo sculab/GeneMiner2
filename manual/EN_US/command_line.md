@@ -1,6 +1,6 @@
 # Command Line Interface
 
-For most Linux users, downloading prebuilt binaries from Sourceforge is sufficient. Refer to [Usage](#Usage) to see the documentation.
+For most Linux users, downloading prebuilt binaries from Sourceforge is sufficient. Refer to [Usage](#usage) to see the documentation.
 
 ## Building
 

@@ -1,5 +1,5 @@
 # GeneMiner2: 系统发育基因组学工具包
-**[To View README in English](README.md)**
+**[View README in English](README.md)**
 
 # 介绍
 GeneMiner2是一款为系统发育基因组学设计的全功能工具包，软件主要功能包括：

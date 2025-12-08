@@ -64,7 +64,7 @@ On server Linux systems, please download the latest Linux binaries (**GeneMiner_
 sudo apt-get install libbz2 libgomp1 zlib1g
 ```
 
-**[Usage of the command-line version](manual/EN_US/command_line.md#Usage)**
+**[Usage of the command-line version](manual/EN_US/command_line.md#usage)**
 
 If the precompiled package fails to run, you can compile GeneMiner2 from scratch. You can also use the Python scripts in the `scripts` folder. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on any operating systems.
 
