@@ -2,7 +2,7 @@
 
 ## Methods
 
-We recommend desktop Linux users to run the Windows binaries using a compatibility layer, preferentially Steam Play. On non-desktop Linux systems, or in the case where compatibility tools are not available, [build and run native Linux binaries](command_line.md).
+We recommend desktop Linux users to run the Windows binaries using a compatibility layer, preferably Steam Play. In the case where compatibility tools are not available, [use the command-line version](command_line.md).
 
 ## Motivation
 
