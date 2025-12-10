@@ -50,7 +50,7 @@ GeneMiner2的源代码在Github和Gitee上均可获取。
 
 **[桌面Linux系统上的运行方法](manual/ZH_CN/linux_desktop.md)**
 
-**[在类Unix平台上的构建指南](manual/ZH_CN/command_line.md)**
+**[在类Unix平台上的命令行版本的构建指南](manual/ZH_CN/command_line.md)**
 
 您也可以使用`scripts`文件夹中的Python脚本，这些脚本提供了GeneMiner2的所有核心功能，并可以在Windows、macOS或Linux上部署。
 

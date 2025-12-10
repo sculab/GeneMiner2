@@ -35,6 +35,8 @@ Xie PL, Guo YL, Teng Y, Zhou WB, Yu Y. 2024. GeneMiner: A tool for extracting ph
 
 # Install
 
+GeneMiner2 supports multiple platforms, including **Windows, macOS, and Linux**.
+
 ## Windows and macOS
 
 **[Download GeneMiner2 from SourceForge](https://sourceforge.net/projects/geneminer/files/)**
@@ -53,7 +55,7 @@ It is not recommended to run GeneMiner2 on macOS for large-scale analyses becaus
 
 **[Running on desktop Linux systems](manual/EN_US/linux_desktop.md)**
 
-**[Build instructions on Unix-like platforms](manual/EN_US/command_line.md)**
+**[Build using the command line on Unix-like systems](manual/EN_US/command_line.md)**
 
 You can also use the Python scripts in the `scripts` folder. These scripts offer all the core functionalities of GeneMiner2 and can be deployed on Windows, macOS, or Linux.
 
