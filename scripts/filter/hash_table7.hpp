@@ -545,7 +545,7 @@ public:
         _pairs = nullptr;
         _bitmask = nullptr;
         _num_buckets = _num_filled = 0;
-        _mlf = (uint32_t)((1 << 27) / EMH_DEFAULT_LOAD_FACTOR);
+        _mlf = (uint32_t)((1 << 28) / EMH_DEFAULT_LOAD_FACTOR);
         max_load_factor(mlf);
         rehash(bucket);
     }
@@ -771,7 +771,7 @@ public:
             _mlf = (uint32_t)((1 << 28) / mlf);
     }
 
-    inline constexpr float max_load_factor() const { return (1 << 27) / (float)_mlf; }
+    inline constexpr float max_load_factor() const { return (1 << 28) / (float)_mlf; }
     constexpr uint64_t max_size() const { return 1ull << (sizeof(_num_buckets) * 8 - 1); }
     constexpr uint64_t max_bucket_count() const { return max_size(); }
 
@@ -1314,6 +1314,17 @@ public:
 #endif
     }
 
+    static void prefetch_heap_block(char* ctrl)
+    {
+        // Prefetch the heap-allocated memory region to resolve potential TLB
+        // misses.  This is intended to overlap with execution of calculating the hash for a key.
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
+        _mm_prefetch((const char*)ctrl, _MM_HINT_T0);
+#elif defined(__GNUC__) || defined(__clang__)
+        __builtin_prefetch(static_cast<const void*>(ctrl));
+#endif
+    }
+
     void clearkv()
     {
         if (!is_trivially_destructible()) {
@@ -1563,6 +1574,8 @@ private:
         if (EMH_EMPTY(bucket))
             return _num_buckets;
 
+        //prefetch_heap_block((char*)&_pairs[bucket]);
+
         auto next_bucket = bucket;
         while (true) {
             if (_eq(key, EMH_KEY(_pairs, next_bucket)))
@@ -1585,6 +1598,7 @@ private:
         if (EMH_EMPTY(bucket))
             return _num_buckets;
 
+        //prefetch_heap_block((char*)&_pairs[bucket]);
         auto next_bucket = bucket;
 //        else if (bucket != (hash_key(bucket_key) & _mask))
 //            return _num_buckets;
@@ -1896,9 +1910,5 @@ private:
 //template <class Key, class Val> using ehmap7 = emhash7::HashMap<Key, Val, std::hash<Key>, std::equal_to<Key>>;
 #endif
 
-//TODO
-//2. improve rehash and find miss performance(reduce peak memory)
-//3. dump or Serialization interface
-//4. node hash map support
-//5. load_factor > 1.0 && add grow ration
-//... https://godbolt.org/
+//1. improve rehash and find miss performance(reduce peak memory)
+//2. load_factor > 1.0 && add grow ration

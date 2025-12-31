@@ -121,6 +121,21 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
     out_loc = args.o.strip()
     kmer_dict_path = os.path.join(out_loc, f'kmer_dict_k{args.kf}.dict')
 
+    if args.soft_boundary == 'auto':
+        soft_boundary = -1
+    elif args.soft_boundary == 'unlimited':
+        soft_boundary = 10000
+    else:
+        try:
+            soft_boundary = int(args.soft_boundary)
+        except ValueError:
+            raise RuntimeError(f"Invalid soft boundary {args.soft_boundary} (must be an integer)")
+
+        if soft_boundary < 0:
+            raise RuntimeError(f"Invalid soft boundary {args.soft_boundary} (must be positive or zero)")
+
+    soft_boundary = str(soft_boundary)
+
     if do_filter:
         filter_bin = find_executable('MainFilterNew', internal=True)
 
@@ -223,13 +238,6 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
 
             if not os.path.isdir(in_dir):
                 raise RuntimeError('No successful filter run, cannot assemble')
-
-            soft_boundary = '0'
-
-            if args.soft_boundary == 'auto':
-                soft_boundary = '-1'
-            elif args.soft_boundary == 'unlimited':
-                soft_boundary = '10000'
 
             if os.path.isdir(out_dir):
                 shutil.rmtree(out_dir, ignore_errors=True)
@@ -885,7 +893,7 @@ if __name__ == '__main__':
     parser.add_argument('-ka', default=0, help='Assembly k-mer size (default = auto)', metavar='INT', type=int)
     parser.add_argument('-s', '--step-size', default=4, help='Filter step size', metavar='INT', type=int)
     parser.add_argument('-e', '--error-threshold', default=2, help='Error threshold', metavar='INT', type=int)
-    parser.add_argument('-sb', '--soft-boundary', choices=('0', 'auto', 'unlimited'), default='auto', help='Soft boundary (default = auto)', type=str)
+    parser.add_argument('-sb', '--soft-boundary', default='auto', help='Soft boundary (default = auto)', metavar='{INT,auto,unlimited}', type=str)
     parser.add_argument('-i', '--iteration', default=4096, help='Search depth', metavar='INT', type=int)
 
     parser.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
