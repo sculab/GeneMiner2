@@ -22,5 +22,5 @@ cli/bin/MainFilterNew: scripts/filter/*.h scripts/filter/*.hpp scripts/filter/*.
 	install -D -t cli/bin scripts/filter/bin/MainFilterNew
 
 $(PY_BIN): cli/bin/%: scripts/%.py
-	cd scripts && pyinstaller -D -y --optimize 1 $(notdir $<)
+	cd scripts && pyinstaller -D -y --optimize 2 $(notdir $<)
 	install -D -t cli/bin scripts/dist/$(notdir $@)/$(notdir $@)
