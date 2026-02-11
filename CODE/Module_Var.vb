@@ -2,7 +2,7 @@
 
 Module Module_Var
     Public TargetOS As String = "win64"
-    Public version As String = "2.4 build 20250709"
+    Public version As String = "2.4 build 20251202"
     Public exe_mode As String
     Public database_url As String
     Public settings As Dictionary(Of String, String)

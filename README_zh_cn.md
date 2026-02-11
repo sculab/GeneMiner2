@@ -1,5 +1,5 @@
 # GeneMiner2: 系统发育基因组学工具包
-**[To View README in English](README.md)**
+**[View README in English](README.md)**
 
 # 介绍
 GeneMiner2是一款为系统发育基因组学设计的全功能工具包，软件主要功能包括：
@@ -9,38 +9,43 @@ GeneMiner2是一款为系统发育基因组学设计的全功能工具包，软�
 
 用户能够在GeneMiner2中完成从NGS数据获取到系统发育树建立的所有工作。
 
+![](images/fig1.png)
+
+![](images/fig2.jpg)
+
 ## 引用
-Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome-skimming data. *Molecular Ecology Resources*（Ready for Production）.DOI:10.1111/1755-0998.70111
+Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. GeneMiner2: Accurate and automated recovery of genes from genome skimming data. *Molecular Ecology Resources* (Ready for Production). DOI: 10.1111/1755-0998.70111
 
 GeneMiner2基于我们之前开发的GeneMiner和Easy353软件，并整合了Blast、Minimap2、Fasttree、Muscle5、Mafft、Astral、PPD、PGA、NOVOPlasty、OrthoFinder等优秀工具，请在使用对应功能时引用软件提示的文献。
 
 
 该工具建立在我们之前发布的方法成功的基础之上：
-- Zhang Z, Xie PL, Guo YL, Zhou WB, Liu EY, Yu Y. 2022. Easy353: A tool to get Angiosperms353 genes for phylogenomic research. Molecular Biology and Evolution 39(12): msac261.
+- Zhang Z, Xie PL, Guo YL, Zhou WB, Liu EY, Yu Y. 2022. Easy353: A tool to get Angiosperms353 genes for phylogenomic research. *Molecular Biology and Evolution* 39(12): msac261.
 
-- Xie PL, Guo YL, Teng Y, Zhou WB, Yu Y. 2024. GeneMiner: A tool for extracting phylogenetic markers from next-generation sequencing data. Molecular Ecology Resources: e13924. [doi:10.1111/1755-0998.13924](https://www.researchgate.net/publication/377298770_GeneMiner_A_tool_for_extracting_phylogenetic_markers_from_next-generation_sequencing_data)
+- Xie PL, Guo YL, Teng Y, Zhou WB, Yu Y. 2024. GeneMiner: A tool for extracting phylogenetic markers from next-generation sequencing data. *Molecular Ecology Resources*: e13924. DOI: [10.1111/1755-0998.13924](https://www.researchgate.net/publication/377298770_GeneMiner_A_tool_for_extracting_phylogenetic_markers_from_next-generation_sequencing_data)
 
 
 # 安装和需求
-
-![](images/fig1.png)
-
-![](images/fig2.jpg)
-
-
-GeneMiner2的源代码在Github和Gitee上均可获取。
-
-## Windows和macOS用户
 
 请从下面的地址获取最新的安装包:
 
 **[SourceForge](https://sourceforge.net/projects/geneminer/files/)**
 
+GeneMiner2的源代码在Github和Gitee上均可获取。
+
+## Windows用户
+
+请从上面的Sourceforge地址下载最新的Windows软件包（**GeneMiner_win64_XXXXXXXX.zip**）并解压到一个独立的文件夹中。双击GeneMiner.exe启动图形界面。
+
 **注意:** 请勿在移动磁盘上运行GeneMiner2。请勿将GeneMiner2安装到带有中文的文件夹中。
 
 **关于并行运行:** 不要在同一个文件夹下打开多个窗口并行运行，可以复制GeneMiner所在的文件夹，并在副本文件中运行第二个窗口。文件夹路径不能有中文名。
 
-**macOS用户:** 在macOS上运行GeneMiner2时，如果遇到 "GeneMiner.app已损坏，无法打开"之类的错误，请打开终端，运行类似下面的命令:
+## macOS用户
+
+请从上面的Sourceforge地址下载最新的macOS安装映像（**GeneMiner_macos_XXXXXXXX.dmg**），并将GeneMiner.app拖放到想要的位置。
+
+如果遇到 "GeneMiner.app已损坏，无法打开"之类的错误，请打开终端，运行类似下面的命令:
 - xattr -cr **把GeneMiner.app拖放到此处**
 - 例如: xattr -cr /Applications/GeneMiner.app
 
@@ -48,11 +53,21 @@ GeneMiner2的源代码在Github和Gitee上均可获取。
 
 ## Linux和其他\*nix用户
 
-**[桌面Linux系统上的运行方法](manual/ZH_CN/linux_desktop.md)**
+在桌面Linux环境下，请考虑使用兼容性工具运行Windows版本：
 
-**[在类Unix平台上的命令行版本的构建指南](manual/ZH_CN/command_line.md)**
+**[在Linux上运行Windows版本](manual/ZH_CN/linux_desktop.md)**
 
-您也可以使用`scripts`文件夹中的Python脚本，这些脚本提供了GeneMiner2的所有核心功能，并可以在Windows、macOS或Linux上部署。
+在服务器Linux环境下，请从上面的Sourceforge地址下载Linux命令行版本（**GeneMiner_cli_linux_XXXXXXXX.tar.gz**）并解压。这一版本支持Debian 11或以上、Ubuntu 20.04或以上、AlmaLinux 9或以上。此外，请确保你安装了libbz2、libgomp和zlib依赖库。在Ubuntu上，可以用这行命令安装这些依赖：
+
+```bash
+sudo apt-get install libbz2 libgomp1 zlib1g
+```
+
+**[命令行版本的使用说明](manual/ZH_CN/command_line.md#用法)**
+
+如果预编译的二进制软件包无法运行，您还可以手动编译命令行版本。您也可以直接使用`scripts`文件夹中的脚本，这些脚本提供了GeneMiner2的所有核心功能，可以在任何操作系统上部署。
+
+**[从头编译命令行版本](manual/ZH_CN/command_line.md)**
 
 ---
 

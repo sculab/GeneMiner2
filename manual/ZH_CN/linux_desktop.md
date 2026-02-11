@@ -2,7 +2,7 @@
 
 ## 方法
 
-我们推荐桌面Linux用户通过兼容层（建议使用Steam Play）运行Windows版GeneMiner2。在服务器Linux系统上，或者在无法使用兼容性工具的场合，请[手动编译运行原生Linux版本](command_line.md)。
+我们推荐桌面Linux用户通过兼容层（建议使用Steam Play）运行Windows版GeneMiner2。在无法使用兼容性工具的场合，请[运行命令行版本](command_line.md)。
 
 ## 动机
 
