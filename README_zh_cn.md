@@ -16,10 +16,12 @@ GeneMiner2是一款为系统发育基因组学设计的全功能工具包，软�
 ## 引用
 
 欢迎使用并引用GeneMiner2:
+
 Yu XY, Tang ZZ, Zhang Z, Song YX, He H, Shi Y, Hou JQ, Yu Y. 2026. GeneMiner2: Accurate and automated recovery of genes from genome-skimming data. Molecular Ecology Resources 26: e70111.
 https://doi.org/10.1111/1755-0998.70111
 
 相关前期分子标记挖掘工具，欢迎引用:
+
 Zhang Z, Xie PL, Guo YL, Zhou WB, Liu EY, Yu Y. 2022. Easy353: A tool to get Angiosperms353 genes for phylogenomic research. Molecular Biology and Evolution 39(12): msac261.
 https://doi.org/10.1093/molbev/msac261
 
