@@ -1643,7 +1643,13 @@ class MainFilterNew {
         return v == null ? throw new ArgumentError('Cannot convert $s to integer') : v;
     }
 
-    static function main() return new MainFilterNew().run();
+    static function main() {
+        var c = new MainFilterNew().run();
+
+        if (c != 0) {
+            Sys.exit(c);
+        }
+    }
 
     var command: Arguments;
     var logStream: FileOutput;
@@ -1688,7 +1694,7 @@ class MainFilterNew {
         }
         catch (e: Exception) {
             Sys.println('Invalid argument: $e');
-            return;
+            return 2;
         }
 
         Sys.println("Do not close this window manually, please!");
@@ -1715,7 +1721,7 @@ class MainFilterNew {
             }
             catch (e: Exception) {
                 writeLog('Failed to read k-mer dictionary: $e');
-                return;
+                return 1;
             }
         }
         else {
@@ -1725,12 +1731,12 @@ class MainFilterNew {
 
             if (refPathList.length == 0) {
                 writeLog("No reference found.");
-                return;
+                return 1;
             }
 
             if (refPathList.length > 131068) {
                 writeLog('The number of reference files shall not exceed 131068. Found ${refPathList.length}.');
-                return;
+                return 1;
             }
 
             if (refPathList.length > 2) {
@@ -1770,14 +1776,14 @@ class MainFilterNew {
         writeLog('Step 1 took ${t1 - t0} seconds.');
 
         if (command.mode == 2) {
-            return;
+            return 0;
         }
 
         FileSystem.createDirectory(Path.join([command.output, command.outSubdir]));
 
         if (command.fastq1.length == 0) {
             writeLog("At least one sequencing file is required.");
-            return;
+            return 2;
         }
 
         if (command.fastq2.length == 0) {
@@ -1822,6 +1828,8 @@ class MainFilterNew {
 
         refCountDict.flush();
         refCountDict.close();
+
+        return 0;
     }
 
     function parseArgs() {
