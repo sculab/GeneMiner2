@@ -16,7 +16,6 @@ using StringTools;
 
 #if cpp
 import cpp.UInt32;
-import cpp.StdString;
 import cpp.VarArg;
 #else
 typedef UInt32 = Int;
@@ -59,7 +58,7 @@ class EncodingError extends Exception {}
 @:native('::cpp::Reference<::GzipReader>')
 extern class GzipReader {
     @:native('::GzipReader::open')
-    public static function open(filename: StdString): GzipReader;
+    public static function open(filename: String): GzipReader;
     public function close(): Void;
     public function destroy(): Void;
     public function readBytes(buf: Bytes, pos: Int, len: Int): Int;
@@ -69,10 +68,10 @@ extern class GzipReader {
 @:native('::cpp::Reference<::NativeFileOutputBuffer>')
 extern class NativeFileOutputBuffer {
     @:native('new ::NativeFileOutputBuffer')
-    public static function create(size: Int): NativeFileOutputBuffer;
-    public function addRecord(key: Int, record: StdString): Int;
+    public static function create(size: Int, compressed: Bool): NativeFileOutputBuffer;
+    public function addRecord(key: Int, record: Array<String>): Int;
     public function destroy(): Void;
-    public function flushBuffer(key: Int, filename: StdString): Void;
+    public function flushBuffer(key: Int, filename: String): Void;
     public function getTotalSize(): Int;
 }
 
@@ -112,7 +111,7 @@ class GzipFileInput extends Input {
     var pointer: GzipReader;
 
     public function new(filename: String) {
-        pointer = GzipReader.open(StdString.ofString(filename));
+        pointer = GzipReader.open(filename);
 
         if (pointer == null)
         {
@@ -130,14 +129,14 @@ class GzipFileInput extends Input {
 class FileOutputBuffer {
     var pointer: NativeFileOutputBuffer;
 
-    public function new(size: Int) {
-        pointer = NativeFileOutputBuffer.create(size);
+    public function new(size: Int, compressed: Bool) {
+        pointer = NativeFileOutputBuffer.create(size, compressed);
         cpp.NativeGc.addFinalizable(this, false);
     }
 
     public function finalize() pointer.destroy();
-    public inline function addRecord(key: Int, record: String) return pointer.addRecord(key, StdString.ofString(record));
-    public inline function flushBuffer(key: Int, filename: String) pointer.flushBuffer(key, StdString.ofString(filename));
+    public inline function addRecord(key: Int, record: Array<String>) return pointer.addRecord(key, record);
+    public inline function flushBuffer(key: Int, filename: String) pointer.flushBuffer(key, filename);
     public inline function getTotalSize() return pointer.getTotalSize();
 }
 
@@ -188,15 +187,22 @@ class FileOutputBuffer {
     var bufferedRecordSize: Array<Int>;
     var totalRecordSize: Int = 0;
 
-    public function new(size: Int) {
+    public function new(size: Int, compressed: Bool) {
+        if (compressed) {
+            throw new EncodingError('Read compression is not supported on this target');
+        }
+
         bufferedRecords = [for (_ in 0...size) []];
         bufferedRecordSize = [for (_ in 0...size) 0];
     }
 
-    public function addRecord(key: Int, record: String) {
-        bufferedRecords[key].push(record);
-        bufferedRecordSize[key] += record.length;
-        totalRecordSize += record.length;
+    public function addRecord(key: Int, record: Array<String>) {
+        for (line in record) {
+            bufferedRecords[key].push(line);
+            bufferedRecordSize[key] += line.length;
+            totalRecordSize += line.length;
+        }
+
         return bufferedRecordSize[key];
     }
 
@@ -504,7 +510,42 @@ abstract CuckooSet(Vector<Int64>) {
 class FastaHelper {
     static final nuclChars = ["A".code, "C".code, "G".code, "T".code];
 
-    public static inline function intToNucl(n) return nuclChars[n];
+    public static inline function convertToDna(buf: Bytes, seq: String) {
+#if debug
+        if (buf.length < seq.length) throw new ArgumentError('Buffer size ${buf.length} is too small for a string of length ${seq.length}');
+#end
+
+        var len = 0;
+
+        for (i in 0...seq.length) {
+            var c = getChar(seq, i);
+
+            // Normalize U as T
+            if (c == 85) {
+                c -= 1;
+            }
+
+            switch (c) {
+                case "A".code | "C".code | "G".code | "T".code: setChar(buf, len, c);
+                default: continue;
+            }
+
+            len++;
+        }
+
+        return len;
+    }
+
+    public static function makeRevComp(dest: Bytes, src: Bytes, seqEnd: Int) {
+#if debug
+        if (src.length < seqEnd) throw new ArgumentError('Slice length $seqEnd is out of bounds for a buffer of length ${src.length}');
+        if (dest.length < seqEnd) throw new ArgumentError('Buffer size ${dest.length} is too small for length $seqEnd');
+#end
+
+        for (i in 0...seqEnd) {
+            setChar(dest, seqEnd - i - 1, nuclChars[3 - nuclToInt(Bytes.fastGet(src.getData(), i))]);
+        }
+    }
 
     public static inline function nuclToInt(charCode: Int) {
         var twoBits = (charCode >>> 1) & 3;
@@ -512,44 +553,6 @@ class FastaHelper {
     }
 
     public static inline function nuclToPattern(charCode: Int) return (charCode >>> 1) & 1;
-
-    public static inline function convertToDna(buf: Bytes, seq: String) {
-#if debug
-        if (buf.length < seq.length) throw new ArgumentError('Buffer size ${buf.length} is too small for a string of length ${seq.length}');
-#end
-
-        var i = 0;
-        var j = 0;
-
-        while (i < seq.length) {
-            var c = getChar(seq, i);
-            i++;
-
-            // Not an alphabetic letter
-            if (c < 65) {
-                continue;
-            }
-
-            // Convert to upper case first
-            if (c >= 97) {
-                c -= 32;
-            }
-
-            // Fold U..Z to T..Y, such that U is normalized as T
-            if (c >= 85) {
-                c -= 1;
-            }
-
-            switch (c) {
-                case "A".code | "C".code | "G".code | "T".code: setChar(buf, j, c);
-                default: continue;
-            }
-
-            j++;
-        }
-
-        return j;
-    }
 
     public static inline function fromBytes(b: Bytes, pos: Int, len: Int): String {
 #if cpp
@@ -585,69 +588,32 @@ abstract ShortKmer(Int64) {
         this = value;
     }
 
-    public static inline function fromString(kmer: String, complement = false) {
-#if debug
-        if (kmer.length < 0 || kmer.length > 32) throw new ArgumentError('Invalid short k-mer size ${kmer.length}');
-#end
-
+    public static inline function fromBytes(seq: Bytes, offset: Int, len: Int) {
         var value: Int64 = 0;
 
-        for (i in 0...kmer.length) {
-            var shift: Int;
-            var n: Int64;
-
-            if (complement) {
-                shift = 2 * (i + 32 - kmer.length);
-                n = 3 - FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
-            }
-            else {
-                shift = 2 * (31 - i);
-                n = FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
-            }
-
-            value |= n << shift;
+        for (i in 0...len) {
+            var shift: Int = 2 * (31 - i);
+            var n: Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + i));
+            value |= (n << shift);
         }
 
         return new ShortKmer(value);
     }
 
     public inline function toInt64(): Int64 return this;
-
-#if debug
-    public inline function toString(size: Int) {
-        if (size < 0 || size > 32) throw new ArgumentError('Invalid short k-mer size $size');
-
-        var buf = new StringBuf();
-
-        for (i in 0...size) {
-            var shift = 2 * (31 - i);
-            buf.addChar(FastaHelper.intToNucl(((this >>> shift) & 0x3).low));
-        }
-
-        return buf.toString();
-    }
-#end
 }
 
 abstract LongKmer(String) {
-    public inline function new(kmer: String, complement = false) {
+    public inline function new(kmer: String) {
 #if debug
         if (kmer.length <= 32) throw new ArgumentError('Invalid long k-mer size ${kmer.length}');
         if (kmer.toUpperCase() != kmer) throw new EncodingError('Non-normalized long k-mer string');
 #end
+        this = kmer;
+    }
 
-        if (complement) {
-            var buf = Bytes.alloc(kmer.length);
-
-            for (i in 0...kmer.length) {
-                FastaHelper.setChar(buf, i, FastaHelper.intToNucl(3 - FastaHelper.nuclToInt(FastaHelper.getChar(kmer, kmer.length - i - 1))));
-            }
-
-            this = FastaHelper.fromBytes(buf, 0, kmer.length);
-        }
-        else {
-            this = kmer;
-        }
+    public static inline function fromBytes(seq: Bytes, offset: Int, len: Int) {
+        return new LongKmer(FastaHelper.fromBytes(seq, offset, len));
     }
 
     public inline function toString() return this;
@@ -771,6 +737,7 @@ class KmerMap {
         }
 
         var seqBuffer = Bytes.alloc(initialBufferSize);
+        var revBuffer = null;
         var shortKmerSet: UnorderedSet<Int64> = null;
         var longKmerSet: Map<String, Bool> = null;
 
@@ -818,27 +785,35 @@ class KmerMap {
                 }
 
                 var seqEnd = FastaHelper.convertToDna(seqBuffer, record[1]);
-                var seq = FastaHelper.fromBytes(seqBuffer, 0, seqEnd);
 
-                if (seq.length < object.kmerLength) {
+                if (seqEnd < object.kmerLength) {
                     continue;
                 }
 
-                object.updateMinMaxMap(seq);
+                object.updateMinMaxMap(seqBuffer, seqEnd);
 
-                if (object.useLongKmer) {
-                    for (j in 0...(seq.length - object.kmerLength + 1)) {
-                        longKmerSet[seq.substr(j, object.kmerLength)] = true;
+                for (j in 0...(seqEnd - object.kmerLength + 1)) {
+                    if (object.useLongKmer) {
+                        longKmerSet[LongKmer.fromBytes(seqBuffer, j, object.kmerLength).toString()] = true;
+                    }
+                    else {
+                        shortKmerSet.insert(ShortKmer.fromBytes(seqBuffer, j, object.kmerLength).toInt64());
                     }
                 }
-                else {
-                    for (j in 0...(seq.length - object.kmerLength + 1)) {
-                        var kmerSeq = seq.substr(j, object.kmerLength);
 
-                        shortKmerSet.insert(ShortKmer.fromString(kmerSeq).toInt64());
+                if (getReverse) {
+                    if (revBuffer == null || revBuffer.length < seqEnd) {
+                        revBuffer = Bytes.alloc(seqEnd);
+                    }
 
-                        if (getReverse) {
-                            shortKmerSet.insert(ShortKmer.fromString(kmerSeq, true).toInt64());
+                    FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
+
+                    for (j in 0...(seqEnd - object.kmerLength + 1)) {
+                        if (object.useLongKmer) {
+                            longKmerSet[LongKmer.fromBytes(revBuffer, j, object.kmerLength).toString()] = true;
+                        }
+                        else {
+                            shortKmerSet.insert(ShortKmer.fromBytes(revBuffer, j, object.kmerLength).toInt64());
                         }
                     }
                 }
@@ -848,11 +823,6 @@ class KmerMap {
                 for (kmer in longKmerSet.keys()) {
                     failureCount += object.addLongKmer(i, kmer);
                     kmerCount++;
-
-                    if (getReverse) {
-                        failureCount += object.addLongKmer(i, new LongKmer(kmer, true).toString());
-                        kmerCount++;
-                    }
                 }
             }
             else {
@@ -1024,7 +994,7 @@ class KmerMap {
         minMaxMap[pattern] = (minimizer << 8) | maximizer;
     }
 
-    private function updateMinMaxMap(seq: String) {
+    private function updateMinMaxMap(seq: Bytes, seqEnd: Int) {
         var forwardPattern = 0;
         var forwardTetramer = 0;
         var backwardPattern = 0;
@@ -1033,7 +1003,7 @@ class KmerMap {
         var bit: Int;
 
         for (i in 0...minMaxPatternSize) {
-            bit = FastaHelper.nuclToPattern(FastaHelper.getChar(seq, i));
+            bit = FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), i));
             forwardPattern <<= 1;
             forwardPattern |= bit;
             backwardPattern >>>= 1;
@@ -1042,14 +1012,14 @@ class KmerMap {
 
         for (i in minMaxPatternSize...(minMaxPatternSize + 4)) {
             forwardTetramer <<= 2;
-            forwardTetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(seq, i));
+            forwardTetramer |= FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), i));
         }
 
         addMinMaxTetramer(forwardPattern, forwardTetramer, forwardTetramer);
         addMinMaxTetramer(backwardPattern, 0, 0xff);
 
-        for (i in 1...(seq.length - minMaxPatternSize + 1)) {
-            bit = FastaHelper.nuclToPattern(FastaHelper.getChar(seq, minMaxPatternSize + i - 1));
+        for (i in 1...(seqEnd - minMaxPatternSize + 1)) {
+            bit = FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), minMaxPatternSize + i - 1));
             forwardPattern <<= 1;
             forwardPattern |= bit;
             forwardPattern &= (1 << minMaxPatternSize) - 1;
@@ -1059,17 +1029,17 @@ class KmerMap {
             forwardTetramer <<= 2;
             forwardTetramer &= 0xff;
 
-            if (i <= seq.length - minMaxPatternSize - 4) {
-                forwardTetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(seq, minMaxPatternSize + i + 3));
+            if (i <= seqEnd - minMaxPatternSize - 4) {
+                forwardTetramer |= FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), minMaxPatternSize + i + 3));
                 addMinMaxTetramer(forwardPattern, forwardTetramer, forwardTetramer);
             }
             else {
-                var j = i - (seq.length - minMaxPatternSize - 4);
+                var j = i - (seqEnd - minMaxPatternSize - 4);
                 addMinMaxTetramer(forwardPattern, forwardTetramer & ((0xff << (2 * j)) & 0xff), forwardTetramer | (0xff >>> (2 * (4 - j))));
             }
 
             backwardTetramer >>>= 2;
-            backwardTetramer |= (3 - FastaHelper.nuclToInt(FastaHelper.getChar(seq, i - 1))) << 6;
+            backwardTetramer |= (3 - FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), i - 1))) << 6;
 
             if (i >= 4) {
                 addMinMaxTetramer(backwardPattern, backwardTetramer, backwardTetramer);
@@ -1140,7 +1110,7 @@ class KmerMap {
         return false;
     }
 
-    public function markHits(match: UnorderedSetPointer<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse: Bool) {
+    public function markHits(match: UnorderedSetPointer<Int>, seq: Bytes, rev: Bytes, seqEnd: Int, step: Int) {
 #if debug
         if (seqEnd < kmerLength) throw new ArgumentError('Read is too short ($seqEnd bp)');
 #end
@@ -1154,20 +1124,18 @@ class KmerMap {
         var offset        = 0;
 
         while (offset <= tailOffset) {
-            var kmer = FastaHelper.fromBytes(seq, offset, kmerLength);
-
             if (checkPattern) {
                 var pattern = 0;
                 var tetramer = 0;
 
                 for (i in (kmerLength - minMaxPatternSize - 4)...(kmerLength - 4)) {
                     pattern <<= 1;
-                    pattern |= FastaHelper.nuclToPattern(FastaHelper.getChar(kmer, i));
+                    pattern |= FastaHelper.nuclToPattern(Bytes.fastGet(seq.getData(), offset + i));
                 }
 
                 for (i in (kmerLength - 4)...kmerLength) {
                     tetramer <<= 2;
-                    tetramer |= FastaHelper.nuclToInt(FastaHelper.getChar(kmer, i));
+                    tetramer |= FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + i));
                 }
 
                 var maximizer = minMaxMap[pattern] & 0xff;
@@ -1182,17 +1150,20 @@ class KmerMap {
             var hit = false;
 
             if (useLongKmer) {
-                hit = markHitsLong(longMap, match, new LongKmer(kmer));
-
-                if (getReverse) {
-                    hit = markHitsLong(longMap, match, new LongKmer(kmer, true)) || hit;
-                }
+                hit = markHitsLong(longMap, match, LongKmer.fromBytes(seq, offset, kmerLength));
             }
             else {
-                hit = markHitsShort(shortMap, match, ShortKmer.fromString(kmer));
+                hit = markHitsShort(shortMap, match, ShortKmer.fromBytes(seq, offset, kmerLength));
+            }
 
-                if (getReverse) {
-                    hit = markHitsShort(shortMap, match, ShortKmer.fromString(kmer, true)) || hit;
+            if (rev != null) {
+                var revOffset = seqEnd - offset - kmerLength;
+
+                if (useLongKmer) {
+                    hit = markHitsLong(longMap, match, LongKmer.fromBytes(rev, revOffset, kmerLength)) || hit;
+                }
+                else {
+                    hit = markHitsShort(shortMap, match, ShortKmer.fromBytes(rev, revOffset, kmerLength)) || hit;
                 }
             }
 
@@ -1201,20 +1172,21 @@ class KmerMap {
         }
 
         if (offset - step < tailOffset) {
-            var kmer = FastaHelper.fromBytes(seq, tailOffset, kmerLength);
-
             if (useLongKmer) {
-                markHitsLong(longMap, match, new LongKmer(kmer));
-
-                if (getReverse) {
-                    markHitsLong(longMap, match, new LongKmer(kmer, true));
-                }
+                markHitsLong(longMap, match, LongKmer.fromBytes(seq, tailOffset, kmerLength));
             }
             else {
-                markHitsShort(shortMap, match, ShortKmer.fromString(kmer));
+                markHitsShort(shortMap, match, ShortKmer.fromBytes(seq, tailOffset, kmerLength));
+            }
 
-                if (getReverse) {
-                    markHitsShort(shortMap, match, ShortKmer.fromString(kmer, true));
+            if (rev != null) {
+                var revOffset = seqEnd - tailOffset - kmerLength;
+
+                if (useLongKmer) {
+                    markHitsLong(longMap, match, LongKmer.fromBytes(rev, revOffset, kmerLength));
+                }
+                else {
+                    markHitsShort(shortMap, match, ShortKmer.fromBytes(rev, revOffset, kmerLength));
                 }
             }
         }
@@ -1421,9 +1393,17 @@ class SeqFileInput {
         isFasta = type == FileType.Fasta;
     }
 
+    public function close() fileInput.close();
+
     public inline function eof() return isEof && posStart == 0 && posEnd == 0;
 
-    private inline function finalizeRecord(record) return isFasta ? [record[0], record.slice(1).join("")] : record;
+    private inline function finalizeRecord(record) {
+        if (isFasta && record.length > 2) {
+            return [record[0], record.slice(1).join("")];
+        }
+
+        return record;
+    }
 
     public function readSequence() {
         while (true) {
@@ -1436,76 +1416,88 @@ class SeqFileInput {
                 }
             }
 
-            var descriptionLine = isFasta || linesRead & 1 == 0;
+            var lineType;
 
-            if (descriptionLine) {
+            if (isFasta) {
                 while (posStart < posEnd && Bytes.fastGet(buffer.getData(), posStart) <= 32) {
                     posStart++;
                 }
+
+                lineType = Bytes.fastGet(buffer.getData(), posStart) == ">".code ? 0 : 1;
+            }
+            else {
+                lineType = linesRead & 3;
             }
 
             var foundNewLine = false;
             var lineEnd = posStart + 1;
 
             while (lineEnd <= posEnd) {
-                foundNewLine = switch (Bytes.fastGet(buffer.getData(), lineEnd - 1)) {
-                    case 0 | "\n".code: true;
-                    default: false;
+                switch (Bytes.fastGet(buffer.getData(), lineEnd - 1)) {
+                    case 0 | "\n".code:
+                        foundNewLine = true;
+                        lineEnd--;
+                        break;
+                    case c if (lineType == 1 && c >= "a".code && c <= "z".code):
+                        FastaHelper.setChar(buffer, lineEnd - 1, c - 32);
                 };
-
-                if (foundNewLine) {
-                    lineEnd--;
-                    break;
-                }
 
                 if (lineEnd == posEnd) {
                     break;
                 }
 
-                foundNewLine = switch (Bytes.fastGet(buffer.getData(), lineEnd)) {
-                    case 0 | "\n".code: true;
-                    default: false;
+                switch (Bytes.fastGet(buffer.getData(), lineEnd)) {
+                    case 0 | "\n".code:
+                        foundNewLine = true;
+                        break;
+                    case c if (lineType == 1 && c >= "a".code && c <= "z".code):
+                        FastaHelper.setChar(buffer, lineEnd, c - 32);
                 };
-
-                if (foundNewLine) {
-                    break;
-                }
 
                 lineEnd += 2;
             }
 
             if (foundNewLine) {
-                if (!descriptionLine) {
-                    while (posStart < lineEnd && Bytes.fastGet(buffer.getData(), posStart) <= 32) {
-                        posStart++;
+                var lineStart = posStart;
+                posStart = lineEnd + 1;
+
+                if (!isFasta) {
+                    while (lineStart < lineEnd && Bytes.fastGet(buffer.getData(), lineStart) <= 32) {
+                        lineStart++;
                     };
                 }
 
-                var nextPosStart = lineEnd + 1;
-
-                while (posStart < lineEnd && Bytes.fastGet(buffer.getData(), lineEnd - 1) <= 32) {
+                while (lineStart < lineEnd && Bytes.fastGet(buffer.getData(), lineEnd - 1) <= 32) {
                     lineEnd--;
                 };
 
-                var line = FastaHelper.fromBytes(buffer, posStart, lineEnd - posStart);
-                linesRead++;
-                posStart = nextPosStart;
-
-                if ((isFasta ? line.startsWith(">") : (linesRead & 3) == 1) || eof()) {
-                    var record = pendingRecord;
-                    pendingRecord = [];
-
-#if cpp
-                    cpp.NativeArray.reserve(pendingRecord, isFasta ? 2 : 4);
-#end
-
-                    if (record.length != 0) {
-                        pendingRecord.push(line);
-                        return finalizeRecord(record);
-                    }
+                if (lineStart == lineEnd && (lineType & 1) == 0) {
+                    continue;
                 }
 
+                var line = FastaHelper.fromBytes(buffer, lineStart, lineEnd - lineStart);
+                linesRead++;
+
+                if (lineType != 0) {
+                    if (pendingRecord.length != 0) {
+                        pendingRecord.push(line);
+                    }
+
+                    continue;
+                }
+
+                var record = pendingRecord;
+                pendingRecord = [];
+
+#if cpp
+                cpp.NativeArray.reserve(pendingRecord, isFasta ? 2 : 4);
+#end
+
                 pendingRecord.push(line);
+
+                if (record.length != 0) {
+                    return finalizeRecord(record);
+                }
             }
             else {
                 if (posEnd >= buffer.length && posStart < pageSize) {
@@ -1541,7 +1533,10 @@ class SeqFileInput {
                     posEnd--;
                 };
 
-                pendingRecord.push(FastaHelper.fromBytes(buffer, posStart, posEnd));
+                if (posStart != posEnd) {
+                    pendingRecord.push(FastaHelper.fromBytes(buffer, posStart, posEnd));
+                }
+
                 posStart = 0;
                 posEnd = 0;
 
@@ -1550,10 +1545,6 @@ class SeqFileInput {
                 return finalizeRecord(record);
             }
         }
-    }
-
-    public function close() {
-        fileInput.close();
     }
 }
 
@@ -1573,28 +1564,35 @@ class OutputBuffer {
         basenameList = refNames;
         filteredPathList = [];
 
-        writePairedEnds = mode == 4;
-
         var filteredFileExt = fileType == FileType.Fasta ? '.fasta' : '.fq';
 
-        for (basename in basenameList) {
-            if (mode == 0) {
+        if (mode == 0) {
+            for (basename in basenameList) {
                 filteredPathList.push(Path.join([outputPath, outSubdir, basename + filteredFileExt]));
             }
-            else if (mode == 4) {
+        }
+        else if (mode == 1) {
+            filteredPathList.push(Path.join([outputPath, outSubdir, "all_1.fq"]));
+            filteredPathList.push(Path.join([outputPath, outSubdir, "all_2.fq"]));
+        }
+        else if (mode == 4) {
+            for (basename in basenameList) {
                 filteredPathList.push(Path.join([outputPath, outSubdir, basename + "_1" + filteredFileExt]));
                 filteredPathList.push(Path.join([outputPath, outSubdir, basename + "_2" + filteredFileExt]));
             }
+            writePairedEnds = true;
         }
-
-        if (mode == 1) {
-            filteredPathList.push(Path.join([outputPath, outSubdir, "all_1.fq"]));
-            filteredPathList.push(Path.join([outputPath, outSubdir, "all_2.fq"]));
+        else if (mode == 5) {
+            for (basename in basenameList) {
+                filteredPathList.push(Path.join([outputPath, outSubdir, basename + "_1.gm2"]));
+                filteredPathList.push(Path.join([outputPath, outSubdir, basename + "_2.gm2"]));
+            }
+            writePairedEnds = true;
         }
 
         var fewFile = defaultFileMemoryBudget * filteredPathList.length < totalMemoryBudget;
         fileMemoryBudget = if (fewFile) Std.int(totalMemoryBudget / filteredPathList.length) else defaultFileMemoryBudget;
-        fileOutputBuffer = new FileOutputBuffer(filteredPathList.length);
+        fileOutputBuffer = new FileOutputBuffer(filteredPathList.length, mode == 5);
     }
 
     public function getBasenames() return basenameList;
@@ -1611,11 +1609,7 @@ class OutputBuffer {
             key = 2 * key + (isReverse ? 1 : 0);
         }
 
-        var fileBufferSize = 0;
-
-        for (line in record) {
-            fileBufferSize = fileOutputBuffer.addRecord(key, line);
-        }
+        var fileBufferSize = fileOutputBuffer.addRecord(key, record);
 
         if (fileBufferSize >= fileMemoryBudget) {
             fileOutputBuffer.flushBuffer(key, filteredPathList[key]);
@@ -1677,7 +1671,8 @@ class MainFilterNew {
                1: filter reads for NOVOPlasty;
                2: build k-mer dictionary only;
                3: do not write filtered reads to disk;
-               4: filter reads and write paired ends into separate files */
+               4: filter reads and write paired ends into separate files
+               5: filter reads and write compressed binary streams */
         };
     }
 
@@ -1962,7 +1957,7 @@ class MainFilterNew {
 
         var matchCallback: Int -> Bool -> Array<String> -> Array<String> -> Void;
 
-        if (mode == 0 || mode == 4) {
+        if (mode == 0 || mode == 4 || mode == 5) {
             matchCallback = function(key: Int, hasRecord2: Bool, record1: Array<String>, record2: Array<String>) {
                 var trueKey = key - 2;
 
@@ -1983,6 +1978,7 @@ class MainFilterNew {
 
         var matchSet = new UnorderedSet<Int>();
         var seqBuffer = Bytes.alloc(initialBufferSize);
+        var revBuffer = null;
 
         for (i => file1 in fastq1) {
             var file2 = fastq2[i];
@@ -2028,7 +2024,15 @@ class MainFilterNew {
                         kmerDict.markHitsFast(match, seqBuffer, seqEnd, stepSize, getReverse);
                     }
                     else {
-                        kmerDict.markHits(match, seqBuffer, seqEnd, stepSize, getReverse);
+                        if (getReverse) {
+                            if (revBuffer == null || revBuffer.length < seqEnd) {
+                                revBuffer = Bytes.alloc(seqEnd);
+                            }
+
+                            FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
+                        }
+
+                        kmerDict.markHits(match, seqBuffer, revBuffer, seqEnd, stepSize);
                     }
                 }
 
@@ -2040,7 +2044,15 @@ class MainFilterNew {
                             kmerDict.markHitsFast(match, seqBuffer, seqEnd, stepSize, getReverse);
                         }
                         else {
-                            kmerDict.markHits(match, seqBuffer, seqEnd, stepSize, getReverse);
+                            if (getReverse) {
+                                if (revBuffer == null || revBuffer.length < seqEnd) {
+                                    revBuffer = Bytes.alloc(seqEnd);
+                                }
+
+                                FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
+                            }
+
+                            kmerDict.markHits(match, seqBuffer, revBuffer, seqEnd, stepSize);
                         }
                     }
                 }

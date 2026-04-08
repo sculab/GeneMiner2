@@ -23,7 +23,7 @@ haxelib install hxcpp
 Third, install Python dependencies. If conda is available, run the following commands. Otherwise, it would be necessary to install them manually using the system package manager.
 
 ```
-conda create -c conda-forge -n geneminer python=3.11 numpy=2.1.3 biopython matplotlib pyinstaller scipy
+conda create -c conda-forge -n geneminer python=3.11 numpy=2.1.3 biopython cython matplotlib pyinstaller scipy
 conda activate geneminer
 ```
 
@@ -66,17 +66,15 @@ cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Ang
 
 GeneMiner2 will build a coalescent tree at `/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`.
 
-All command line parameters:
+Command line parameters:
 
 - `-f`: Sample list in tsv format
 - `-r`: Reference directory
 - `-o`: Output directory
 - `-p`: Number of parallel processes
-- `--max-reads`: Max reads per file, disabled by default
+- `--max-reads`: Max million reads per file, disabled by default
 - `-kf`: Filter k-mer size
 - `-s`: Filter step size
-- `--max-depth`: Depth limit
-- `--max-size`: File size limit
 - `-ka`: Assembly k-mer size, automatic by default
 - `--min-ka`: Minimum auto-estimated assembly k-mer size
 - `--max-ka`: Maximum auto-estimated assembly k-mer size
@@ -118,4 +116,4 @@ The following line runs **Trim With Reference** and **Combine Results**:
 cli/geneminer2 trim combine -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -ts consensus -tm all -tr 0.5 -cd 0.2 -cn 5 --msa-program muscle
 ```
 
-All parameters and output are analogus to their counterparts in the graphical version, except that the command line interface only accepts decimal values between 0.0 and 1.0 for percentages. Additionally, several internal options (such as `--min-depth`) are also exposed, providing extra flexibility for advanced users.
+All parameters and output are analogus to their counterparts in the graphical version, except that the command line interface only accepts decimal values between 0.0 and 1.0 for percentages. Additionally, several internal options (such as `--min-coverage`) are also exposed, providing extra flexibility for advanced users.

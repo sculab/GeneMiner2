@@ -1,11 +1,13 @@
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
+from main_refilter_ext import collect_runs_stats, filter_read, parse_record
 import argparse
 import collections
 import contextlib
 import math
 import os
 import shutil
+import struct
 
 FILE_EXTENSION = {
     'fasta': '.fasta',
@@ -17,7 +19,8 @@ FILE_TYPES = {
     '.fas': 'fasta',
     '.fasta': 'fasta',
     '.fq': 'fastq',
-    '.fastq': 'fastq'
+    '.fastq': 'fastq',
+    '.gm2': 'fastq'
 }
 
 FORMAT_FUNCTIONS = {
@@ -40,7 +43,7 @@ def print_log(log_path, *args, **kwargs):
 
     print(*args, **kwargs)
 
-def get_read_dict(se_dir, pe_dir):
+def get_read_dict(se_dir, pe_dir, use_compressed):
     read_dict = {}
     walk_directory = lambda path: ((os.path.dirname(ent.path), *os.path.splitext(ent.name)) for ent in os.scandir(path) if ent.is_file())
 
@@ -52,8 +55,15 @@ def get_read_dict(se_dir, pe_dir):
             if extname not in FILE_TYPES:
                 continue
 
+            if not use_compressed and extname == '.gm2':
+                continue
+
             if basename in read_dict:
-                raise ValueError(f'Duplicate read group name {basename}.')
+                if os.path.splitext(read_dict[basename][0])[1] == '.gm2':
+                    continue
+
+                if extname != '.gm2':
+                    raise ValueError(f'Duplicate read group name {basename}.')
 
             read_dict[basename] = (f'{dirname}/{basename}{extname}', )
 
@@ -67,8 +77,15 @@ def get_read_dict(se_dir, pe_dir):
 
             gene_name = basename[:-2]
 
+            if not use_compressed and extname == '.gm2':
+                continue
+
             if gene_name in read_dict:
-                raise ValueError(f'Duplicate read group name {gene_name}.')
+                if os.path.splitext(read_dict[gene_name][0])[1] == '.gm2':
+                    continue
+
+                if extname != '.gm2':
+                    raise ValueError(f'Duplicate read group name {gene_name}.')
 
             forward_path = os.path.join(dirname, f'{gene_name}_1{extname}')
             reverse_path = os.path.join(dirname, f'{gene_name}_2{extname}')
@@ -108,6 +125,39 @@ def load_reference(ref_path, kmer_size):
     effective_len = int(max(length_list) * (math.log10(len(length_list)) + 1))
     return ref_set, effective_len
 
+def gm2_iterator(f, suffix=''):
+    read_id = 0
+    seq_buf = bytearray(1024)
+    phr_buf = bytearray(1024)
+
+    while True:
+        rec_hdr = f.read(6)
+
+        if len(rec_hdr) < 6:
+            break
+
+        rl1, rl2, sl1, sl2 = struct.unpack('!BHBH', rec_hdr)
+        rec_len = (rl1 << 16) | rl2
+        has_phr = (sl1 & 0x80) != 0
+        seq_len = ((sl1 & 0x7f) << 16) | sl2
+
+        if rec_len == 0:
+            continue
+
+        if len(seq_buf) < seq_len:
+            seq_buf = bytearray(seq_len)
+            phr_buf = bytearray(seq_len)
+
+        record = f.read(rec_len)
+
+        if seq_len == 0:
+            continue
+
+        parse_record(record, has_phr, seq_buf, phr_buf, seq_len)
+        read_id += 1
+
+        yield (f'read_{read_id}{suffix}', seq_buf[:seq_len].decode("ascii"), phr_buf[:seq_len].decode("ascii") if has_phr else '')
+
 def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
     # Values: 0=unused; 1=forward; 2=reverse; 3=both
     kmer_dict = collections.defaultdict(lambda: 0)
@@ -131,60 +181,18 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
 
     return kmer_dict
 
-def collect_runs_stats(reads, kmer_dict, kmer_size, trans=FWD_TRANS, zero_stats=(0, ) * 12):
-    # Return values: [0:4]=best length; [4:8]=run count; [8:12]=hit count; [12]=k-mer count
-    mask_bin = (1 << (kmer_size << 1)) - 1
-
-    for tp in reads:
-        read_str = tp[1].translate(trans)
-        kmer_cnt = len(read_str) - kmer_size + 1
-        results  = [*zero_stats, kmer_cnt]
-
-        if kmer_cnt > 0:
-            curr_dir    = 0
-            curr_len    = 0
-            read_int    = int(read_str, 4)
-
-            for _ in range(0, kmer_cnt):
-                kmer = read_int & mask_bin
-                orient = 0
-                read_int >>= 2
-
-                if kmer in kmer_dict:
-                    orient = kmer_dict[kmer]
-
-                if orient != curr_dir:
-                    if curr_len > results[curr_dir]:
-                        results[curr_dir] = curr_len
-
-                    results[curr_dir + 4] += 1
-                    curr_dir = orient
-                    curr_len = 0
-
-                if curr_dir != 0:
-                    curr_len += 1
-                    results[curr_dir + 8] += 1
-
-            if curr_len > results[curr_dir]:
-                results[curr_dir] = curr_len
-
-            results[curr_dir + 4] += 1
-        else:
-            results[12] = 0
-
-        yield results
-
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
     RUN_LEN_CONST = 0.5772156649 / math.log(2) - 1.5
     THR_P95_2T = 1.96
     THR_1e5_1T = 3.74
     TOLERANCE = 1e-5
 
+    gm2_format  = os.path.splitext(read_info[0])[1] == '.gm2'
     output_ext  = FILE_EXTENSION[file_type]
     output_path = os.path.join(out_dir, 'large_files', name + output_ext)
     format_func = FORMAT_FUNCTIONS[file_type]
-    read_iter   = READ_ITERATORS[file_type]
     open_flags  = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    trans_table = FWD_TRANS
 
     if os.name == 'nt' and not keep_temporaries:
         open_flags |= os.O_SHORT_LIVED
@@ -192,15 +200,20 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
     kmer_dict = build_kmer_dict(ref_set, kmer_size)
 
     with contextlib.ExitStack() as stack:
-        read_iters  = [read_iter(stack.enter_context(open(path, 'r'))) for path in read_info]
+        if gm2_format:
+            read_iters = [gm2_iterator(stack.enter_context(open(path, 'rb')), f'/{i}') for i, path in enumerate(read_info, start=1)]
+        else:
+            read_iters = [READ_ITERATORS[file_type](stack.enter_context(open(path, 'r'))) for path in read_info]
+
         output_file = stack.enter_context(os.fdopen(os.open(output_path, open_flags), 'w'))
 
         for linked_reads in zip(*read_iters):
             orient = [0] * len(linked_reads)
+            group_iter = (collect_runs_stats(tp[1].translate(trans_table), kmer_dict, kmer_size) for tp in linked_reads)
 
             for i, (_, fwd_l, rev_l, _,
                     _, fwd_r, rev_r, _,
-                    _, fwd_n, rev_n, amb_n, tot_n) in enumerate(collect_runs_stats(linked_reads, kmer_dict, kmer_size)):
+                    _, fwd_n, rev_n, amb_n, tot_n) in enumerate(group_iter):
 
                 # Forward hits    Reverse hits    Ambiguous hits    Verdict
                 # -----------------------------------------------------------
@@ -295,24 +308,12 @@ def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, 
 
     return output_path
 
-def filter_read(read, kmer_dict, kmer_size, trans=FWD_TRANS):
-    mask_bin = (1 << (kmer_size << 1)) - 1
-    read_str = read.translate(trans)
-
-    if len(read_str) < kmer_size:
-        return False
-
-    read_int = int(read_str, 4)
-
-    return any(True
-               for i in range(0, len(read_str) - kmer_size + 1)
-               if ((read_int >> (2 * i)) & mask_bin) in kmer_dict)
-
 def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_type, kmer_size, min_depth, max_depth, max_size, keep_temporaries):
     output_ext  = FILE_EXTENSION[file_type]
     output_path = os.path.join(out_dir, name + output_ext)
     format_func = FORMAT_FUNCTIONS[file_type]
     read_iter   = READ_ITERATORS[file_type]
+    trans_table = FWD_TRANS
 
     with open(temp_path, 'r') as f:
         total_length = sum(len(tp[1]) for tp in read_iter(f))
@@ -344,7 +345,7 @@ def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_ty
         with open(temp_path, 'r') as f:
             total_length = sum(len(tp[1])
                                for tp in read_iter(f)
-                               if filter_read(tp[1], kmer_dict, kmer_size))
+                               if filter_read(tp[1].translate(trans_table), kmer_dict, kmer_size))
 
         coverage  = total_length / ref_length
         too_deep  = coverage > max_depth
@@ -366,7 +367,7 @@ def kmer_filter(name, out_dir, log_path, ref_set, ref_length, temp_path, file_ty
 
     with open(temp_path, 'r') as f, open(output_path, 'w') as fo:
         for tp in read_iter(f):
-            if filter_read(tp[1], kmer_dict, kmer_size):
+            if filter_read(tp[1].translate(trans_table), kmer_dict, kmer_size):
                 i += 1
 
                 if too_large and i % interval != 0:
@@ -456,6 +457,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-depth', default=768, help='Max allowed coverage', type=int)
     parser.add_argument('--max-size', default=6, help='Max allowed size in million bases', type=int)
     parser.add_argument('--keep-temporaries', action='store_true', help='Keep temporary files')
+    parser.add_argument('--use-gm2-format', action='store_true', help='Read reads from compressed binary format')
     parser.add_argument('-kf', '--kmer-size', default=31, help='K-mer size', type=int)
 
     parser.add_argument('-p', '--processes', default=1, help='Number of parallel processes', type=int)
@@ -463,7 +465,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        read_dict = get_read_dict(args.se_dir, args.pe_dir)
+        read_dict = get_read_dict(args.se_dir, args.pe_dir, args.use_gm2_format)
         ref_dict = get_ref_dict(args.ref_dir)
         out_dir = args.out_dir
         os.makedirs(os.path.join(out_dir, 'large_files'), exist_ok=True)

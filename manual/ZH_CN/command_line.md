@@ -23,7 +23,7 @@ haxelib install hxcpp
 第三步，安装Python和依赖项。如果可以使用conda，执行下面的命令即可；否则，需要用系统的软件包管理器手动安装这些包。
 
 ```
-conda create -c conda-forge -n geneminer python=3.11 numpy=2.1.3 biopython matplotlib pyinstaller scipy
+conda create -c conda-forge -n geneminer python=3.11 numpy=2.1.3 biopython cython matplotlib pyinstaller scipy
 conda activate geneminer
 ```
 
@@ -66,17 +66,15 @@ cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Ang
 
 执行这行命令后，GeneMiner2会构建一棵溯祖树，路径为`/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`。
 
-所有命令行参数的说明如下：
+命令行参数的说明如下：
 
 - `-f`: 样本列表tsv文件
 - `-r`: 参考序列文件夹
 - `-o`: 输出文件夹
 - `-p`: 同时运行的进程数
-- `--max-reads`: 每文件限制的最大读长数量，默认禁用
+- `--max-reads`: 每文件限制的最大读长数量（单位为百万），默认禁用
 - `-kf`: 过滤kmer大小
 - `-s`: 过滤步长
-- `--max-depth`: 进一步过滤的深度限制
-- `--max-size`: 进一步过滤的文件大小限制
 - `-ka`: 组装kmer大小，默认为自动
 - `--min-ka`: 自动估算k值的下限
 - `--max-ka`: 自动估算k值的上限
@@ -118,4 +116,4 @@ cli/geneminer2 tree -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/use
 cli/geneminer2 trim combine -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /mnt/data/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output -ts consensus -tm all -tr 0.5 -cd 0.2 -cn 5 --msa-program muscle
 ```
 
-所有参数和输出与图形界面的版本含义一致，除了命令行版本在需要填写百分数的位置只支持0-1的小数。此外，一部分内部参数（例如`--min-depth`）也可以修改，允许高级用户更灵活地控制软件的行为。
+所有参数和输出与图形界面的版本含义一致，除了命令行版本在需要填写百分数的位置只支持0-1的小数。此外，一部分内部参数（例如``--min-coverage`）也可以修改，允许高级用户更灵活地控制软件的行为。

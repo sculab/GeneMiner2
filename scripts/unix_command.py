@@ -24,6 +24,24 @@ combine   Gene alignment, concatenation and cleanup
 tree      Phylogenetic tree reconstruction
 '''
 
+DEPTH_DEPRECATION_EXPLAINER = '''
+  Gene assembly involves two different types of depth measurements: k-mer frequencies and read depths. In early versions of GeneMiner2, the two measurements were confounded, causing slight deviation in contig depth calculation. Several new options have since been added to avoid ambiguity.
+
+  --depth-limit INT
+    This option limits the highest depth of a gene to prevent pathological assemblies. It should not significantly affect quality unless set to a low value.
+
+  --depth-low-water-mark INT
+    This option corresponds to the depth at which GeneMiner2 begins to relax its filtering criteria, so highly diverged sequences can still be recovered. Its value should be sufficiently large, since most irrelevant reads will be removed at a later stage. This option is not for strict quality control!
+
+  --error-threshold INT
+    This option exists in previous versions and corresponds to the minimum frequency of a k-mer. Increasing its value will improve quality at the cost of contiguity.
+
+  --min-coverage INT
+    This option specifically targets the minimum read depth of contigs. Any contig with a lower read depth will be removed. Note that GeneMiner2 can recover certain types of sequence without a full supporting read. These reads are not counted towards the read depth, making this option very stringent. Use this option if the goal is to ensure read coverage of assembled contigs.
+'''
+
+HELP_EPILOG = 'quality control of assembled genes:' + DEPTH_DEPRECATION_EXPLAINER
+
 SCRIPT_ROOT = os.path.join(sys._MEIPASS, os.pardir) if hasattr(sys, '_MEIPASS') else os.path.dirname(__file__)
 
 def find_executable(prog, internal=False):
@@ -158,7 +176,7 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
 
             params = [filter_bin, '-r', args.r, '-q1', q1, '-q2', q2, '-o', os.path.join(out_loc, name),
                       '-kf', str(args.kf), '-s', str(args.step_size), '-gr', '-subdir', 'filtered_pe',
-                      '-m', '4', '-lb', '-lkd', kmer_dict_path]
+                      '-m', '5', '-lb', '-lkd', kmer_dict_path]
 
             if args.max_reads > 0:
                 params.extend(['-m_reads', str(args.max_reads)])
@@ -217,8 +235,8 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
 
             params = [refilter_bin, '-r', args.r, '-qd', in_dir, '-o', out_dir, '-kf', str(args.kf),
                       '-p', str(thr), '--log-file', os.path.join(out_loc, name, 'log.txt'),
-                      '--min-depth', str(args.min_depth), '--max-depth', str(args.max_depth),
-                      '--max-size', str(args.max_size)]
+                      '--min-depth', str(args.depth_low_water_mark), '--max-depth', str(args.depth_limit),
+                      '--max-size', str(args.file_size_limit), '--use-gm2-format']
 
             subprocess.run(params)
 
@@ -244,7 +262,8 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
 
             params = [assembler_bin, '-r', args.r, '-o', os.path.join(out_loc, name), '-ka', str(args.ka),
                       '-k_min', str(args.min_ka), '-k_max', str(args.max_ka), '-limit_count', str(args.error_threshold),
-                      '-iteration', str(args.iteration), '-sb', soft_boundary, '-p', str(thr)]
+                      '-iteration', str(args.search_depth), '-sb', soft_boundary, '-cov_min', str(args.min_coverage),
+                      '-p', str(thr)]
 
             subprocess.run(params)
 
@@ -279,7 +298,7 @@ def do_filter_assemble(args, samples, do_filter, do_refilter, do_assemble, ignor
             assemble_list.extend(reversed(samples.keys()))
 
         while True:
-            while refilter_list and avail_cpu >= asm_thr:
+            while refilter_list and avail_cpu >= filt_thr:
                 sample = refilter_list.pop()
                 task_thr = calc_task_thr()
                 avail_cpu -= task_thr
@@ -829,7 +848,7 @@ def build_concatenation_tree(args):
 def execute_tasks(args, samples):
     if not os.path.isdir(args.r):
         print(f"Reference directory '{args.r}' does not exist")
-        return
+        return 2
 
     commands = frozenset(args.command)
 
@@ -873,61 +892,88 @@ def execute_tasks(args, samples):
 
     except RuntimeError as e:
         print(f'Error: {e}')
-        return
+        return 1
+
+    return 0
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                     description='GeneMiner2 is a tool for extracting phylogenetic marker genes.')
+                                     description='GeneMiner2 is a tool for extracting phylogenetic marker genes.',
+                                     epilog=HELP_EPILOG)
     parser.add_argument('command',
                         choices=('filter', 'refilter', 'assemble', 'consensus', 'trim', 'combine', 'tree', []),
                         help='One or several of the following actions, separated by space:' + COMMAND_HELP,
                         metavar='command',
                         nargs='*')
 
-    parser.add_argument('-f', help='Sample list file', metavar='FILE', required=True)
-    parser.add_argument('-r', help='Reference directory', metavar='DIR', required=True)
-    parser.add_argument('-o', help='Output directory', metavar='DIR', required=True)
-    parser.add_argument('-p', default=1, help='Number of parallel processes', metavar='INT', type=int)
+    group_io = parser.add_argument_group('input/output parameters')
+    group_io.add_argument('-f', help='Sample list file', metavar='FILE', required=True)
+    group_io.add_argument('-r', help='Reference directory', metavar='DIR', required=True)
+    group_io.add_argument('-o', help='Output directory', metavar='DIR', required=True)
+    group_io.add_argument('-p', default=1, help='Number of parallel processes', metavar='INT', type=int)
 
-    parser.add_argument('-kf', default=31, help='Filter k-mer size', metavar='INT', type=int)
-    parser.add_argument('-ka', default=0, help='Assembly k-mer size (default = auto)', metavar='INT', type=int)
-    parser.add_argument('-s', '--step-size', default=4, help='Filter step size', metavar='INT', type=int)
-    parser.add_argument('-e', '--error-threshold', default=2, help='Error threshold', metavar='INT', type=int)
-    parser.add_argument('-sb', '--soft-boundary', default='auto', help='Soft boundary (default = auto)', metavar='{INT,auto,unlimited}', type=str)
-    parser.add_argument('-i', '--iteration', default=4096, help='Search depth', metavar='INT', type=int)
+    group_filter = parser.add_argument_group('arguments for filtering')
+    group_filter.add_argument('-kf', default=31, help='Filter k-mer size', metavar='INT', type=int)
+    group_filter.add_argument('-s', '--step-size', default=4, help='Filter step size', metavar='INT', type=int)
+    group_filter.add_argument('--max-reads', default=0, help='Million reads to process per file', metavar='INT', type=int)
 
-    parser.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
+    group_refilter = parser.add_argument_group('arguments for futher filtering')
+    group_refilter.add_argument('--depth-low-water-mark', default=50, help='If depth is lower than this value, try to find more reads with relaxed criteria', metavar='INT', type=int)
+    group_refilter.add_argument('--depth-limit', default=768, help='Maximum depth processed during re-filtering', metavar='INT', type=int)
+    group_refilter.add_argument('--file-size-limit', default=6, help='Maximum file size during re-filtering', metavar='INT', type=int)
 
-    parser.add_argument('-ts', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
-    parser.add_argument('-tm', '--trim-mode', choices=('all', 'longest', 'terminal', 'isoform'), default='terminal', help='Trim mode (default = terminal)', type=str)
-    parser.add_argument('-tr', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
+    group_assembly = parser.add_argument_group('arguments for assembling')
+    group_assembly.add_argument('-ka', default=0, help='Assembly k-mer size (default = auto)', metavar='INT', type=int)
+    group_assembly.add_argument('--min-ka', default=21, help='Minimum auto-estimated assembly k-mer size', metavar='INT', type=int)
+    group_assembly.add_argument('--max-ka', default=51, help='Maximum auto-estimated assembly k-mer size', metavar='INT', type=int)
+    group_assembly.add_argument('-e', '--error-threshold', default=2, help='Error threshold', metavar='INT', type=int)
+    group_assembly.add_argument('-sb', '--soft-boundary', default='auto', help='Soft boundary (default = auto)', metavar='{INT,auto,unlimited}', type=str)
+    group_assembly.add_argument('-i', '--search-depth', default=4096, help='Search depth', metavar='INT', type=int)
+    group_assembly.add_argument('--min-coverage', default=0, help='Minimum read depth required for contig generation', metavar='INT', type=int)
 
-    parser.add_argument('-cs', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
-    parser.add_argument('-cd', '--clean-difference', default=1, help='Maximum acceptable pairwise difference in an alignment (default = 1.0)', metavar='FLOAT', type=float)
-    parser.add_argument('-cn', '--clean-sequences', default=0, help='Number of sequences required in an alignment (default = 0)', metavar='INT', type=int)
+    group_consensus = parser.add_argument_group('argument for consensus generation')
+    group_consensus.add_argument('-c', '--consensus-threshold', default='0.75', help='Consensus threshold (default = 0.75)', metavar='FLOAT', type=float)
 
-    parser.add_argument('-m', '--tree-method', choices=('coalescent', 'concatenation'), default='coalescent', help='Multi-gene tree reconstruction method (default = coalescent)')
-    parser.add_argument('-b', '--bootstrap', default=1000, help='Number of bootstrap replicates', metavar='INT', type=int)
+    group_trim = parser.add_argument_group('arguments for sequence trimming')
+    group_trim.add_argument('-ts', '--trim-source', choices=('assembly', 'consensus'), default=None, help='Whether to trim the primary assembly or the consensus sequence (default = output of last step, assembly if no other command given)')
+    group_trim.add_argument('-tm', '--trim-mode', choices=('all', 'longest', 'terminal', 'isoform'), default='terminal', help='Trim mode (default = terminal)', type=str)
+    group_trim.add_argument('-tr', '--trim-retention', default=0, help='Retention length threshold (default = 0.0)', metavar='FLOAT', type=float)
 
-    parser.add_argument('--max-reads', default=0, help='Maximum reads per file', metavar='INT', type=int)
-    parser.add_argument('--min-depth', default=50, help='Minimum acceptable depth during re-filtering', metavar='INT', type=int)
-    parser.add_argument('--max-depth', default=768, help='Maximum acceptable depth during re-filtering', metavar='INT', type=int)
-    parser.add_argument('--max-size', default=6, help='Maximum file size during re-filtering', metavar='INT', type=int)
-    parser.add_argument('--min-ka', default=21, help='Minimum auto-estimated assembly k-mer size', metavar='INT', type=int)
-    parser.add_argument('--max-ka', default=51, help='Maximum auto-estimated assembly k-mer size', metavar='INT', type=int)
-    parser.add_argument('--msa-program', choices=('clustalo', 'mafft', 'muscle'), default='mafft', help='Program for multiple sequence alignment', type=str)
-    parser.add_argument('--no-alignment', action='store_true', default=False, help='Do not perform multiple sequence alignment')
-    parser.add_argument('--no-trimal', action='store_true', default=False, help='Do not run trimAl on alignments')
-    parser.add_argument('--phylo-program', choices=('raxmlng', 'iqtree', 'fasttree', 'veryfasttree'), default='fasttree', help='Program for phylogenetic tree reconstruction', type=str)
+    group_combine = parser.add_argument_group('arguments for sequence alignment and clustering')
+    group_combine.add_argument('-cs', '--combine-source', choices=('assembly', 'consensus', 'trimmed'), default=None, help='Whether to combine the primary assembly, the consensus sequences or the trimmed sequences (default = output of last step, assembly if no other command given)')
+    group_combine.add_argument('-cd', '--clean-difference', default=1, help='Maximum acceptable pairwise difference in an alignment (default = 1.0)', metavar='FLOAT', type=float)
+    group_combine.add_argument('-cn', '--clean-sequences', default=0, help='Number of sequences required in an alignment (default = 0)', metavar='INT', type=int)
+    group_combine.add_argument('--msa-program', choices=('clustalo', 'mafft', 'muscle'), default='mafft', help='Program for multiple sequence alignment', type=str)
+    group_combine.add_argument('--no-alignment', action='store_true', default=False, help='Do not perform multiple sequence alignment')
+    group_combine.add_argument('--no-trimal', action='store_true', default=False, help='Do not run trimAl on alignments')
+
+    group_tree = parser.add_argument_group('argument for tree inference')
+    group_tree.add_argument('-m', '--tree-method', choices=('coalescent', 'concatenation'), default='coalescent', help='Multi-gene tree reconstruction method (default = coalescent)')
+    group_tree.add_argument('-b', '--bootstrap', default=1000, help='Number of bootstrap replicates', metavar='INT', type=int)
+    group_tree.add_argument('--phylo-program', choices=('raxmlng', 'iqtree', 'fasttree', 'veryfasttree'), default='fasttree', help='Program for phylogenetic tree reconstruction', type=str)
+
+    parser.add_argument('--min-depth', help=argparse.SUPPRESS)
+    parser.add_argument('--max-depth', help=argparse.SUPPRESS)
 
     args = parser.parse_args()
     args.command = args.command or ('filter', 'refilter', 'assemble', 'trim', 'combine', 'tree')
+
+    if args.min_depth is not None:
+        print('  Option --min-depth has been removed. Please use --depth-low-water-mark, --error-threshold or --min-coverage instead.')
+        print(DEPTH_DEPRECATION_EXPLAINER)
+        sys.exit(2)
+
+    if args.max_depth is not None:
+        print('  Option --max-depth has been removed. Please use --depth-limit instead.')
+        print(DEPTH_DEPRECATION_EXPLAINER)
+        sys.exit(2)
 
     samples = prepare_workdir(args)
 
     if samples:
         print(f'Running tasks: {", ".join(args.command)}')
         print()
-        execute_tasks(args, samples)
+        sys.exit(execute_tasks(args, samples))
     else:
         print('Sample list is empty or invalid, exiting')
+        sys.exit(2)

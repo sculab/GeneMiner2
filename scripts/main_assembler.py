@@ -347,7 +347,7 @@ def Process_Contigs(contigs, max_weight, slice_len, reads_dict, soft_boundary = 
     return processed_contigs
 
 
-def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, iteration = 1024, soft_boundary = 0):
+def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, cov_min = None, iteration = 1024, soft_boundary = 0):
     """
     获取最优的contig
     :param _reads_dict: reads的高质量切片的词典
@@ -378,11 +378,24 @@ def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, iteration = 10
             c_weight = l[1] + r[1]
             contig_len = len(c)
             r_count = 0
+            left_coord = contig_len
+            right_coord = 0
             for j in range(contig_len - slice_len):
                 if contig_len - slice_len - j >= 0:
                     slice_str = c[contig_len - slice_len - j:contig_len - j]
                     if slice_str in _reads_dict:
+                        if contig_len - slice_len - j < left_coord:
+                            left_coord = contig_len - slice_len - j
+                        if contig_len - j > right_coord:
+                            right_coord = contig_len - j
                         r_count += _reads_dict[slice_str]
+            cov_len = max(right_coord - left_coord, 0)
+            cov_dep = r_count * slice_len / 0.9
+            if cov_min > 0:
+                if cov_len == 0 or cov_dep / cov_len < cov_min:
+                    continue
+                if cov_dep / contig_len < cov_min:
+                    c = c[left_coord:right_coord]
             # 序列，序列的拼接权重，切片数
             processed_contigs.append([c, c_weight, r_count])
     return processed_contigs, kmer_set_1 | kmer_set_2, contig_pos
@@ -583,8 +596,8 @@ def process_key_value(args, key, ref_path, ref_count, iteration, soft_boundary, 
     contigs_best = []
 
     while len(seed_list) > seed_list_len * 0.5: # 已经耗费了大于一半的seed就没必要再做了 
-        # org_contigs: 0序列 1序列的拼接权重 2切片数 3配对的切片数
-        org_contigs, kmer_set, contig_pos = Get_Contig_v6(reads_dict, slice_len, filtered_dict, seed_list[0][0], current_ka, iteration=iteration, soft_boundary=soft_boundary)
+        # org_contigs: 0序列 1序列的拼接权重 2切片数
+        org_contigs, kmer_set, contig_pos = Get_Contig_v6(reads_dict, slice_len, filtered_dict, seed_list[0][0], current_ka, args.cov_min, iteration=iteration, soft_boundary=soft_boundary)
         seed_list = [item for item in seed_list if (item[0] not in kmer_set) and (Reverse_Int(item[0], current_ka) not in kmer_set)]
         for contig in org_contigs:
             if contig[2] * slice_len > len(contig[0]): # 起码要有reads高质量切片能够覆盖contig，否则就是错误的拼接
@@ -633,6 +646,7 @@ if __name__ == '__main__':
     pars.add_argument('-k_min', metavar='<int>', type=int, help='''max kmer of assemble''',  default=21)
     pars.add_argument('-limit_count', metavar='<int>', type=int, help='''limit of kmer count''', required=False, default=2)
     pars.add_argument('-iteration', metavar='<int>', type=int, help='''iteration''', required=False, default=8192)
+    pars.add_argument('-cov_min', metavar='<int>', type=int, help='''min coverage''', required=False, default=0)
     pars.add_argument('-sb', '--soft_boundary', metavar='<int>', type=int, help='''soft boundary，default = [0], -1时为切片长度的一半''', required=False, default=0)
     pars.add_argument('-p', '--processes', metavar='<int>', type=int, help='Number of processes for multiprocessing', default= 1)#max(multiprocessing.cpu_count()-1,2))
     args = pars.parse_args()
