@@ -2,7 +2,9 @@
 
 For most Linux users, downloading prebuilt binaries from Sourceforge is sufficient. Refer to [Usage](#usage) to see the documentation.
 
-## Building
+## Building from Source
+
+Building GeneMiner2 from source is not trivial. Most users can try the prebuilt `.tar.gz` package from Sourceforge. Generally, it is only necessary to build from source when incompatibility arises from the prebuilt package. The rest of this section is for advanced users. Please refer to [Usage](#usage) for command-line parameters.
 
 First, install the default C++ compiler and [zlib](https://zlib.net/) for the platform. On Ubuntu 20.04 and later, this can be done as follows:
 
@@ -58,10 +60,10 @@ Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunna
 
 The reference sequences has to be under a separate directory. For each gene, place all of its reference sequences in `<Gene Name>.fasta`. For example, to extract matK and psbA genes, create `matK.fasta` and `psbA.fasta` under an empty directory, and write reference sequences into the respective file.
 
-Next, assuming the sample list is saved to `/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv`, Angiosperm353 genes saved under `/home/user/Angiosperm353`, and the desired output location `/home/user/GeneMiner2/DEMO/DEMO3/output`, run GeneMiner2 with default settings:
+Next, assuming the sample list is saved to `/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv`, Angiosperms353 genes saved under `/home/user/Angiosperms353`, and the desired output location `/home/user/GeneMiner2/DEMO/DEMO3/output`, run GeneMiner2 with default settings:
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperms353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
 GeneMiner2 will build a coalescent tree at `/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`.

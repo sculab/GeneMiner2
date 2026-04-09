@@ -181,6 +181,21 @@ def build_kmer_dict(ref_set, kmer_size, trans=FWD_TRANS, rtrans=REV_TRANS):
 
     return kmer_dict
 
+def copy_reads(name, out_dir, read_info, file_type):
+    gm2_format  = os.path.splitext(read_info[0])[1] == '.gm2'
+    output_ext  = FILE_EXTENSION[file_type]
+    output_path = os.path.join(out_dir, name + output_ext)
+    format_func = FORMAT_FUNCTIONS[file_type]
+
+    with contextlib.ExitStack() as stack:
+        if gm2_format:
+            read_iters = [gm2_iterator(stack.enter_context(open(path, 'rb')), f'/{i}') for i, path in enumerate(read_info, start=1)]
+        else:
+            read_iters = [READ_ITERATORS[file_type](stack.enter_context(open(path, 'r'))) for path in read_info]
+
+        output_file = stack.enter_context(open(output_path, 'w'))
+        output_file.writelines(format_func(tp) for linked_reads in zip(*read_iters) for tp in linked_reads)
+
 def run_length_filter(name, out_dir, ref_set, ref_length, read_info, file_type, kmer_size, keep_temporaries):
     RUN_LEN_CONST = 0.5772156649 / math.log(2) - 1.5
     THR_P95_2T = 1.96
@@ -382,9 +397,15 @@ def filter_gene(task):
         print_log(task.log_path, f"File '{task.read_path[0]}' has invalid file type.")
         return
 
+    file_type = FILE_TYPES[file_ext]
+
+    if task.copy_only:
+        print_log(task.log_path, f'Writing reads for gene {task.name}.')
+        copy_reads(task.name, task.out_dir, task.read_path, file_type)
+        return
+
     print_log(task.log_path, f'Filtering gene {task.name}.')
 
-    file_type = FILE_TYPES[file_ext]
     ref_set, effective_len = load_reference(task.ref_path, task.kmer_size)
 
     if not effective_len:
@@ -408,8 +429,8 @@ def filter_gene(task):
         os.unlink(tmp_path)
 
 Task = collections.namedtuple('Task', ('name', 'out_dir', 'ref_path', 'read_path',
-                                       'log_path', 'min_depth', 'max_depth',
-                                       'max_size', 'keep_temporaries', 'kmer_size'))
+                                       'log_path', 'min_depth', 'max_depth', 'max_size',
+                                       'copy_only', 'keep_temporaries', 'kmer_size'))
 
 def run(args):
     tasks = []
@@ -421,7 +442,7 @@ def run(args):
 
         tasks.append(Task(name, out_dir, ref_path, read_dict[name], args.log_file,
                           args.min_depth, args.max_depth, args.max_size,
-                          args.keep_temporaries, args.kmer_size))
+                          args.copy_only, args.keep_temporaries, args.kmer_size))
 
     if args.processes > 1:
         with multiprocessing.Pool(args.processes) as pool:
@@ -456,6 +477,7 @@ if __name__ == '__main__':
     parser.add_argument('--min-depth', default=50, help='Min allowed coverage', type=int)
     parser.add_argument('--max-depth', default=768, help='Max allowed coverage', type=int)
     parser.add_argument('--max-size', default=6, help='Max allowed size in million bases', type=int)
+    parser.add_argument('--copy-only', action='store_true', help='Interleave paired reads without filtering')
     parser.add_argument('--keep-temporaries', action='store_true', help='Keep temporary files')
     parser.add_argument('--use-gm2-format', action='store_true', help='Read reads from compressed binary format')
     parser.add_argument('-kf', '--kmer-size', default=31, help='K-mer size', type=int)

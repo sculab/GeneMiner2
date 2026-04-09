@@ -347,7 +347,7 @@ def Process_Contigs(contigs, max_weight, slice_len, reads_dict, soft_boundary = 
     return processed_contigs
 
 
-def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, cov_min = None, iteration = 1024, soft_boundary = 0):
+def Get_Contig_v6(_reads_dict, slice_len, _dict, seed, kmer_size, cov_min, iteration = 1024, soft_boundary = 0):
     """
     获取最优的contig
     :param _reads_dict: reads的高质量切片的词典

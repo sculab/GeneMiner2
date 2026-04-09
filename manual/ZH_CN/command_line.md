@@ -2,7 +2,9 @@
 
 对于大多数Linux用户而言，可以直接下载Sourceforge上提供的二进制软件包。命令行版本的使用方法请参见[用法](#用法)。
 
-## 构建
+## 从源码构建
+
+注意，从头构建GeneMiner2较为复杂。一般用户可以先尝试使用Sourceforge上提供的`.tar.gz`压缩包。如果预编译包与系统环境存在不兼容，才有从源码构建GeneMiner2的必要。本节剩余内容提供给高级用户参考，GeneMiner2的使用方法请跳转到文档后半部分的[用法](#用法)章节。
 
 第一步，安装系统的默认C++编译器和[zlib](https://zlib.net/)。在Ubuntu 24.04 或更新版本上，可以运行下面的命令：
 
@@ -58,10 +60,10 @@ Bupleurum_yunnanense	/home/user/GeneMiner2/DEMO/DEMO3/DATA/PLANT/Bupleurum_yunna
 
 参考序列需要放在一个独立的文件夹下，每个基因可以有一条或多条参考序列。对于每个基因，将对应的所有参考序列存在`<基因名>.fasta`下。假设需要提取matK和psbA两个基因，则需要在一个空白文件夹下创建`matK.fasta`和`psaA.fasta`两个文件，分别保存对应的参考序列。
 
-假设样本列表保存在`/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv`，被子植物353参考基因保存在`/home/user/Angiosperm353`，期望的输出文件夹为`/home/user/GeneMiner2/DEMO/DEMO3/output`，用默认设置运行GeneMiner2的命令如下：
+假设样本列表保存在`/home/user/GeneMiner2/DEMO/DEMO3/samples.tsv`，被子植物353参考基因保存在`/home/user/Angiosperms353`，期望的输出文件夹为`/home/user/GeneMiner2/DEMO/DEMO3/output`，用默认设置运行GeneMiner2的命令如下：
 
 ```
-cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperm353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
+cli/geneminer2 -f /home/user/GeneMiner2/DEMO/DEMO3/samples.tsv -r /home/user/Angiosperms353 -o /home/user/GeneMiner2/DEMO/DEMO3/output
 ```
 
 执行这行命令后，GeneMiner2会构建一棵溯祖树，路径为`/home/user/GeneMiner2/DEMO/DEMO3/output/Coalescent.tree`。
