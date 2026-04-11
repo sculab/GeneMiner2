@@ -104,6 +104,7 @@ Public Class Main_Form
             SI_filter.Arguments += " --max-depth " + form_config_basic.NumericUpDown4.Value.ToString
             SI_filter.Arguments += " --max-size " + form_config_basic.NumericUpDown9.Value.ToString
             SI_filter.Arguments += " -p " + options(10)
+            SI_filter.Arguments += " --use-gm2-format"
         Else
             SI_filter.FileName = currentDirectory + "analysis\MainFilterNew.exe"
             SI_filter.WorkingDirectory = currentDirectory + "temp\"
@@ -114,7 +115,7 @@ Public Class Main_Form
             SI_filter.Arguments += " -kf " + options(0)
             SI_filter.Arguments += " -s " + form_config_basic.NumericUpDown2.Value.ToString
             SI_filter.Arguments += If(form_config_basic.CheckBox2.Checked, " -gr", "")
-            SI_filter.Arguments += If(options(7) = 1, " -m 1 -lb", " -subdir filtered_pe -m 4 -lb")
+            SI_filter.Arguments += If(options(7) = 1, " -m 1 -lb", " -subdir filtered_pe -m 5 -lb")
             SI_filter.Arguments += If(Len(options(6)) > 0, " -lkd " + """" + Path.GetFullPath(options(5) + "\" + options(6)) + """", "")
             SI_filter.Arguments += If(form_config_basic.CheckBox3.Checked, " -m_reads " + form_config_basic.NumericUpDown3.Value.ToString, "")
         End If
@@ -124,40 +125,20 @@ Public Class Main_Form
         process_filter.Close()
 
         If options(8) = 0 AndAlso MenuClicked = "filter" AndAlso Directory.Exists(options(5) + "\filtered_pe") Then
+            Dim SI_copy As New ProcessStartInfo()
             FileIO.FileSystem.CreateDirectory(options(5) + "\filtered")
-
-            Dim bufferSize = 1024 * 1024
-            Dim buffer = New Byte(bufferSize - 1) {}
-            Dim extName = If(options(2).EndsWith(".fasta"), ".fasta", ".fq")
-
-            For i As Integer = 1 To refsView.Count
-                If DataGridView1.Rows(i - 1).Cells(0).FormattedValue.ToString = "True" Then
-                    Dim name1 = options(5) + "\filtered_pe\" + refsView.Item(i - 1).Item(1).ToString + "_1" + extName
-                    Dim name2 = options(5) + "\filtered_pe\" + refsView.Item(i - 1).Item(1).ToString + "_2" + extName
-                    Dim target = New FileStream(options(5) + "\filtered\" + refsView.Item(i - 1).Item(1).ToString + extName, IO.FileMode.Create, FileAccess.Write)
-
-                    If File.Exists(name1) Then
-                        Dim s1 = New FileStream(name1, IO.FileMode.Open, FileAccess.Read, FileShare.Read)
-                        Dim readSize As Integer = s1.Read(buffer, 0, bufferSize)
-                        While readSize > 0
-                            target.Write(buffer, 0, readSize)
-                            readSize = s1.Read(buffer, 0, bufferSize)
-                        End While
-                        s1.Close()
-
-                        If File.Exists(name2) Then
-                            Dim s2 = New FileStream(name2, IO.FileMode.Open, FileAccess.Read, FileShare.Read)
-                            readSize = s2.Read(buffer, 0, bufferSize)
-                            While readSize > 0
-                                target.Write(buffer, 0, readSize)
-                                readSize = s2.Read(buffer, 0, bufferSize)
-                            End While
-                            s2.Close()
-                        End If
-                    End If
-                    target.Close()
-                End If
-            Next
+            SI_copy.FileName = currentDirectory + "analysis\main_refilter_new.exe"
+            SI_copy.WorkingDirectory = currentDirectory + "temp\"
+            SI_copy.CreateNoWindow = (options(9) = 1)
+            SI_copy.Arguments = "-r " + """" + options(4) + """"
+            SI_copy.Arguments += " -qd " + """" + options(5) + "\filtered_pe" + """"
+            SI_copy.Arguments += " -o " + """" + options(5) + "\filtered" + """"
+            SI_copy.Arguments += " --log-file " + """" + options(5) + "\log.txt" + """"
+            SI_copy.Arguments += " -p " + options(10)
+            SI_copy.Arguments += " --copy-only --use-gm2-format"
+            Dim process_copy As Process = Process.Start(SI_copy)
+            process_copy.WaitForExit()
+            process_copy.Close()
         End If
 
         If MenuClicked.StartsWith("batch_") Then
@@ -4148,12 +4129,16 @@ Public Class Main_Form
                                                                  Interlocked.Add(count, 1)
                                                                  PB_value = count / refsView.Count * 100
                                                                  Dim in_path_fq As String = Path.Combine(out_dir, "filtered", refsView.Item(i - 1).Item(1).ToString + ".fq")
+                                                                 Dim temp_out_dir = Path.Combine(out_dir, "best_refs")
+                                                                 If Directory.Exists(out_dir) = False Then
+                                                                     Directory.CreateDirectory(out_dir)
+                                                                 End If
                                                                  If File.Exists(in_path_fq) Then
                                                                      Dim random_folder As String = Path.Combine(currentDirectory, "temp", GenerateRandomString(8))
                                                                      Directory.CreateDirectory(random_folder)
                                                                      SplitFastaFile(Path.Combine(currentDirectory, "temp", "org_seq", refsView.Item(i - 1).Item(1).ToString + ".fasta"), random_folder)
                                                                      'options = (0:kf,1:kr,2:q1,3:q2,4:ref,5:out_dir,6:lkd,7:rl,8:refilter,9:no_window,10:thread,11,random_folder,ref_name )
-                                                                     Dim my_options() As String = {31, 31, in_path_fq, in_path_fq, random_folder, random_folder, "kmer_dict.dict", 0, "-1", "1", current_thread, random_folder, refsView.Item(i - 1).Item(1).ToString}
+                                                                     Dim my_options() As String = {31, 31, in_path_fq, in_path_fq, random_folder, random_folder, "kmer_dict.dict", 0, "-1", "1", current_thread, random_folder, refsView.Item(i - 1).Item(1).ToString, out_dir}
                                                                      find_best_ref(my_options)
                                                                  End If
                                                              End Sub)
@@ -4194,7 +4179,7 @@ Public Class Main_Form
                                                                  End Try
                                                              End Sub)
         PB_value = -1
-        MsgBox("Analysis completed! Please check multicopy folder in output.", MsgBoxStyle.Information, "Information")
+        MsgBox("Analysis completed! Please check best_refs folder in output.", MsgBoxStyle.Information, "Information")
     End Sub
 
     Public Sub find_best_ref(ByVal options() As String)

@@ -9,7 +9,7 @@
         form_main.下载叶绿体基因组ToolStripMenuItem.Text = "Plant Chloroplast Genome"
         form_main.下载植物线粒体ToolStripMenuItem.Text = "Plant Mitochondrial Genome"
         form_main.哺乳动物线粒体基因组ToolStripMenuItem.Text = "Animal Mitochondrial Genome"
-        form_main.下载ToolStripMenuItem.Text = "Angiosperm 353 Genes"
+        form_main.下载ToolStripMenuItem.Text = "Angiosperms353 Genes"
         form_main.导出ToolStripMenuItem.Text = "Export List"
         form_main.导出参考序列ToolStripMenuItem.Text = "Export References"
         form_main.导出测序文件ToolStripMenuItem.Text = "Export Sequencing Files"
@@ -146,6 +146,10 @@
         form_config_trim.Label3.Text = "Trim Method"
         form_config_trim.Button2.Text = "Cancel"
         form_config_trim.Button1.Text = "OK"
+
+        form_config_consensus.Text = "Consensus Sequence"
+        form_config_consensus.Label1.Text = "Consensus Threshold (%)"
+        form_config_consensus.Label2.Text = "Source Sequence"
 
         form_config_basic.Text = "Basic Option"
         form_config_basic.GroupBox2.Text = "Filter"
@@ -392,6 +396,10 @@
         form_config_trim.Label1.Text = "保留长度阈值(%)"
         form_config_trim.Button2.Text = "取消"
         form_config_trim.Button1.Text = "确定"
+
+        form_config_consensus.Text = "一致序列"
+        form_config_consensus.Label1.Text = "一致性阈值(%)"
+        form_config_consensus.Label2.Text = "来源序列"
 
         form_config_cp.Text = "下载数据"
         form_config_cp.Button5.Text = "<<"
