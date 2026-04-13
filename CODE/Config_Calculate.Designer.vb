@@ -36,6 +36,8 @@ Partial Class Config_Calculate
         Label4 = New Label()
         ComboBox_Seq = New ComboBox()
         TableLayoutPanel2 = New TableLayoutPanel()
+        TextBox_SearchDepth = New TextBox()
+        Label14 = New Label()
         Label12 = New Label()
         TextBox_Kf = New TextBox()
         Label5 = New Label()
@@ -55,8 +57,6 @@ Partial Class Config_Calculate
         Button_Calculate = New Button()
         Button_Apply = New Button()
         Button_Close = New Button()
-        Label14 = New Label()
-        TextBox_SearchDepth = New TextBox()
         TableLayoutPanel1.SuspendLayout()
         TableLayoutPanel2.SuspendLayout()
         GroupBox1.SuspendLayout()
@@ -247,6 +247,26 @@ Partial Class Config_Calculate
         TableLayoutPanel2.Size = New Size(364, 116)
         TableLayoutPanel2.TabIndex = 12
         ' 
+        ' TextBox_SearchDepth
+        ' 
+        TextBox_SearchDepth.Anchor = AnchorStyles.Left
+        TextBox_SearchDepth.Enabled = False
+        TextBox_SearchDepth.Location = New Point(222, 32)
+        TextBox_SearchDepth.Name = "TextBox_SearchDepth"
+        TextBox_SearchDepth.Size = New Size(65, 23)
+        TextBox_SearchDepth.TabIndex = 21
+        ' 
+        ' Label14
+        ' 
+        Label14.Anchor = AnchorStyles.Right
+        Label14.AutoSize = True
+        Label14.Location = New Point(160, 35)
+        Label14.Name = "Label14"
+        Label14.Size = New Size(56, 17)
+        Label14.TabIndex = 21
+        Label14.Text = "搜索深度"
+        Label14.TextAlign = ContentAlignment.MiddleCenter
+        ' 
         ' Label12
         ' 
         Label12.Anchor = AnchorStyles.Right
@@ -255,7 +275,7 @@ Partial Class Config_Calculate
         Label12.Name = "Label12"
         Label12.Size = New Size(80, 17)
         Label12.TabIndex = 23
-        Label12.Text = "清理差异阈值"
+        Label12.Text = "聚类差异限值"
         Label12.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' TextBox_Kf
@@ -433,26 +453,6 @@ Partial Class Config_Calculate
         Button_Close.TabIndex = 16
         Button_Close.Text = "关闭"
         Button_Close.UseVisualStyleBackColor = True
-        ' 
-        ' Label14
-        ' 
-        Label14.Anchor = AnchorStyles.Right
-        Label14.AutoSize = True
-        Label14.Location = New Point(160, 35)
-        Label14.Name = "Label14"
-        Label14.Size = New Size(56, 17)
-        Label14.TabIndex = 21
-        Label14.Text = "搜索深度"
-        Label14.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' TextBox_SearchDepth
-        ' 
-        TextBox_SearchDepth.Anchor = AnchorStyles.Left
-        TextBox_SearchDepth.Enabled = False
-        TextBox_SearchDepth.Location = New Point(222, 32)
-        TextBox_SearchDepth.Name = "TextBox_SearchDepth"
-        TextBox_SearchDepth.Size = New Size(65, 23)
-        TextBox_SearchDepth.TabIndex = 21
         ' 
         ' Config_Calculate
         ' 
