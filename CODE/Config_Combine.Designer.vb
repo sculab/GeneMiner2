@@ -83,7 +83,7 @@ Partial Class Config_Combine
         Label1.Name = "Label1"
         Label1.Size = New Size(80, 17)
         Label1.TabIndex = 4
-        Label1.Text = "最大差异大于"
+        Label1.Text = "聚类差异限值"
         ' 
         ' Label2
         ' 
@@ -92,7 +92,7 @@ Partial Class Config_Combine
         Label2.Name = "Label2"
         Label2.Size = New Size(80, 17)
         Label2.TabIndex = 6
-        Label2.Text = "序列数量小于"
+        Label2.Text = "最小样本数量"
         ' 
         ' NumericUpDown1
         ' 

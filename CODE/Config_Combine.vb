@@ -86,9 +86,9 @@ Public Class Config_Combine
 
     Private Sub CheckBox3_MouseHover(sender As Object, e As EventArgs) Handles CheckBox3.MouseHover
         If language = "EN" Then
-            TextBox1.Text = "Selecting this option enables automatic cleanup. The program calculates the difference of sequence overlaps and clusters sequences with a pairwise difference lower than the 'Maximum Difference' threshold. If a cluster is larger than or equal to the specified 'Number of sequences', the sequences are added to the alignment."
+            TextBox1.Text = "Selecting this option enables automatic cleanup. The program calculates the difference of sequence overlaps and clusters sequences using 'Cluster difference' as the criterion. If a cluster is larger than or equal to the specified 'Number of samples', the sequences are added to the alignment."
         Else
-            TextBox1.Text = "勾选表示执行自动清理。程序将计算序列重叠区域的差异率，然后对差异率不超过所设定的‘最大差异’的序列进行聚类。如果一组重叠序列的数量超过所设定的‘序列数量’，则将这组序列加入多序列比对中，否则删除。"
+            TextBox1.Text = "勾选表示执行自动清理。程序将计算序列重叠区域的差异率，然后根据所设定的‘差异限值’对序列进行聚类。如果一组重叠序列的数量超过所设定的‘样本数量’，则将这组序列加入多序列比对中，否则删除。"
         End If
     End Sub
 
