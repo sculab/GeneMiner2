@@ -400,14 +400,14 @@ public:
         }
 
         bool operator()(const ::String& lhs, const std::string& rhs) const {
-            return !lhs.isUTF16Encoded() && lhs.length == rhs.size() && memcmp(lhs.raw_ptr(), rhs.data(), rhs.size()) == 0;
+            return !lhs.isUTF16Encoded() && lhs.length == rhs.size() && std::memcmp(lhs.raw_ptr(), rhs.data(), rhs.size()) == 0;
         }
     };
 
     struct hx_hash final {
         uint64_t lu64(const char* data) const {
             uint64_t value;
-            memcpy(&value, data, 8);
+            std::memcpy(&value, data, 8);
             return value;
         }
 
@@ -447,7 +447,7 @@ public:
                 size  -= 16;
             }
 
-            if (size > 8) {
+            if (size >= 8) {
                 uint64_t word0   = lu64(data + index) ^ seed1;
                 uint64_t temp1   = seed2;
                 seed2 = ((word0  * 0xcc9e2d51) << 15) ^ seed6;
@@ -480,7 +480,7 @@ public:
 
     static inline ::String hx_new_string(std::string key) {
         char* s = hx::NewString(key.size());
-        ::memcpy(s, key.c_str(), key.size() * sizeof(char));
+        std::memcpy(s, key.c_str(), key.size() * sizeof(char));
         return ::String(s, key.size());
     }
 
