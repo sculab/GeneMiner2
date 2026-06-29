@@ -70,6 +70,35 @@ If the precompiled package fails to run, you can compile GeneMiner2 from scratch
 
 **[Building the command-line version from scratch](manual/EN_US/command_line.md)**
 
+
+
+
+### **Acknowledgement**:
+
+We sincerely thank **Fei Xia**  from UTokyo for forking and extending the Linux version of GeneMiner2. This fork preserves the  reference-guided marker recovery framework of GeneMiner2 while adding useful extensions for **UCE-oriented analyses**.
+
+
+For details, please refer to:
+
+https://github.com/GUIBA-EX/GeneMiner2
+
+
+**Main Features From Fei Xia**:
+
+1.UCE-oriented assembly mode through --assembly-mode uce, designed to retain longer read-supported flanking contigs.
+
+2.Optional one-round UCE raw-read rescue through --uce-rescue-reads.
+
+3.phyluce-compatible UCE contig export under uce_contigs/.
+
+4.HybPiper-style UCE statistics through the stats subcommand.
+
+5.Optional AliFilter alignment filtering through --alignment-filter alifilter.
+
+6.Controlled combine-stage parallelism through --msa-threads and --filter-processes.
+
+
+
 ---
 
 # Tutorials

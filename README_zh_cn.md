@@ -73,6 +73,30 @@ sudo apt-get install libbz2 libgomp1 zlib1g
 
 **[从头编译命令行版本](manual/ZH_CN/command_line.md)**
 
+
+### **致谢**
+
+我们诚挚感谢来自东京大学的**夏非**对 GeneMiner2 Linux 版本进行 fork 和扩展。该 fork 保留了 GeneMiner2 原有的参考引导组装方式，同时增加了面向 **UCE** 的实用扩展功能。
+
+详细内容请参考：
+
+https://github.com/GUIBA-EX/GeneMiner2
+
+**Fei Xia 贡献的主要功能：**
+
+1. 通过 `--assembly-mode uce` 提供面向 UCE 的组装模式，旨在保留更长、且具有 reads 支持的侧翼 contig。
+   
+2. 通过 `--uce-rescue-reads` 提供可选的一轮 UCE 原始 reads 补救/再捕获步骤。
+   
+3. 在 `uce_contigs/` 目录下导出与 phyluce 兼容的 UCE contig 文件。
+   
+4. 通过 `stats` 子命令提供类似 HybPiper 的 UCE 统计信息。
+   
+5. 通过 `--alignment-filter alifilter` 提供可选的 AliFilter 比对过滤功能。
+   
+6. 通过 `--msa-threads` 和 `--filter-processes` 控制合并阶段的并行度。
+
+
 ---
 
 # 示例演示
