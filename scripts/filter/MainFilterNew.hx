@@ -3,6 +3,7 @@ import haxe.Int64;
 import haxe.Rest;
 import haxe.ds.Vector;
 import haxe.io.Bytes;
+import haxe.io.BytesData;
 import haxe.io.Eof;
 import haxe.io.Input;
 import haxe.io.Path;
@@ -17,8 +18,10 @@ using StringTools;
 #if cpp
 import cpp.UInt32;
 import cpp.VarArg;
+import cpp.SizeT;
 #else
 typedef UInt32 = Int;
+typedef SizeT = Int;
 #end
 
 typedef Arguments = {
@@ -76,11 +79,25 @@ extern class NativeFileOutputBuffer {
 }
 
 @:include('../../bindings.h')
+@:native('::HxBufferView')
+@:struct
+extern class HxBufferView {
+    public function new(data: BytesData, pos: Int, len: Int);
+}
+
+@:include('../../bindings.h')
+@:native('::HxStringHasher')
+extern class HxStringHasher {
+    public static function hash(value: HxBufferView): SizeT;
+}
+
+@:include('../../bindings.h')
 @:native('::UnorderedMapPointer')
 extern class UnorderedMapPointer<K, V> {
     public function destroy(): Void;
+    public function clear(): Void;
     public function foreach(fn: Dynamic, extras: cpp.Rest<VarArg>): Void;
-    public function get(key: K, def: V): V;
+    public function get(key: K, def: V, extras: cpp.Rest<VarArg>): V;
     public function reserve(count: Int): Void;
     public function set(key: K, value: V): Void;
 }
@@ -88,22 +105,6 @@ extern class UnorderedMapPointer<K, V> {
 @:include('../../bindings.h')
 @:native('::UnorderedMapReference')
 extern class UnorderedMapReference<K, V> extends UnorderedMapPointer<K, V> {
-    public function new(create: Bool);
-}
-
-@:include('../../bindings.h')
-@:native('::UnorderedSetPointer')
-extern class UnorderedSetPointer<T> {
-    public function destroy(): Void;
-    public function clear(): Void;
-    public function empty(): Bool;
-    public function foreach(fn: Dynamic, extras: cpp.Rest<VarArg>): Void;
-    public function insert(value: T): Void;
-}
-
-@:include('../../bindings.h')
-@:native('::UnorderedSetReference')
-extern class UnorderedSetReference<T> extends UnorderedSetPointer<T> {
     public function new(create: Bool);
 }
 
@@ -151,28 +152,6 @@ class UnorderedMap<K, V> {
     }
 
     public function finalize() pointer.destroy();
-    public inline function foreach(fn: K -> V -> Void) pointer.foreach(fn);
-    public inline function get(key: K, def: V) return pointer.get(key, def);
-    public inline function reference() return pointer;
-    public inline function reserve(count: Int) pointer.reserve(count);
-    public inline function set(key: K, value: V) return pointer.set(key, value);
-}
-
-@:generic
-@:remove
-class UnorderedSet<T> {
-    var pointer: UnorderedSetReference<T>;
-
-    public function new() {
-       pointer = new UnorderedSetReference<T>(true);
-       cpp.NativeGc.addFinalizable(this, false);
-    }
-
-    public function finalize() pointer.destroy();
-    public inline function clear() pointer.clear();
-    public inline function empty() return pointer.empty();
-    public inline function foreach(fn: T -> Void) pointer.foreach(fn);
-    public inline function insert(value: T) return pointer.insert(value);
     public inline function reference() return pointer;
 }
 
@@ -220,6 +199,17 @@ class FileOutputBuffer {
     public function getTotalSize() return totalRecordSize;
 }
 
+@:forward
+abstract HxBufferView(String) {
+    public function new(data: BytesData, pos: Int, len: Int) {
+        this = FastaHelper.fromBytes(data, pos, len);
+    }
+}
+
+class HxStringHasher {
+    public static function hash(value: HxBufferView) return 0;
+}
+
 @:forward.new
 abstract UnorderedMap<K, V>(Map<K, V>) {
     public inline function foreach(fn: Dynamic, extras: Rest<Any>) {
@@ -228,28 +218,14 @@ abstract UnorderedMap<K, V>(Map<K, V>) {
         }
     }
 
-    public inline function get(key: K, def: V) return this.get(key) ?? def;
+    public inline function clear() this.clear();
+    public inline function get(key: K, def: V, extras: Rest<Any>) return this.get(key) ?? def;
     public inline function reference() return abstract;
     public inline function reserve(count: Int) {}
     public inline function set(key: K, value: V) this.set(key, value);
 }
 
-@:forward.new
-abstract UnorderedSet<T>(Map<T, Bool>) {
-    public inline function foreach(fn: Dynamic, extras: Rest<Any>) {
-        for (k in this.keys()) {
-            Reflect.callMethod(null, fn.bind(k), extras.toArray());
-        }
-    }
-
-    public inline function clear() this.clear();
-    public inline function empty() return Lambda.count(cast this) == 0;
-    public inline function insert(value: T) this.set(value, true);
-    public inline function reference() return abstract;
-}
-
 typedef UnorderedMapPointer<K, V> = UnorderedMap<K, V>;
-typedef UnorderedSetPointer<T> = UnorderedSet<T>;
 
 #end
 
@@ -536,6 +512,18 @@ class FastaHelper {
         return len;
     }
 
+    public static inline function loadShortKmer(seq: Bytes, offset: Int, len: Int): Int64 {
+        var value: Int64 = 0;
+
+        for (i in 0...len) {
+            var shift: Int = 2 * (31 - i);
+            var n: Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + i));
+            value |= (n << shift);
+        }
+
+        return value;
+    }
+
     public static function makeRevComp(dest: Bytes, src: Bytes, seqEnd: Int) {
 #if debug
         if (src.length < seqEnd) throw new ArgumentError('Slice length $seqEnd is out of bounds for a buffer of length ${src.length}');
@@ -583,42 +571,6 @@ class FastaHelper {
     }
 }
 
-abstract ShortKmer(Int64) {
-    public inline function new(value: Int64) {
-        this = value;
-    }
-
-    public static inline function fromBytes(seq: Bytes, offset: Int, len: Int) {
-        var value: Int64 = 0;
-
-        for (i in 0...len) {
-            var shift: Int = 2 * (31 - i);
-            var n: Int64 = FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + i));
-            value |= (n << shift);
-        }
-
-        return new ShortKmer(value);
-    }
-
-    public inline function toInt64(): Int64 return this;
-}
-
-abstract LongKmer(String) {
-    public inline function new(kmer: String) {
-#if debug
-        if (kmer.length <= 32) throw new ArgumentError('Invalid long k-mer size ${kmer.length}');
-        if (kmer.toUpperCase() != kmer) throw new EncodingError('Non-normalized long k-mer string');
-#end
-        this = kmer;
-    }
-
-    public static inline function fromBytes(seq: Bytes, offset: Int, len: Int) {
-        return new LongKmer(FastaHelper.fromBytes(seq, offset, len));
-    }
-
-    public inline function toString() return this;
-}
-
 @:unreflective
 class KmerMap {
     public static inline var minMaxPatternSize = 12;
@@ -637,10 +589,13 @@ class KmerMap {
     var minMaxMap: UInt16Array;
 
     var shortKmerMap: UnorderedMap<Int64, Int>;
-    var longKmerMap: UnorderedMap<String, Int>;
+    var longKmerMap: UnorderedMap<HxBufferView, Int>;
 
     var skipLength: Int;
     var expectedSkipLength: Float;
+
+    var generation: UInt32 = 0;
+    var seenAndHits: Array<UInt32>;
 
     private inline function new(kmer, refNum) {
         kmerLength = kmer;
@@ -651,7 +606,7 @@ class KmerMap {
         cuckooSetList = [];
 
         if (useLongKmer) {
-            longKmerMap = new UnorderedMap<String, Int>();
+            longKmerMap = new UnorderedMap<HxBufferView, Int>();
         }
         else {
             shortKmerMap = new UnorderedMap<Int64, Int>();
@@ -667,16 +622,17 @@ class KmerMap {
         }
 
         var failure = 0;
-        var pos     = shortKmerMap.get(kmer, -1);
+        var map     = shortKmerMap.reference();
+        var pos     = map.get(kmer, -1);
 
         if (pos == -1) {
-            shortKmerMap.set(kmer, index);
+            map.set(kmer, index);
         }
         else if (pos < referenceCount) {
             var cs = new CuckooSet();
             failure += cs.set(pos + 2);
             failure += cs.set(index + 2);
-            shortKmerMap.set(kmer, cuckooSetList.length);
+            map.set(kmer, cuckooSetList.length);
             cuckooSetList.push(cs);
         }
         else {
@@ -689,25 +645,22 @@ class KmerMap {
     }
 
     private inline function addLongKmer(index, kmer) {
-#if debug
-        if (kmer.length != kmerLength) throw new ArgumentError('Mismatched k-mer length ${kmer.length}');
-#end
-
         if (cuckooSetList.length > 2147483645) {
             throw new ArgumentError('Overflow in k-mer list');
         }
 
         var failure = 0;
-        var pos     = longKmerMap.get(kmer, -1);
+        var map     = longKmerMap.reference();
+        var pos     = map.get(kmer, -1);
 
         if (pos == -1) {
-            longKmerMap.set(kmer, index);
+            map.set(kmer, index);
         }
         else if (pos < referenceCount) {
             var cs = new CuckooSet();
             failure += cs.set(pos + 2);
             failure += cs.set(index + 2);
-            longKmerMap.set(kmer, cuckooSetList.length);
+            map.set(kmer, cuckooSetList.length);
             cuckooSetList.push(cs);
         }
         else {
@@ -719,7 +672,7 @@ class KmerMap {
         return failure;
     }
 
-    public static function fromReference(kmer, refPathList: Array<String>, getReverse = false) {
+    public static function fromReference(kmer, refPathList: Array<String>) {
         var refCount = refPathList.length;
         var object = new KmerMap(kmer, refCount);
 
@@ -737,16 +690,8 @@ class KmerMap {
         }
 
         var seqBuffer = Bytes.alloc(initialBufferSize);
-        var revBuffer = null;
-        var shortKmerSet: UnorderedSet<Int64> = null;
-        var longKmerSet: Map<String, Bool> = null;
-
-        if (object.useLongKmer) {
-            longKmerSet = new Map<String, Bool>();
-        }
-        else {
-            shortKmerSet = new UnorderedSet<Int64>();
-        }
+        var revBuffer = Bytes.alloc(initialBufferSize);
+        var shortKmerSet = object.useLongKmer ? null : new UnorderedMap<Int64, Bool>();
 
         var failureCount = 0;
         var kmerCount = 0;
@@ -754,11 +699,8 @@ class KmerMap {
         for (i => path in refPathList) {
             // writeLog('Reading k-mers from ${Path.withoutDirectory(path)}');
 
-            if (object.useLongKmer) {
-                longKmerSet.clear();
-            }
-            else {
-                shortKmerSet.clear();
+            if (!object.useLongKmer) {
+                shortKmerSet.reference().clear();
             }
 
             var inFile = new SeqFileInput(path, FileType.Fasta);
@@ -782,6 +724,7 @@ class KmerMap {
                     }
 
                     seqBuffer = Bytes.alloc(rawSeqLen);
+                    revBuffer = Bytes.alloc(rawSeqLen);
                 }
 
                 var seqEnd = FastaHelper.convertToDna(seqBuffer, record[1]);
@@ -790,43 +733,36 @@ class KmerMap {
                     continue;
                 }
 
+                FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
                 object.updateMinMaxMap(seqBuffer, seqEnd);
 
                 for (j in 0...(seqEnd - object.kmerLength + 1)) {
                     if (object.useLongKmer) {
-                        longKmerSet[LongKmer.fromBytes(seqBuffer, j, object.kmerLength).toString()] = true;
+                        var k1 = new HxBufferView(seqBuffer.getData(), j, object.kmerLength);
+                        var k2 = new HxBufferView(revBuffer.getData(), seqEnd - object.kmerLength - j, object.kmerLength);
+                        var h1 = HxStringHasher.hash(k1);
+                        var h2 = HxStringHasher.hash(k2);
+
+                        if (h1 <= h2) {
+                            failureCount += object.addLongKmer(i, k1);
+                            kmerCount++;
+                        }
+
+                        if (h1 >= h2) {
+                            failureCount += object.addLongKmer(i, k2);
+                            kmerCount++;
+                        }
                     }
                     else {
-                        shortKmerSet.insert(ShortKmer.fromBytes(seqBuffer, j, object.kmerLength).toInt64());
-                    }
-                }
-
-                if (getReverse) {
-                    if (revBuffer == null || revBuffer.length < seqEnd) {
-                        revBuffer = Bytes.alloc(seqEnd);
-                    }
-
-                    FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
-
-                    for (j in 0...(seqEnd - object.kmerLength + 1)) {
-                        if (object.useLongKmer) {
-                            longKmerSet[LongKmer.fromBytes(revBuffer, j, object.kmerLength).toString()] = true;
-                        }
-                        else {
-                            shortKmerSet.insert(ShortKmer.fromBytes(revBuffer, j, object.kmerLength).toInt64());
-                        }
+                        var k1 = FastaHelper.loadShortKmer(seqBuffer, j, object.kmerLength);
+                        var k2 = FastaHelper.loadShortKmer(revBuffer, seqEnd - object.kmerLength - j, object.kmerLength);
+                        shortKmerSet.reference().set(k1 < k2 ? k1 : k2, true);
                     }
                 }
             }
 
-            if (object.useLongKmer) {
-                for (kmer in longKmerSet.keys()) {
-                    failureCount += object.addLongKmer(i, kmer);
-                    kmerCount++;
-                }
-            }
-            else {
-                shortKmerSet.foreach(function(kmer) {
+            if (!object.useLongKmer) {
+                shortKmerSet.reference().foreach(function(kmer, _) {
                     failureCount += object.addShortKmer(i, kmer);
                     kmerCount++;
                 });
@@ -892,10 +828,10 @@ class KmerMap {
         object.minMaxMap = UInt16Array.fromBytes(minMaxMapBuf, 0, minMaxMapSize);
 
         if (object.useLongKmer) {
-            object.longKmerMap.reserve(Std.int(cuckooSetCount / 0.75));
+            object.longKmerMap.reference().reserve(Std.int(cuckooSetCount / 0.75));
         }
         else {
-            object.shortKmerMap.reserve(Std.int(cuckooSetCount / 0.75));
+            object.shortKmerMap.reference().reserve(Std.int(cuckooSetCount / 0.75));
         }
 
         final kmerHeaderSize = object.kmerStorageSize + 4;
@@ -938,7 +874,7 @@ class KmerMap {
                 var csLen = itemSize - kmerHeaderSize;
                 var isSingleton = csLen == 8;
                 var singletonElement = buf.getInt64(i + kmerHeaderSize);
-                var index = isSingleton ? singletons.get(singletonElement, -1) : -1;
+                var index = isSingleton ? singletons.reference().get(singletonElement, -1) : -1;
 
                 if (index < 0) {
                     if (insertionIndex >= cuckooSetCount || insertionIndex > 2147483645) {
@@ -950,17 +886,17 @@ class KmerMap {
                     insertionIndex++;
 
                     if (isSingleton) {
-                        singletons.set(singletonElement, index);
+                        singletons.reference().set(singletonElement, index);
                     }
                 }
 
                 if (object.useLongKmer) {
-                    var lk = FastaHelper.fromBytes(buf, i + 4, object.kmerStorageSize);
-                    object.longKmerMap.set(lk, index);
+                    var lk = new HxBufferView(buf.getData(), i + 4, object.kmerStorageSize);
+                    object.longKmerMap.reference().set(lk, index);
                 }
                 else {
                     var sk = buf.getInt64(i + 4);
-                    object.shortKmerMap.set(sk, index);
+                    object.shortKmerMap.reference().set(sk, index);
                 }
 
                 count++;
@@ -1074,43 +1010,39 @@ class KmerMap {
         expectedSkipLength = sum;
     }
 
-    private static function setMatches(list: Array<CuckooSet>, pos: Int, match: UnorderedSetPointer<Int>) {
+    private function setMatches(list: Array<CuckooSet>, pos: Int) {
 #if cpp
         var cs: Vector<Int64> = untyped __cpp__("{0}.StaticCast<::Array<::cpp::Int64>>()", cpp.NativeArray.unsafeGet(list, pos));
 #else
         var cs = list[pos].toVector();
 #end
 
-        CuckooSet.foreach(cs, match.insert);
+        CuckooSet.foreach(cs, this.markHit);
     }
 
-    private inline function markHitsShort(map: UnorderedMapPointer<Int64, Int>, match: UnorderedSetPointer<Int>, kmer: ShortKmer) {
-        var pos = map.get(kmer.toInt64(), -1);
+    private inline function markHitsShort(map: UnorderedMapPointer<Int64, Int>, kmer: Int64) {
+        var pos = map.get(kmer, -1);
 
         if (pos != -1) {
-            setMatches(cuckooSetList, pos, match);
+            setMatches(cuckooSetList, pos);
             return true;
         }
 
         return false;
     }
 
-    private inline function markHitsLong(map: UnorderedMapPointer<String, Int>, match: UnorderedSetPointer<Int>, kmer: LongKmer) {
-#if debug
-        if (kmer.toString().length != kmerLength) throw new ArgumentError('Mismatched k-mer length ${kmer.toString().length}');
-#end
-
-        var pos = map.get(kmer.toString(), -1);
+    private inline function markHitsLong(map: UnorderedMapPointer<HxBufferView, Int>, kmer: HxBufferView, hash: SizeT) {
+        var pos = map.get(kmer, -1, hash);
 
         if (pos != -1) {
-            setMatches(cuckooSetList, pos, match);
+            setMatches(cuckooSetList, pos);
             return true;
         }
 
         return false;
     }
 
-    public function markHits(match: UnorderedSetPointer<Int>, seq: Bytes, rev: Bytes, seqEnd: Int, step: Int) {
+    public function markHits(seq: Bytes, rev: Bytes, seqEnd: Int, step: Int) {
 #if debug
         if (seqEnd < kmerLength) throw new ArgumentError('Read is too short ($seqEnd bp)');
 #end
@@ -1150,21 +1082,24 @@ class KmerMap {
             var hit = false;
 
             if (useLongKmer) {
-                hit = markHitsLong(longMap, match, LongKmer.fromBytes(seq, offset, kmerLength));
+                var k1 = new HxBufferView(seq.getData(), offset, kmerLength);
+                var k2 = new HxBufferView(rev.getData(), seqEnd - offset - kmerLength, kmerLength);
+                var h1 = HxStringHasher.hash(k1);
+                var h2 = HxStringHasher.hash(k2);
+
+                if (h1 <= h2) {
+                    hit = markHitsLong(longMap, k1, h1);
+                }
+
+                if (h1 >= h2) {
+                    hit = markHitsLong(longMap, k2, h2) || hit;
+                }
             }
             else {
-                hit = markHitsShort(shortMap, match, ShortKmer.fromBytes(seq, offset, kmerLength));
-            }
+                var k1 = FastaHelper.loadShortKmer(seq, offset, kmerLength);
+                var k2 = FastaHelper.loadShortKmer(rev, seqEnd - offset - kmerLength, kmerLength);
 
-            if (rev != null) {
-                var revOffset = seqEnd - offset - kmerLength;
-
-                if (useLongKmer) {
-                    hit = markHitsLong(longMap, match, LongKmer.fromBytes(rev, revOffset, kmerLength)) || hit;
-                }
-                else {
-                    hit = markHitsShort(shortMap, match, ShortKmer.fromBytes(rev, revOffset, kmerLength)) || hit;
-                }
+                hit = markHitsShort(shortMap, k1 < k2 ? k1 : k2);
             }
 
             checkPattern = usePatterns && !hit;
@@ -1173,26 +1108,29 @@ class KmerMap {
 
         if (offset - step < tailOffset) {
             if (useLongKmer) {
-                markHitsLong(longMap, match, LongKmer.fromBytes(seq, tailOffset, kmerLength));
+                var k1 = new HxBufferView(seq.getData(), tailOffset, kmerLength);
+                var k2 = new HxBufferView(rev.getData(), seqEnd - tailOffset - kmerLength, kmerLength);
+                var h1 = HxStringHasher.hash(k1);
+                var h2 = HxStringHasher.hash(k2);
+
+                if (h1 <= h2) {
+                    markHitsLong(longMap, k1, h1);
+                }
+
+                if (h1 >= h2) {
+                    markHitsLong(longMap, k2, h2);
+                }
             }
             else {
-                markHitsShort(shortMap, match, ShortKmer.fromBytes(seq, tailOffset, kmerLength));
-            }
+                var k1 = FastaHelper.loadShortKmer(seq, tailOffset, kmerLength);
+                var k2 = FastaHelper.loadShortKmer(rev, seqEnd - tailOffset - kmerLength, kmerLength);
 
-            if (rev != null) {
-                var revOffset = seqEnd - tailOffset - kmerLength;
-
-                if (useLongKmer) {
-                    markHitsLong(longMap, match, LongKmer.fromBytes(rev, revOffset, kmerLength));
-                }
-                else {
-                    markHitsShort(shortMap, match, ShortKmer.fromBytes(rev, revOffset, kmerLength));
-                }
+                markHitsShort(shortMap, k1 < k2 ? k1 : k2);
             }
         }
     }
 
-    public function markHitsFast(match: UnorderedSetPointer<Int>, seq: Bytes, seqEnd: Int, step: Int, getReverse: Bool) {
+    public function markHitsFast(seq: Bytes, seqEnd: Int, step: Int) {
 #if debug
         if (useLongKmer || step >= kmerLength) throw new ArgumentError('KmerMap.markHitsFast supports short k-mers only');
         if (seqEnd < kmerLength) throw new ArgumentError('Read is too short ($seqEnd bp)');
@@ -1258,12 +1196,7 @@ class KmerMap {
                 }
             }
 
-            var hit = markHitsShort(map, match, new ShortKmer(sk));
-
-            if (getReverse) {
-                hit = markHitsShort(map, match, new ShortKmer(skr)) || hit;
-            }
-
+            var hit = markHitsShort(map, sk < skr ? sk : skr);
             checkPattern = usePatterns && !hit;
             actualStep = step;
             offset += step;
@@ -1286,11 +1219,37 @@ class KmerMap {
                 actualStep--;
             } while (actualStep > 0);
 
-            markHitsShort(map, match, new ShortKmer(sk));
+            markHitsShort(map, sk < skr ? sk : skr);
+        }
+    }
 
-            if (getReverse) {
-                markHitsShort(map, match, new ShortKmer(skr));
-            }
+    public inline function beginReadMarking(readIndex: UInt32) {
+        generation = readIndex;
+
+        if (seenAndHits == null) {
+            seenAndHits = [for (_ in 0...referenceCount) 0];
+        }
+        else {
+            seenAndHits.resize(referenceCount);
+        }
+    }
+
+    private inline function markHit(match) {
+        match -= 2;
+
+        if (seenAndHits[match] != generation) {
+            seenAndHits[match] = generation;
+            seenAndHits.push(match);
+        }
+    }
+
+    public inline function hasHits() {
+        return seenAndHits.length > referenceCount;
+    }
+
+    public inline function iterateHits(matchCallback, record1, record2) {
+        for (i in referenceCount...seenAndHits.length) {
+            matchCallback(seenAndHits[i], record1, record2);
         }
     }
 
@@ -1314,7 +1273,7 @@ class KmerMap {
         var i = 0;
 
         if (useLongKmer) {
-            longKmerMap.foreach(function(kmer, pos) {
+            longKmerMap.reference().foreach(function(kmer, pos) {
                 var kmerBytes = Bytes.ofString(kmer);
                 var cuckooSet = cuckooSetList[pos];
                 var itemSize = 4 + kmerBytes.length + cuckooSet.getStorageSize();
@@ -1336,7 +1295,7 @@ class KmerMap {
             });
         }
         else {
-            shortKmerMap.foreach(function(kmer, pos) {
+            shortKmerMap.reference().foreach(function(kmer, pos) {
                 var cuckooSet = cuckooSetList[pos];
                 var itemSize = 12 + cuckooSet.getStorageSize();
 
@@ -1804,7 +1763,7 @@ class MainFilterNew {
             kmerDict.checkPatternUsage();
         }
 
-        filterReads(command.fastq1, command.fastq2, !command.getReverse);
+        filterReads(command.fastq1, command.fastq2);
 
         outputBuffer.flush();
 
@@ -1921,7 +1880,7 @@ class MainFilterNew {
     }
 
     function makeKmerDict(refPathList: Array<String>) {
-        var loader = KmerMap.fromReference(command.kmer, refPathList, command.getReverse);
+        var loader = KmerMap.fromReference(command.kmer, refPathList);
 
         var failureCount = loader.failure;
 
@@ -1949,51 +1908,46 @@ class MainFilterNew {
         return loader.count;
     }
 
-    function filterReads(fastq1: Array<String>, fastq2: Array<String>, getReverse: Bool) {
+    function filterReads(fastq1: Array<String>, fastq2: Array<String>) {
         var mode = command.mode;
         var kmerSize = command.kmer;
         var stepSize = command.step;
         var useFastIteration = stepSize < kmerSize && !kmerDict.useLongKmer;
 
-        var matchCallback: Int -> Bool -> Array<String> -> Array<String> -> Void;
+        var matchCallback: Int -> Array<String> -> Array<String> -> Void;
 
         if (mode == 0 || mode == 4 || mode == 5) {
-            matchCallback = function(key: Int, hasRecord2: Bool, record1: Array<String>, record2: Array<String>) {
-                var trueKey = key - 2;
+            matchCallback = function(key: Int, record1: Array<String>, record2: Array<String>) {
+                outputBuffer.writeRecord(key, record1, false);
+                refHitsList[key]++;
 
-                outputBuffer.writeRecord(trueKey, record1, false);
-                refHitsList[trueKey]++;
-
-                if (hasRecord2) {
-                    outputBuffer.writeRecord(trueKey, record2, true);
-                    refHitsList[trueKey]++;
+                if (record2 != null) {
+                    outputBuffer.writeRecord(key, record2, true);
+                    refHitsList[key]++;
                 }
             };
         }
         else {
-            matchCallback = function(key: Int, hasRecord2: Bool, record1: Array<String>, record2: Array<String>) {
-                refHitsList[key - 2] += hasRecord2 ? 2 : 1;
+            matchCallback = function(key: Int, record1: Array<String>, record2: Array<String>) {
+                refHitsList[key] += record2 != null ? 2 : 1;
             };
         }
 
-        var matchSet = new UnorderedSet<Int>();
         var seqBuffer = Bytes.alloc(initialBufferSize);
-        var revBuffer = null;
+        var revBuffer = useFastIteration ? null : Bytes.alloc(initialBufferSize);
 
         for (i => file1 in fastq1) {
             var file2 = fastq2[i];
 
+            var readCount: UInt32 = 0;
             var t0 = Sys.time();
 
-            var readCount = 0;
             var pairedReads = file1 != file2 && file2 != null;
             var isFasta = judgeType(file1) == FileType.Fasta;
             var recordLen = isFasta ? 2 : 4;
 
             var input1 = new SeqFileInput(file1, judgeType(file1));
             var input2 = pairedReads ? new SeqFileInput(file2, judgeType(file2)) : null;
-
-            var match: UnorderedSetPointer<Int> = matchSet.reference();
 
             while (!input1.eof()) {
                 var record1 = input1.readSequence();
@@ -2003,8 +1957,16 @@ class MainFilterNew {
                     continue;
                 }
 
-                var hasRecord2 = record2 != null && record2.length >= recordLen;
-                var maxRawSeqLen = (hasRecord2 && record2[1].length > record1[1].length) ? record2[1].length : record1[1].length;
+                var maxRawSeqLen = record1[1].length;
+
+                if (record2 != null) {
+                    if (record2[1].length > maxRawSeqLen) {
+                        maxRawSeqLen = record2[1].length;
+                    }
+                    else if (record2.length < recordLen) {
+                        record2 = null;
+                    }
+                }
 
                 if (seqBuffer.length < maxRawSeqLen) {
                     if (maxRawSeqLen > maxBufferSize) {
@@ -2012,61 +1974,51 @@ class MainFilterNew {
                     }
 
                     seqBuffer = Bytes.alloc(maxRawSeqLen);
+
+                    if (useFastIteration) {
+                        revBuffer = Bytes.alloc(maxRawSeqLen);
+                    }
                 }
 
-                match.clear();
                 readCount++;
+                kmerDict.beginReadMarking(readCount);
 
                 var seqEnd = FastaHelper.convertToDna(seqBuffer, record1[1]);
 
                 if (seqEnd >= kmerSize) {
                     if (useFastIteration) {
-                        kmerDict.markHitsFast(match, seqBuffer, seqEnd, stepSize, getReverse);
+                        kmerDict.markHitsFast(seqBuffer, seqEnd, stepSize);
                     }
                     else {
-                        if (getReverse) {
-                            if (revBuffer == null || revBuffer.length < seqEnd) {
-                                revBuffer = Bytes.alloc(seqEnd);
-                            }
-
-                            FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
-                        }
-
-                        kmerDict.markHits(match, seqBuffer, revBuffer, seqEnd, stepSize);
+                        FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
+                        kmerDict.markHits(seqBuffer, revBuffer, seqEnd, stepSize);
                     }
                 }
 
-                if (hasRecord2) {
+                if (record2 != null) {
                     seqEnd = FastaHelper.convertToDna(seqBuffer, record2[1]);
 
                     if (seqEnd >= kmerSize) {
                         if (useFastIteration) {
-                            kmerDict.markHitsFast(match, seqBuffer, seqEnd, stepSize, getReverse);
+                            kmerDict.markHitsFast(seqBuffer, seqEnd, stepSize);
                         }
                         else {
-                            if (getReverse) {
-                                if (revBuffer == null || revBuffer.length < seqEnd) {
-                                    revBuffer = Bytes.alloc(seqEnd);
-                                }
-
-                                FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
-                            }
-
-                            kmerDict.markHits(match, seqBuffer, revBuffer, seqEnd, stepSize);
+                            FastaHelper.makeRevComp(revBuffer, seqBuffer, seqEnd);
+                            kmerDict.markHits(seqBuffer, revBuffer, seqEnd, stepSize);
                         }
                     }
                 }
 
-                if (!match.empty()) {
+                if (kmerDict.hasHits()) {
                     if (mode == 1) {
                         outputBuffer.writeRecord(0, record1, false);
 
-                        if (hasRecord2) {
+                        if (record2 != null) {
                             outputBuffer.writeRecord(1, record2, true);
                         }
                     }
 
-                    match.foreach(matchCallback, hasRecord2, record1, record2);
+                    kmerDict.iterateHits(matchCallback, record1, record2);
                 }
 
                 if (readCount & 1048575 == 0) {

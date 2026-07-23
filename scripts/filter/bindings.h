@@ -13,7 +13,6 @@
 #include "haxe/io/Bytes.h"
 #include "hx/StdString.h"
 #include "hash_table7.hpp"
-#include "hash_set2.hpp"
 #include "zlib.h"
 
 #pragma comment(lib, "zlib")
@@ -343,6 +342,107 @@ private:
     bool binaryFormat;
 };
 
+class HxBufferView final {
+public:
+    HxBufferView(const ::Array<uint8_t> buffer, size_t pos, size_t len) :
+    buffer(buffer), byteLength(len), byteOffset(pos) {}
+
+    const ::Array<uint8_t> buffer;
+    size_t byteLength, byteOffset;
+};
+
+class HxStringEquality final {
+public:
+    bool operator()(HxBufferView lhs, const std::string& rhs) const {
+        return lhs.byteLength == rhs.size() && std::memcmp(lhs.buffer->__CStr() + lhs.byteOffset, rhs.data(), rhs.size()) == 0;
+    }
+
+    bool operator()(const std::string& lhs, const std::string& rhs) const {
+        return lhs == rhs;
+    }
+};
+
+class HxStringHasher final {
+public:
+    static size_t hash(const char* data, size_t size) {
+        /* Hyper-simplified komihash without 128-bit multiplication
+         * Checkerboard patterns are not a concern here
+         * https://github.com/avaneev/komihash */
+
+        uint64_t seed1 = 0x243F6A8885A308D3ULL ^ 0x5555555555555555ULL;
+        uint64_t seed2 = 0x13198A2E03707344ULL ^ 0x55556A8885A3AAAAULL;
+        uint64_t seed5 = 0x452821E638D01377ULL ^ 0xAAAAAAAAAAAAAAAAULL;
+        uint64_t seed6 = 0xBE5466CF34E90C6CULL ^ 0xAAAA21E638D05555ULL;
+
+        size_t index = 0;
+
+        while (size >= 32) {
+            uint64_t word0   = lu64(data + index)      ^ seed1;
+            uint64_t word8   = lu64(data + index + 8)  ^ seed2;
+            uint64_t word16  = lu64(data + index + 16) ^ seed5;
+            uint64_t word32  = lu64(data + index + 24) ^ seed6;
+            uint64_t temp1   = seed1;
+            seed1 = ((word0  * 0xcc9e2d51) << 15) ^ seed2;
+            seed2 = ((word8  * 0x1b873593) >> 19) ^ seed5;
+            seed5 = ((word16 * 0xcc9e2d51) << 15) ^ seed6;
+            seed6 = ((word32 * 0x1b873593) >> 19) ^ temp1;
+            index += 32;
+            size  -= 32;
+        }
+
+        if (size >= 16) {
+            uint64_t word0   = lu64(data + index)      ^ seed1;
+            uint64_t word8   = lu64(data + index + 8)  ^ seed5;
+            uint64_t temp1   = seed1;
+            seed1 = ((word0  * 0xcc9e2d51) << 15) ^ seed5;
+            seed5 = ((word8  * 0x1b873593) >> 19) ^ temp1;
+            index += 16;
+            size  -= 16;
+        }
+
+        if (size >= 8) {
+            uint64_t word0   = lu64(data + index) ^ seed1;
+            uint64_t temp1   = seed2;
+            seed2 = ((word0  * 0xcc9e2d51) << 15) ^ seed6;
+            seed6 = ((seed2  * 0x1b873593) >> 19) ^ temp1;
+            index += 8;
+            size  -= 8;
+        }
+
+        seed1 ^= (seed2 * 0x1b873593) ^ seed5 ^ (seed6 * 0xcc9e2d51);
+
+        // Use FNA-1a for the remaining bytes
+        while (size > 0) {
+            seed1 ^= (unsigned)data[index];
+            seed1 *= 0x100000001b3ULL;
+            index += 1;
+            size  -= 1;
+        }
+
+        return static_cast<size_t>(seed1);
+    }
+
+    static size_t hash(HxBufferView value) {
+        return hash(value.buffer->__CStr() + value.byteOffset, value.byteLength);
+    }
+
+    static size_t hash(const std::string& value) {
+        return hash(value.data(), value.size());
+    }
+
+    template <typename... Ts>
+    size_t operator()(Ts&&... args) const {
+        return hash(std::forward<Ts>(args)...);
+    }
+
+private:
+    static uint64_t lu64(const char* data) {
+        uint64_t value;
+        std::memcpy(&value, data, 8);
+        return value;
+    }
+};
+
 template <typename T>
 class OwningReference final : public ::cpp::Reference<T> {
 public:
@@ -372,14 +472,23 @@ public:
 
     template <typename... Ts>
     void foreach(::Dynamic fn, Ts... extras) const {
-         for (auto it = map.cbegin(); it != map.cend(); it++) {
+        for (auto it = map.cbegin(); it != map.cend(); it++) {
             fn(it->first, it->second, extras...);
-         }
-     }
+        }
+    }
+
+    void clear() {
+        map.clear();
+    }
 
     V get(K key, V def) const {
         const V* ptr = map.try_get(key);
         return ptr ? *ptr : def;
+    }
+
+    V get(K key, V def, size_t hash) const {
+        const auto it = map.find(key, hash);
+        return it == map.cend() ? def : it->second;
     }
 
     void set(K key, V value) {
@@ -390,93 +499,9 @@ public:
 };
 
 template <typename V>
-class UnorderedMapType<::String, V> final : public UnorderedMapBase<UnorderedMapType<::String, V>> {
+class UnorderedMapType<HxBufferView, V> final : public UnorderedMapBase<UnorderedMapType<HxBufferView, V>> {
 public:
-    using UnorderedMapBase<UnorderedMapType<::String, V>>::UnorderedMapBase;
-
-    struct hx_equal_to final {
-        bool operator()(const std::string& lhs, const std::string& rhs) const {
-            return lhs == rhs;
-        }
-
-        bool operator()(const ::String& lhs, const std::string& rhs) const {
-            return !lhs.isUTF16Encoded() && lhs.length == rhs.size() && std::memcmp(lhs.raw_ptr(), rhs.data(), rhs.size()) == 0;
-        }
-    };
-
-    struct hx_hash final {
-        uint64_t lu64(const char* data) const {
-            uint64_t value;
-            std::memcpy(&value, data, 8);
-            return value;
-        }
-
-        size_t hash(const char* data, size_t size) const {
-            /* Hyper-simplified komihash without 128-bit multiplication
-             * Checkerboard patterns are not a concern here
-             * https://github.com/avaneev/komihash */
-
-            uint64_t seed1 = 0x243F6A8885A308D3ULL ^ 0x5555555555555555ULL;
-            uint64_t seed2 = 0x13198A2E03707344ULL ^ 0x55556A8885A3AAAAULL;
-            uint64_t seed5 = 0x452821E638D01377ULL ^ 0xAAAAAAAAAAAAAAAAULL;
-            uint64_t seed6 = 0xBE5466CF34E90C6CULL ^ 0xAAAA21E638D05555ULL;
-
-            size_t index = 0;
-
-            while (size >= 32) {
-                uint64_t word0   = lu64(data + index)      ^ seed1;
-                uint64_t word8   = lu64(data + index + 8)  ^ seed2;
-                uint64_t word16  = lu64(data + index + 16) ^ seed5;
-                uint64_t word32  = lu64(data + index + 24) ^ seed6;
-                uint64_t temp1   = seed1;
-                seed1 = ((word0  * 0xcc9e2d51) << 15) ^ seed2;
-                seed2 = ((word8  * 0x1b873593) >> 19) ^ seed5;
-                seed5 = ((word16 * 0xcc9e2d51) << 15) ^ seed6;
-                seed6 = ((word32 * 0x1b873593) >> 19) ^ temp1;
-                index += 32;
-                size  -= 32;
-            }
-
-            if (size >= 16) {
-                uint64_t word0   = lu64(data + index)      ^ seed1;
-                uint64_t word8   = lu64(data + index + 8)  ^ seed5;
-                uint64_t temp1   = seed1;
-                seed1 = ((word0  * 0xcc9e2d51) << 15) ^ seed5;
-                seed5 = ((word8  * 0x1b873593) >> 19) ^ temp1;
-                index += 16;
-                size  -= 16;
-            }
-
-            if (size >= 8) {
-                uint64_t word0   = lu64(data + index) ^ seed1;
-                uint64_t temp1   = seed2;
-                seed2 = ((word0  * 0xcc9e2d51) << 15) ^ seed6;
-                seed6 = ((seed2  * 0x1b873593) >> 19) ^ temp1;
-                index += 8;
-                size  -= 8;
-            }
-
-            seed1 ^= (seed2 * 0x1b873593) ^ seed5 ^ (seed6 * 0xcc9e2d51);
-
-            // Use FNA-1a for the remaining bytes
-            while (size > 0) {
-                seed1 ^= (unsigned)data[index];
-                seed1 *= 0x100000001b3ULL;
-                index += 1;
-                size  -= 1;
-            }
-
-            return seed1;
-        }
-
-        size_t operator()(const std::string& value) const {
-            return hash(value.data(), value.size());
-        }
-
-        size_t operator()(const ::String value) const {
-            return hash(value.raw_ptr(), value.length);
-        }
-    };
+    using UnorderedMapBase<UnorderedMapType<HxBufferView, V>>::UnorderedMapBase;
 
     static inline ::String hx_new_string(std::string key) {
         char* s = hx::NewString(key.size());
@@ -486,21 +511,26 @@ public:
 
     template <typename... Ts>
     void foreach(::Dynamic fn, Ts... extras) const {
-         for (auto it = map.cbegin(); it != map.cend(); it++) {
+        for (auto it = map.cbegin(); it != map.cend(); it++) {
             fn(hx_new_string(it->first), it->second, extras...);
-         }
-     }
+        }
+    }
 
-    V get(::String key, V def) const {
+    V get(const HxBufferView key, V def) const {
         const auto it = map.find(key);
         return it == map.cend() ? def : it->second;
     }
 
-    void set(::String key, V value) {
-        map[::hx::StdString(key)] = value;
+    V get(const HxBufferView key, V def, size_t hash) const {
+        const auto it = map.find(key, hash);
+        return it == map.cend() ? def : it->second;
     }
 
-    emhash7::HashMap<std::string, V, hx_hash, hx_equal_to> map;
+    void set(HxBufferView key, V value) {
+        map[std::string(key.buffer->__CStr() + key.byteOffset, key.byteLength)] = value;
+    }
+
+    emhash7::HashMap<std::string, V, HxStringHasher, HxStringEquality> map;
 };
 
 template <typename K, typename V>
@@ -508,48 +538,5 @@ using UnorderedMapPointer = UnorderedMapType<K, V>*;
 
 template <typename K, typename V>
 using UnorderedMapReference = OwningReference<UnorderedMapType<K, V>>;
-
-template <typename Derived, typename T>
-class UnorderedSetBase {
-public:
-    UnorderedSetBase() {}
-    virtual ~UnorderedSetBase() {}
-
-    void destroy() {
-        delete this;
-    }
-
-    void clear() {
-        set.clear();
-    }
-
-    bool empty() const {
-        return set.empty();
-    }
-
-    template <typename... Ts>
-    void foreach(::Dynamic fn, Ts... extras) const {
-        for (auto it = set.cbegin(); it != set.cend(); it++) {
-            fn(*it, extras...);
-        }
-    }
-
-    void insert(T value) {
-        set.insert(value);
-    }
-
-    emhash2::HashSet<T> set;
-};
-
-template <typename T>
-class UnorderedSetType final : public UnorderedSetBase<UnorderedSetType<T>, T> {
-    using UnorderedSetBase<UnorderedSetType<T>, T>::UnorderedSetBase;
-};
-
-template <typename T>
-using UnorderedSetPointer = UnorderedSetType<T>*;
-
-template <typename T>
-using UnorderedSetReference = OwningReference<UnorderedSetType<T>>;
 
 #endif /* INCLUDED_MainFilterNew_Bindings */
