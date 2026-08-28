@@ -5,7 +5,7 @@
 
 #define BUFFER_MIN_SIZE 4096
 #define BUFFER_MAX_SIZE 65536
-#define CHUNK_SIZE 65536
+#define CHUNK_SIZE 196608
 #define EMH_EXT 1
 #define EMH_INT_HASH 1
 

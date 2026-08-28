@@ -1010,6 +1010,13 @@ class KmerMap {
         expectedSkipLength = sum;
     }
 
+    private inline function canSkipPattern(pattern, tetramer) {
+        var offset    = minMaxMap.getData().byteOffset + (pattern << 1);
+        var maximizer = Bytes.fastGet(minMaxMap.getData().bytes.getData(), offset);
+        var minimizer = Bytes.fastGet(minMaxMap.getData().bytes.getData(), offset + 1);
+        return tetramer > maximizer || tetramer < minimizer;
+    }
+
     private function setMatches(list: Array<CuckooSet>, pos: Int) {
 #if cpp
         var cs: Vector<Int64> = untyped __cpp__("{0}.StaticCast<::Array<::cpp::Int64>>()", cpp.NativeArray.unsafeGet(list, pos));
@@ -1070,10 +1077,7 @@ class KmerMap {
                     tetramer |= FastaHelper.nuclToInt(Bytes.fastGet(seq.getData(), offset + i));
                 }
 
-                var maximizer = minMaxMap[pattern] & 0xff;
-                var minimizer = (minMaxMap[pattern] >>> 8) & 0xff;
-
-                if (tetramer > maximizer || tetramer < minimizer) {
+                if (canSkipPattern(pattern, tetramer)) {
                     offset += skipLength;
                     continue;
                 }
@@ -1139,7 +1143,7 @@ class KmerMap {
         final map: UnorderedMapPointer<Int64, Int> = shortKmerMap.reference();
 
         final kmerOffset  = 64 - 2 * kmerLength;
-        final kmerMask    = ~((1 << kmerOffset) - 1);
+        final kmerMask    = ~((Int64.make(0, 1) << kmerOffset) - 1);
         final usePatterns = expectedSkipLength >= 0.5 && skipLength > step;
         final tailOffset  = seqEnd - kmerLength;
 
@@ -1184,16 +1188,10 @@ class KmerMap {
             sk      &= kmerMask;
             skr     &= kmerMask;
 
-            if (checkPattern) {
-                var tetramer = (sk >>> kmerOffset) & 0xff;
-                var maximizer = minMaxMap[pattern] & 0xff;
-                var minimizer = (minMaxMap[pattern] >>> 8) & 0xff;
-
-                if (tetramer > maximizer || tetramer < minimizer) {
-                    actualStep = skipLength;
-                    offset += skipLength;
-                    continue;
-                }
+            if (checkPattern && canSkipPattern(pattern, (sk >>> kmerOffset).low & 0xff)) {
+                actualStep = skipLength;
+                offset += skipLength;
+                continue;
             }
 
             var hit = markHitsShort(map, sk < skr ? sk : skr);
@@ -1449,7 +1447,7 @@ class SeqFileInput {
                 pendingRecord = [];
 
 #if cpp
-                cpp.NativeArray.reserve(pendingRecord, isFasta ? 2 : 4);
+                cpp.NativeArray.reserve(pendingRecord, 4);
 #end
 
                 pendingRecord.push(line);
