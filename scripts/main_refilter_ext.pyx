@@ -91,10 +91,12 @@ def parse_record(record: bytes, has_phr: bool, seq_buf: bytearray, phr_buf: byte
         chunk = record[j]
         if chunk & 0x80:
             chunk2: NativeChar = record[j + 1]
-            rep_num = ((chunk & 0x7f) | (chunk2 & 0x80)) + 1
+            rep_num = (chunk & 0x7f) | (chunk2 & 0x80)
             for k in range(rep_num):
                 phr_buf[i + k] = chunk2 & 0x7f
             i += rep_num
+            phr_buf[i] = chunk2 & 0x7f
+            i += 1
             j += 2
         else:
             phr_buf[i] = chunk
